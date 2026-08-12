@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Penyewa - Sekar Space</title>
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #F1E2D1;
+        }
+
+        header {
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #541A1A;
+            margin-bottom: 5px;
+        }
+
+        h2 {
+            color: #541A1A;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        th {
+            background-color: #DCC3AA;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+
+        button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        a:first-child button {
+            background-color: #541A1A;
+            color: white;
+        }
+
+        a:last-child button {
+            background-color: #DCC3AA;
+            color: black;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Manajemen Penyewa</h1>
+        <p>Daftar data penyewa Kost Muslimah Sekar Wangi</p>
+    </header>
+
+    <main>
+        <section>
+            <h2>List Penyewa</h2>
+
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Password</th>
+                        <th>Nama Lengkap</th>
+                        <th>NIK</th>
+                        <th>Alamat</th>
+                        <th>No Telepon</th>
+                        <th>Tanggal Lahir</th>
+                        <th>No Telepon Orang Tua</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <td>keyla01</td>
+                        <td>********</td>
+                        <td>Keyla Asyfa Zahra</td>
+                        <td>3401234567890001</td>
+                        <td>Sleman, Yogyakarta</td>
+                        <td>081234567890</td>
+                        <td>2004-05-12</td>
+                        <td>081298765432</td>
+                        <td>
+                            <a href="detail.html"><button>Detail</button></a>
+                            <a href="delete.html"><button>Delete</button></a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>zulfa01</td>
+                        <td>********</td>
+                        <td>Zulfa Tsaniyatul Fadilah</td>
+                        <td>3401234567890002</td>
+                        <td>Bantul, Yogyakarta</td>
+                        <td>081345678901</td>
+                        <td>2004-03-21</td>
+                        <td>081287654321</td>
+                        <td>
+                            <a href="detail.html"><button>Detail</button></a>
+                            <a href="delete.html"><button>Delete</button></a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>zalfa01</td>
+                        <td>********</td>
+                        <td>Zalfa Nadya Alfialini</td>
+                        <td>3401234567890003</td>
+                        <td>Kulon Progo, Yogyakarta</td>
+                        <td>081456789012</td>
+                        <td>2004-07-10</td>
+                        <td>081276543210</td>
+                        <td>
+                            <a href="detail.html"><button>Detail</button></a>
+                            <a href="delete.html"><button>Delete</button></a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+</body>
+
+</html>

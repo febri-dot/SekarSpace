@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dashboard Penyewa Sekar Space - Kelola kost, pembayaran, dan keluhan Anda.">
+    <title>Dashboard — Sekar Space</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="user-dashboard.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="../index.html" class="sidebar-logo">
+                    <i class='bx bxs-home-heart'></i>
+                    <span>Sekar<strong>Space</strong></span>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Menu Dashboard">
+                <span class="nav-section-title">Menu Utama</span>
+                <a href="index.html" class="sidebar-link active" id="navDashboard">
+                    <i class='bx bxs-dashboard'></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="complaint/index.html" class="sidebar-link" id="navComplaint">
+                    <i class='bx bxs-message-square-error'></i>
+                    <span>Keluhan</span>
+                    <span class="badge-count">2</span>
+                </a>
+                <a href="payments/index.html" class="sidebar-link" id="navPayment">
+                    <i class='bx bxs-wallet'></i>
+                    <span>Pembayaran</span>
+                </a>
+
+                <span class="nav-section-title">Lainnya</span>
+                <a href="../index.html" class="sidebar-link" id="navLanding">
+                    <i class='bx bx-globe'></i>
+                    <span>Website</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-profile">
+                <div class="profile-avatar">KA</div>
+                <div class="profile-info">
+                    <h4>Keyla Asyfa</h4>
+                    <span>Kamar 07 · Deluxe</span>
+                </div>
+                <button class="logout-btn" title="Keluar" id="btnLogout">
+                    <i class='bx bx-log-out'></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- ========== MAIN CONTENT ========== -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle sidebar">
+                        <i class='bx bx-menu'></i>
+                    </button>
+                    <div class="header-greeting">
+                        <h1 id="greetingText">Selamat Siang, Keyla! 👋</h1>
+                        <p>Berikut ringkasan informasi kost Anda</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="header-date" id="currentDate">
+                        <i class='bx bx-calendar'></i>
+                        <span>-</span>
+                    </div>
+                    <button class="header-btn" id="btnNotification" title="Notifikasi">
+                        <i class='bx bx-bell'></i>
+                        <span class="notif-dot"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- ===== COUNTDOWN CARD ===== -->
+                <section class="countdown-card animate-in" id="countdownSection" aria-label="Countdown sisa kost">
+                    <div class="countdown-header">
+                        <div class="countdown-header-left">
+                            <h2><i class='bx bx-time-five' style="vertical-align: middle; margin-right: 4px;"></i> Sisa Waktu Kost Anda</h2>
+                            <p>Masa sewa Anda akan berakhir pada tanggal yang tertera</p>
+                        </div>
+                        <div class="countdown-end-date" id="endDateBadge">
+                            <i class='bx bx-calendar-check'></i>
+                            <span id="endDateText">4 September 2026</span>
+                        </div>
+                    </div>
+
+                    <div class="countdown-timer" id="countdownTimer">
+                        <div class="countdown-block">
+                            <span class="number" id="countDays">--</span>
+                            <span class="label">Hari</span>
+                        </div>
+                        <span class="countdown-separator">:</span>
+                        <div class="countdown-block">
+                            <span class="number" id="countHours">--</span>
+                            <span class="label">Jam</span>
+                        </div>
+                        <span class="countdown-separator">:</span>
+                        <div class="countdown-block">
+                            <span class="number" id="countMinutes">--</span>
+                            <span class="label">Menit</span>
+                        </div>
+                        <span class="countdown-separator">:</span>
+                        <div class="countdown-block">
+                            <span class="number" id="countSeconds">--</span>
+                            <span class="label">Detik</span>
+                        </div>
+                    </div>
+
+                    <div class="countdown-progress">
+                        <div class="progress-info">
+                            <span>Waktu berjalan</span>
+                            <strong id="progressPercent">0%</strong>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== STAT CARDS ===== -->
+                <section class="stats-grid" aria-label="Ringkasan informasi">
+                    <div class="stat-card animate-in" id="statRoom">
+                        <div class="stat-card-header">
+                            <div class="stat-icon room">
+                                <i class='bx bxs-door-open'></i>
+                            </div>
+                            <span class="stat-trend neutral">Aktif</span>
+                        </div>
+                        <h3>Kamar 07</h3>
+                        <p>Tipe Deluxe · 3×4m · AC</p>
+                    </div>
+
+                    <div class="stat-card animate-in" id="statPayment">
+                        <div class="stat-card-header">
+                            <div class="stat-icon payment">
+                                <i class='bx bxs-check-circle'></i>
+                            </div>
+                            <span class="stat-trend up"><i class='bx bx-check'></i> Lunas</span>
+                        </div>
+                        <h3>Rp 800.000</h3>
+                        <p>Pembayaran bulan Agustus</p>
+                    </div>
+
+                    <div class="stat-card animate-in" id="statComplaint">
+                        <div class="stat-card-header">
+                            <div class="stat-icon complaint">
+                                <i class='bx bxs-message-square-error'></i>
+                            </div>
+                            <span class="stat-trend neutral">2 aktif</span>
+                        </div>
+                        <h3>2 Keluhan</h3>
+                        <p>1 menunggu · 1 diproses</p>
+                    </div>
+                </section>
+
+                <!-- ===== QUICK ACTIONS ===== -->
+                <section class="quick-actions" aria-label="Aksi cepat">
+                    <a href="complaint/index.html" class="action-card animate-in" id="actionComplaint">
+                        <div class="action-icon complaint-action">
+                            <i class='bx bx-message-square-add'></i>
+                        </div>
+                        <div>
+                            <h4>Buat Keluhan</h4>
+                            <p>Laporkan masalah atau keluhan Anda</p>
+                        </div>
+                        <i class='bx bx-chevron-right action-arrow'></i>
+                    </a>
+                    <a href="payments/index.html" class="action-card animate-in" id="actionPayment">
+                        <div class="action-icon payment-action">
+                            <i class='bx bx-receipt'></i>
+                        </div>
+                        <div>
+                            <h4>Konfirmasi Pembayaran</h4>
+                            <p>Upload bukti pembayaran kost</p>
+                        </div>
+                        <i class='bx bx-chevron-right action-arrow'></i>
+                    </a>
+                </section>
+
+                <!-- ===== RECENT ACTIVITY ===== -->
+                <section aria-label="Aktivitas terbaru">
+                    <div class="section-title-row">
+                        <h2>Aktivitas Terbaru</h2>
+                        <a href="complaint/index.html">Lihat Semua <i class='bx bx-right-arrow-alt'></i></a>
+                    </div>
+
+                    <div class="activity-list animate-in">
+                        <div class="activity-item">
+                            <div class="activity-icon type-complaint">
+                                <i class='bx bx-error-circle'></i>
+                            </div>
+                            <div class="activity-info">
+                                <h4>Keluhan AC diproses</h4>
+                                <p>Admin sedang menangani keluhan AC kamar Anda</p>
+                            </div>
+                            <span class="activity-time">2 jam lalu</span>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon type-payment">
+                                <i class='bx bx-check-circle'></i>
+                            </div>
+                            <div class="activity-info">
+                                <h4>Pembayaran dikonfirmasi</h4>
+                                <p>Pembayaran bulan Agustus 2026 telah dikonfirmasi</p>
+                            </div>
+                            <span class="activity-time">1 hari lalu</span>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon type-complaint">
+                                <i class='bx bx-message-square-add'></i>
+                            </div>
+                            <div class="activity-info">
+                                <h4>Keluhan baru dikirim</h4>
+                                <p>WiFi sering terputus-putus di lantai 2</p>
+                            </div>
+                            <span class="activity-time">3 hari lalu</span>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon type-info">
+                                <i class='bx bx-info-circle'></i>
+                            </div>
+                            <div class="activity-info">
+                                <h4>Pengumuman jadwal pembersihan</h4>
+                                <p>Pembersihan area umum setiap Senin & Kamis</p>
+                            </div>
+                            <span class="activity-time">5 hari lalu</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ===== SIDEBAR TOGGLE (Mobile) =====
+        const mobileToggle = document.getElementById('mobileToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+        }
+
+        mobileToggle.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // ===== GREETING BASED ON TIME =====
+        function updateGreeting() {
+            const hour = new Date().getHours();
+            let greeting;
+            if (hour >= 5 && hour < 11) greeting = 'Selamat Pagi';
+            else if (hour >= 11 && hour < 15) greeting = 'Selamat Siang';
+            else if (hour >= 15 && hour < 18) greeting = 'Selamat Sore';
+            else greeting = 'Selamat Malam';
+
+            document.getElementById('greetingText').textContent = `${greeting}, Keyla! 👋`;
+        }
+        updateGreeting();
+
+        // ===== CURRENT DATE =====
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            document.querySelector('#currentDate span').textContent = dateStr;
+        }
+        updateDate();
+
+        // ===== COUNTDOWN TIMER =====
+        const endDate = new Date('2026-09-04T00:00:00');
+        const startDate = new Date('2026-08-04T00:00:00');
+        const totalDuration = endDate - startDate;
+
+        function updateCountdown() {
+            const now = new Date();
+            const diff = endDate - now;
+
+            if (diff <= 0) {
+                document.getElementById('countDays').textContent = '0';
+                document.getElementById('countHours').textContent = '0';
+                document.getElementById('countMinutes').textContent = '0';
+                document.getElementById('countSeconds').textContent = '0';
+                document.getElementById('progressPercent').textContent = '100%';
+                document.getElementById('progressBar').style.width = '100%';
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            const daysEl = document.getElementById('countDays');
+            const hoursEl = document.getElementById('countHours');
+            const minutesEl = document.getElementById('countMinutes');
+            const secondsEl = document.getElementById('countSeconds');
+
+            // Animate on change
+            if (daysEl.textContent !== String(days)) {
+                daysEl.style.animation = 'none';
+                daysEl.offsetHeight; // force reflow
+                daysEl.style.animation = 'countdownTick 0.3s ease';
+            }
+
+            daysEl.textContent = days;
+            hoursEl.textContent = String(hours).padStart(2, '0');
+            minutesEl.textContent = String(minutes).padStart(2, '0');
+            secondsEl.textContent = String(seconds).padStart(2, '0');
+
+            // Progress bar
+            const elapsed = now - startDate;
+            const progress = Math.min((elapsed / totalDuration) * 100, 100);
+            document.getElementById('progressPercent').textContent = Math.round(progress) + '%';
+            document.getElementById('progressBar').style.width = progress + '%';
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+
+        // ===== END DATE TEXT =====
+        const endDateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+        document.getElementById('endDateText').textContent = endDate.toLocaleDateString('id-ID', endDateOptions);
+    </script>
+</body>
+</html>

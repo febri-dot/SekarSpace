@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sekar Space - Kost Muslimah Sekar Wangi. Hunian nyaman, aman, dan terjangkau khusus muslimah. Fasilitas lengkap, lokasi strategis.">
+    <meta name="keywords" content="kost muslimah, kost putri, sekar wangi, hunian muslimah, kost murah, kost nyaman">
+    <title>Sekar Space — Kost Muslimah Sekar Wangi</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css?v=4.0">
+</head>
+<body>
+    <!-- ========== NAVBAR ========== -->
+    <header id="header" class="header">
+        <nav class="navbar" aria-label="Navigasi Utama">
+            <a href="#" class="nav-logo" aria-label="Sekar Space - Beranda">
+                <i class='bx bxs-home-heart'></i>
+                <span>Sekar<strong>Space</strong></span>
+            </a>
+
+            <ul class="nav-menu" id="navMenu" role="menubar">
+                <li role="none"><a href="#hero" class="nav-link active" role="menuitem">Beranda</a></li>
+                <li role="none"><a href="#facilities" class="nav-link" role="menuitem">Fasilitas</a></li>
+                <li role="none"><a href="#rooms" class="nav-link" role="menuitem">Kamar</a></li>
+                <li role="none"><a href="#faq" class="nav-link" role="menuitem">FAQ</a></li>
+                <li role="none"><a href="#contact" class="nav-link" role="menuitem">Kontak</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button class="nav-toggle" id="navToggle" aria-label="Toggle navigasi" aria-expanded="false">
+                    <i class='bx bx-menu'></i>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- [MOBILE FIX #6] Nav Overlay — tap di luar menu untuk menutup -->
+    <div class="nav-overlay" id="navOverlay"></div>
+
+    <main>
+        <!-- ========== HERO SECTION ========== -->
+        <section id="hero" class="hero" aria-labelledby="heroHeading">
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <span class="hero-badge">
+                    <i class='bx bxs-star'></i>
+                    Kost Muslimah Terpercaya
+                </span>
+                <h1 id="heroHeading">Temukan Hunian<br><span class="text-gradient">Nyaman & Aman</span></h1>
+                <p class="hero-desc">
+                    Sekar Space menyediakan kost muslimah dengan fasilitas lengkap, 
+                    lingkungan yang kondusif, dan harga terjangkau untuk kenyamanan Anda.
+                </p>
+                <div class="hero-actions">
+                    <a href="#rooms" class="btn btn-primary" id="btnExploreRooms">
+                        <i class='bx bx-search-alt'></i>
+                        Lihat Kamar
+                    </a>
+                    <a href="https://wa.me/6281234567890" class="btn btn-ghost" id="btnWhatsapp" target="_blank" rel="noopener">
+                        <i class='bx bxl-whatsapp'></i>
+                        Hubungi Kami
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <strong>50+</strong>
+                        <span>Penyewa Puas</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <strong>15+</strong>
+                        <span>Kamar Tersedia</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <strong>4.8</strong>
+                        <span>Rating</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== FACILITIES SECTION ========== -->
+        <section id="facilities" class="section facilities" aria-labelledby="facilitiesHeading">
+            <div class="container">
+                <header class="section-header">
+                    <span class="section-tag">Keunggulan Kami</span>
+                    <h2 id="facilitiesHeading">Fasilitas <span class="text-gradient">Lengkap</span></h2>
+                    <p>Kami menyediakan berbagai fasilitas untuk menunjang kenyamanan dan keamanan Anda selama tinggal.</p>
+                </header>
+                <div class="facilities-grid">
+                    <article class="facility-card" id="facilityWifi">
+                        <div class="facility-icon">
+                            <i class='bx bx-wifi'></i>
+                        </div>
+                        <h3>WiFi Cepat</h3>
+                        <p>Internet berkecepatan tinggi tersedia 24 jam untuk kebutuhan belajar dan bekerja.</p>
+                    </article>
+                    <article class="facility-card" id="facilitySecurity">
+                        <div class="facility-icon">
+                            <i class='bx bx-shield-quarter'></i>
+                        </div>
+                        <h3>Keamanan 24 Jam</h3>
+                        <p>Sistem keamanan terpadu dengan CCTV dan akses terbatas untuk kenyamanan Anda.</p>
+                    </article>
+                    <article class="facility-card" id="facilityParking">
+                        <div class="facility-icon">
+                            <i class='bx bxs-car-garage'></i>
+                        </div>
+                        <h3>Parkir Luas</h3>
+                        <p>Area parkir yang memadai untuk motor dan sepeda, aman dan terlindung.</p>
+                    </article>
+                    <article class="facility-card" id="facilityKitchen">
+                        <div class="facility-icon">
+                            <i class='bx bx-fridge'></i>
+                        </div>
+                        <h3>Dapur Bersama</h3>
+                        <p>Dapur lengkap dengan peralatan memasak yang bisa digunakan bersama.</p>
+                    </article>
+                    <article class="facility-card" id="facilityLaundry">
+                        <div class="facility-icon">
+                            <i class='bx bxs-washer'></i>
+                        </div>
+                        <h3>Laundry</h3>
+                        <p>Layanan laundry tersedia untuk memudahkan kegiatan sehari-hari Anda.</p>
+                    </article>
+                    <article class="facility-card" id="facilityMusholla">
+                        <div class="facility-icon">
+                            <i class='bx bxs-mosque'></i>
+                        </div>
+                        <h3>Musholla</h3>
+                        <p>Ruang ibadah yang bersih dan nyaman untuk beribadah dengan tenang.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== ROOMS / PILIHAN KAMAR ========== -->
+        <section id="rooms" class="section rooms" aria-labelledby="roomsHeading">
+            <div class="container">
+                <header class="section-header">
+                    <span class="section-tag">Pilihan Kamar</span>
+                    <h2 id="roomsHeading">Pilih Tipe <span class="text-gradient">Kamar</span></h2>
+                    <p>Kami menyediakan dua pilihan tipe kamar yang bisa disesuaikan dengan kebutuhan dan kenyamanan Anda.</p>
+                </header>
+
+                <div class="room-comparison">
+                    <!-- Kamar Mandi Luar -->
+                    <a href="rooms/index.html?tipe=km-luar" class="room-type-card" id="roomKmLuar">
+                        <div class="room-type-image-wrapper">
+                            <img src="assets/images/room-single.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
+                            <div class="room-type-img-overlay"></div>
+                            <div class="room-type-icon-badge">
+                                <i class='bx bx-door-open'></i>
+                            </div>
+                        </div>
+                        <div class="room-type-content">
+                            <span class="room-type-tag">Terjangkau</span>
+                            <h3>Kamar Mandi Luar</h3>
+                            <p class="room-type-desc">Kamar nyaman dengan akses kamar mandi bersama yang selalu bersih dan terawat.</p>
+                            <ul class="room-type-features">
+                                <li><i class='bx bx-check-circle'></i> Ukuran 3 × 3 meter</li>
+                                <li><i class='bx bx-check-circle'></i> Kasur & Lemari</li>
+                                <li><i class='bx bx-check-circle'></i> WiFi 24 Jam</li>
+                                <li><i class='bx bx-check-circle'></i> Listrik Token</li>
+                            </ul>
+                            <div class="room-type-price">
+                                <span class="price-from">Mulai dari</span>
+                                <strong>Rp 700.000<span>/bulan</span></strong>
+                            </div>
+                            <div class="room-type-cta">
+                                <span>Lihat Kamar Tersedia</span>
+                                <i class='bx bx-right-arrow-alt'></i>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Divider -->
+                    <div class="room-comparison-divider">
+                        <span>atau</span>
+                    </div>
+
+                    <!-- Kamar Mandi Dalam -->
+                    <a href="rooms/index.html?tipe=km-dalam" class="room-type-card room-type-premium" id="roomKmDalam">
+                        <div class="room-type-badge-float">
+                            <i class='bx bxs-star'></i> Populer
+                        </div>
+                        <div class="room-type-image-wrapper">
+                            <img src="assets/images/room-deluxe.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
+                            <div class="room-type-img-overlay"></div>
+                            <div class="room-type-icon-badge">
+                                <i class='bx bx-bath'></i>
+                            </div>
+                        </div>
+                        <div class="room-type-content">
+                            <span class="room-type-tag tag-premium">Premium</span>
+                            <h3>Kamar Mandi Dalam</h3>
+                            <p class="room-type-desc">Privasi lebih dengan kamar mandi dalam yang nyaman. Lebih leluasa dan eksklusif.</p>
+                            <ul class="room-type-features">
+                                <li><i class='bx bx-check-circle'></i> Ukuran 3 × 4 meter</li>
+                                <li><i class='bx bx-check-circle'></i> Kamar Mandi Dalam</li>
+                                <li><i class='bx bx-check-circle'></i> Kasur & Lemari</li>
+                                <li><i class='bx bx-check-circle'></i> WiFi 24 Jam</li>
+                            </ul>
+                            <div class="room-type-price">
+                                <span class="price-from">Mulai dari</span>
+                                <strong>Rp 950.000<span>/bulan</span></strong>
+                            </div>
+                            <div class="room-type-cta">
+                                <span>Lihat Kamar Tersedia</span>
+                                <i class='bx bx-right-arrow-alt'></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== FAQ SECTION ========== -->
+        <section id="faq" class="section faq" aria-labelledby="faqHeading">
+            <div class="container">
+                <div class="faq-grid">
+                    <div class="faq-intro">
+                        <span class="section-tag">Tanya Jawab</span>
+                        <h2 id="faqHeading">Pertanyaan yang Sering <span class="text-gradient">Diajukan</span></h2>
+                        <p>Temukan jawaban atas pertanyaan umum seputar peraturan dan fasilitas di Kost Muslimah Sekar Wangi. Kami merangkum semua informasi untuk kenyamanan Anda.</p>
+                        
+                        <div class="faq-support-card">
+                            <div class="support-icon">
+                                <i class='bx bx-support'></i>
+                            </div>
+                            <div class="support-text">
+                                <h4>Punya pertanyaan lain?</h4>
+                                <p>Jangan ragu untuk menghubungi pengelola kami secara langsung.</p>
+                                <a href="https://wa.me/6281234567890" class="btn btn-primary btn-sm" target="_blank" rel="noopener">Hubungi Admin</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="faq-container">
+                        <div class="faq-item active">
+                            <button class="faq-question" aria-expanded="true">
+                                <div class="faq-q-text">
+                                    <span class="faq-number">01</span>
+                                    <h3>Apa saja peraturan utama di Kost Muslimah Sekar Wangi?</h3>
+                                </div>
+                                <span class="faq-icon-wrapper"><i class='bx bx-plus'></i></span>
+                            </button>
+                            <div class="faq-answer">
+                                <div class="faq-answer-inner">
+                                    <ul class="faq-list">
+                                        <li><strong>Identitas:</strong> Penyewa wajib seorang muslimah.</li>
+                                        <li><strong>Jam Operasional:</strong> Akses kost dibuka dari waktu Subuh hingga pukul 22.00 malam.</li>
+                                        <li><strong>Tamu:</strong> Tidak diperkenankan membawa lawan jenis ke dalam kamar; tamu lawan jenis hanya diperbolehkan di area ruang tamu.</li>
+                                        <li><strong>Menginap:</strong> Tamu (sesama wanita) yang menginap lebih dari 2 hari akan dikenakan biaya tambahan Rp 50.000/hari.</li>
+                                        <li><strong>Kebersihan:</strong> Wajib menjaga kebersihan fasilitas umum seperti dapur dan kamar mandi bersama.</li>
+                                        <li><strong>Hewan Peliharaan:</strong> Dilarang membawa hewan peliharaan jenis apapun.</li>
+                                        <li><strong>Perizinan:</strong> Wajib melapor kepada pengelola kost jika meninggalkan kost untuk pulang kampung atau pergi dalam waktu lama.</li>
+                                        <li><strong>Ketertiban:</strong> Dilarang keras merokok dan mengonsumsi minuman keras di seluruh area kost, termasuk di dalam kamar.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-question" aria-expanded="false">
+                                <div class="faq-q-text">
+                                    <span class="faq-number">02</span>
+                                    <h3>Apakah biaya sewa sudah termasuk listrik dan air?</h3>
+                                </div>
+                                <span class="faq-icon-wrapper"><i class='bx bx-plus'></i></span>
+                            </button>
+                            <div class="faq-answer">
+                                <div class="faq-answer-inner">
+                                    <p>Ya, biaya sewa bulanan sudah mencakup penggunaan air bersih dan listrik untuk kebutuhan standar (lampu, kipas angin, laptop, dan charger HP). Untuk barang elektronik berdaya besar seperti rice cooker pribadi atau setrika, mungkin dikenakan sedikit penyesuaian biaya tambahan.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-question" aria-expanded="false">
+                                <div class="faq-q-text">
+                                    <span class="faq-number">03</span>
+                                    <h3>Bagaimana sistem pembayaran sewa kamar kost?</h3>
+                                </div>
+                                <span class="faq-icon-wrapper"><i class='bx bx-plus'></i></span>
+                            </button>
+                            <div class="faq-answer">
+                                <div class="faq-answer-inner">
+                                    <p>Pembayaran sewa dapat dilakukan secara bulanan, per 3 bulan, atau tahunan melalui transfer bank ke rekening pengelola. Pembayaran wajib diselesaikan paling lambat pada tanggal jatuh tempo setiap bulannya sesuai kesepakatan awal.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-question" aria-expanded="false">
+                                <div class="faq-q-text">
+                                    <span class="faq-number">04</span>
+                                    <h3>Apakah ada jam malam untuk tamu yang berkunjung?</h3>
+                                </div>
+                                <span class="faq-icon-wrapper"><i class='bx bx-plus'></i></span>
+                            </button>
+                            <div class="faq-answer">
+                                <div class="faq-answer-inner">
+                                    <p>Tamu hanya diperbolehkan berkunjung di area ruang tamu luar hingga pukul 21.00 WIB. Demi kenyamanan dan privasi penghuni lain, tamu (termasuk keluarga perempuan) tidak diizinkan memasuki area kamar tanpa izin khusus.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <button class="faq-question" aria-expanded="false">
+                                <div class="faq-q-text">
+                                    <span class="faq-number">05</span>
+                                    <h3>Bagaimana dengan fasilitas dapur dan laundry?</h3>
+                                </div>
+                                <span class="faq-icon-wrapper"><i class='bx bx-plus'></i></span>
+                            </button>
+                            <div class="faq-answer">
+                                <div class="faq-answer-inner">
+                                    <p>Kami menyediakan dapur bersama yang lengkap dengan kompor, kulkas, dan peralatan dasar. Penghuni wajib membersihkan perlengkapan setelah dipakai. Untuk laundry, tersedia mesin cuci yang bisa digunakan bersama atau Anda dapat menggunakan jasa laundry berlangganan di sekitar area kost.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== CONTACT SECTION ========== -->
+        <section id="contact" class="section contact" aria-labelledby="contactHeading">
+            <div class="container">
+                <header class="section-header">
+                    <span class="section-tag">Hubungi Kami</span>
+                    <h2 id="contactHeading">Lokasi & <span class="text-gradient">Kontak</span></h2>
+                    <p>Kunjungi langsung atau hubungi kami untuk informasi lebih lanjut.</p>
+                </header>
+                <div class="contact-grid">
+                    <div class="contact-info-wrapper">
+                        <address class="contact-details">
+                            <div class="contact-item" id="contactAddress">
+                                <div class="contact-icon">
+                                    <i class='bx bxs-map'></i>
+                                </div>
+                                <div>
+                                    <h3>Alamat</h3>
+                                    <p>Jl. Sekar Wangi No. 123<br>Kota, Provinsi 12345</p>
+                                </div>
+                            </div>
+                            <div class="contact-item" id="contactPhone">
+                                <div class="contact-icon">
+                                    <i class='bx bxs-phone'></i>
+                                </div>
+                                <div>
+                                    <h3>Telepon</h3>
+                                    <p><a href="tel:+6281234567890">+62 812-3456-7890</a></p>
+                                </div>
+                            </div>
+                            <div class="contact-item" id="contactEmail">
+                                <div class="contact-icon">
+                                    <i class='bx bxs-envelope'></i>
+                                </div>
+                                <div>
+                                    <h3>Email</h3>
+                                    <p><a href="mailto:info@sekarspace.com">info@sekarspace.com</a></p>
+                                </div>
+                            </div>
+                            <div class="contact-item" id="contactHours">
+                                <div class="contact-icon">
+                                    <i class='bx bxs-time'></i>
+                                </div>
+                                <div>
+                                    <h3>Jam Operasional</h3>
+                                    <p>Senin – Sabtu: 08.00 – 17.00<br>Minggu: Dengan perjanjian</p>
+                                </div>
+                            </div>
+                        </address>
+                        <div class="contact-cta-group">
+                            <a href="https://wa.me/6281234567890?text=Halo%20Sekar%20Space%2C%20saya%20ingin%20bertanya%20tentang%20ketersediaan%20kamar." 
+                               class="contact-cta-btn cta-wa" id="ctaWhatsappContact" target="_blank" rel="noopener">
+                                <i class='bx bxl-whatsapp'></i>
+                                <span>Hubungi via WhatsApp</span>
+                            </a>
+                            <a href="https://www.google.com/maps/search/?api=1&query=-6.2,106.8" 
+                               class="contact-cta-btn cta-maps" id="ctaGoogleMapsContact" target="_blank" rel="noopener">
+                                <i class='bx bxs-map-pin'></i>
+                                <span>Buka Google Maps</span>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="contact-map" id="contactMap">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3966.0!2d106.8!3d-6.2!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwMTInMDAuMCJTIDEwNsKwNDgnMDAuMCJF!5e0!3m2!1sid!2sid!4v1700000000000!5m2!1sid!2sid"
+                            width="100%"
+                            height="100%"
+                            style="border:0; border-radius: 16px;"
+                            allowfullscreen=""
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"
+                            title="Lokasi Kost Muslimah Sekar Wangi di Google Maps">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ========== FOOTER ========== -->
+    <footer class="footer" id="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="footer-logo" aria-label="Sekar Space">
+                        <i class='bx bxs-home-heart'></i>
+                        <span>Sekar<strong>Space</strong></span>
+                    </a>
+                    <p>Kost Muslimah Sekar Wangi — hunian nyaman, aman, dan terjangkau khusus muslimah dengan fasilitas lengkap dan lokasi strategis.</p>
+                    <div class="footer-socials">
+                        <a href="#" aria-label="Instagram Sekar Space" id="socialInstagram"><i class='bx bxl-instagram'></i></a>
+                        <a href="#" aria-label="Facebook Sekar Space" id="socialFacebook"><i class='bx bxl-facebook'></i></a>
+                        <a href="https://wa.me/6281234567890" aria-label="WhatsApp Sekar Space" id="socialWhatsapp" target="_blank" rel="noopener"><i class='bx bxl-whatsapp'></i></a>
+                        <a href="#" aria-label="TikTok Sekar Space" id="socialTiktok"><i class='bx bxl-tiktok'></i></a>
+                    </div>
+                </div>
+                <nav class="footer-nav" aria-label="Navigasi Footer - Tautan Cepat">
+                    <h3>Tautan Cepat</h3>
+                    <ul>
+                        <li><a href="#hero">Beranda</a></li>
+                        <li><a href="#facilities">Fasilitas</a></li>
+                        <li><a href="#rooms">Kamar</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="#contact">Kontak</a></li>
+                    </ul>
+                </nav>
+                <nav class="footer-nav" aria-label="Navigasi Footer - Layanan">
+                    <h3>Layanan</h3>
+                    <ul>
+                        <li><a href="user/index.html">Portal Penyewa</a></li>
+                        <li><a href="user/payments/index.html">Konfirmasi Pembayaran</a></li>
+                        <li><a href="user/complaint/index.html">Pengaduan Keluhan</a></li>
+                    </ul>
+                </nav>
+                <div class="footer-contact">
+                    <h3>Kontak Kami</h3>
+                    <address>
+                        <p><i class='bx bxs-map'></i> Jl. Sekar Wangi No. 123</p>
+                        <p><i class='bx bxs-phone'></i> <a href="tel:+6281234567890">+62 812-3456-7890</a></p>
+                        <p><i class='bx bxs-envelope'></i> <a href="mailto:info@sekarspace.com">info@sekarspace.com</a></p>
+                    </address>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Sekar Space — Kost Muslimah Sekar Wangi. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- [MOBILE FIX #5] Floating WhatsApp Button — selalu terlihat di mobile -->
+    <a href="https://wa.me/6281234567890" class="floating-wa" id="floatingWhatsapp" 
+       target="_blank" rel="noopener" aria-label="Hubungi via WhatsApp">
+        <i class='bx bxl-whatsapp'></i>
+    </a>
+
+    <script>
+        // ===== NAVBAR TOGGLE (Mobile) =====
+        const navToggle = document.getElementById('navToggle');
+        const navMenu = document.getElementById('navMenu');
+        const navOverlay = document.getElementById('navOverlay');
+
+        function openMobileNav() {
+            navMenu.classList.add('show');
+            navOverlay.classList.add('show');
+            navToggle.setAttribute('aria-expanded', 'true');
+            navToggle.querySelector('i').className = 'bx bx-x';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMobileNav() {
+            navMenu.classList.remove('show');
+            navOverlay.classList.remove('show');
+            navToggle.setAttribute('aria-expanded', 'false');
+            navToggle.querySelector('i').className = 'bx bx-menu';
+            document.body.style.overflow = '';
+        }
+
+        navToggle.addEventListener('click', () => {
+            const isOpen = navMenu.classList.contains('show');
+            if (isOpen) {
+                closeMobileNav();
+            } else {
+                openMobileNav();
+            }
+        });
+
+        // [MOBILE FIX #6] Klik overlay untuk menutup menu — Feedback & Closure
+        navOverlay.addEventListener('click', closeMobileNav);
+
+        // Close menu on link click
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', closeMobileNav);
+        });
+
+        // ===== NAVBAR SCROLL EFFECT =====
+        const header = document.getElementById('header');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // ===== ACTIVE NAV LINK ON SCROLL =====
+        const sections = document.querySelectorAll('section[id]');
+
+        function activateNavOnScroll() {
+            const scrollY = window.scrollY + 100;
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.offsetHeight;
+                const sectionId = section.getAttribute('id');
+                const navLink = document.querySelector(`.nav-link[href="#${sectionId}"]`);
+
+                if (navLink && scrollY >= sectionTop && scrollY < sectionTop + sectionHeight) {
+                    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                    navLink.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', activateNavOnScroll);
+
+        // ===== SCROLL REVEAL ANIMATION =====
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.facility-card, .room-type-card, .contact-item, .faq-item, .contact-cta-btn, .section-header').forEach(el => {
+            el.classList.add('reveal');
+            observer.observe(el);
+        });
+
+        // ===== FAQ ACCORDION =====
+        const faqQuestions = document.querySelectorAll('.faq-question');
+        faqQuestions.forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                const isActive = item.classList.contains('active');
+                
+                // Close all other FAQs
+                document.querySelectorAll('.faq-item').forEach(otherItem => {
+                    otherItem.classList.remove('active');
+                    otherItem.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+                });
+                
+                // Toggle current FAQ
+                if (!isActive) {
+                    item.classList.add('active');
+                    question.setAttribute('aria-expanded', 'true');
+                }
+            });
+        });
+
+        // ===== SMOOTH SCROLL =====
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

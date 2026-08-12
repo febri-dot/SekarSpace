@@ -1,0 +1,29 @@
+[
+  {
+    "id": "PAY-2026-08",
+    "tenantName": "Keyla Asyfa Zahra",
+    "period": "Agustus 2026",
+    "amount": 950000,
+    "method": "Transfer BCA",
+    "date": "01 Ags 2026",
+    "status": "paid"
+  },
+  {
+    "id": "PAY-2026-07",
+    "tenantName": "Keyla Asyfa Zahra",
+    "period": "Juli 2026",
+    "amount": 950000,
+    "method": "Transfer BCA",
+    "date": "01 Jul 2026",
+    "status": "paid"
+  },
+  {
+    "id": "PAY-2026-06",
+    "tenantName": "Keyla Asyfa Zahra",
+    "period": "Juni 2026",
+    "amount": 950000,
+    "method": "Transfer Mandiri",
+    "date": "02 Jun 2026",
+    "status": "paid"
+  }
+]

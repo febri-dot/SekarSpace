@@ -1,0 +1,158 @@
+[
+  {
+    "id": "U-01",
+    "number": "01",
+    "floor": 1,
+    "buildingId": "utama",
+    "buildingName": "Gedung Utama",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja Belajar",
+      "Token Listrik"
+    ]
+  },
+  {
+    "id": "U-02",
+    "number": "02",
+    "floor": 1,
+    "buildingId": "utama",
+    "buildingName": "Gedung Utama",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "occupied",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja Belajar"
+    ]
+  },
+  {
+    "id": "U-03",
+    "number": "03",
+    "floor": 1,
+    "buildingId": "utama",
+    "buildingName": "Gedung Utama",
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "price": 950000,
+    "status": "available",
+    "size": "3x4m",
+    "features": [
+      "Kamar Mandi Dalam",
+      "Kasur Springbed",
+      "Lemari 2 Pintu",
+      "Token Listrik"
+    ]
+  },
+  {
+    "id": "U-04",
+    "number": "04",
+    "floor": 2,
+    "buildingId": "utama",
+    "buildingName": "Gedung Utama",
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "price": 950000,
+    "status": "available",
+    "size": "3x4m",
+    "features": [
+      "Kamar Mandi Dalam",
+      "Kasur Springbed",
+      "Lemari 2 Pintu",
+      "Balkon"
+    ]
+  },
+  {
+    "id": "T-01",
+    "number": "05",
+    "floor": 1,
+    "buildingId": "timur",
+    "buildingName": "Gedung Timur",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja Belajar"
+    ]
+  },
+  {
+    "id": "T-02",
+    "number": "06",
+    "floor": 1,
+    "buildingId": "timur",
+    "buildingName": "Gedung Timur",
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "price": 950000,
+    "status": "available",
+    "size": "3x4m",
+    "features": [
+      "Kamar Mandi Dalam",
+      "Kasur Springbed",
+      "Lemari 2 Pintu"
+    ]
+  },
+  {
+    "id": "T-03",
+    "number": "07",
+    "floor": 2,
+    "buildingId": "timur",
+    "buildingName": "Gedung Timur",
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "price": 950000,
+    "status": "available",
+    "size": "3x4m",
+    "features": [
+      "Kamar Mandi Dalam",
+      "Kasur Springbed",
+      "Lemari 2 Pintu"
+    ]
+  },
+  {
+    "id": "B-01",
+    "number": "08",
+    "floor": 1,
+    "buildingId": "barat",
+    "buildingName": "Gedung Barat",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 720000,
+    "status": "available",
+    "size": "3.5x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Jendela Hadap Taman"
+    ]
+  },
+  {
+    "id": "B-02",
+    "number": "09",
+    "floor": 2,
+    "buildingId": "barat",
+    "buildingName": "Gedung Barat",
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "price": 980000,
+    "status": "available",
+    "size": "3.5x4m",
+    "features": [
+      "Kamar Mandi Dalam",
+      "Kasur Springbed",
+      "Balkon Pribadi"
+    ]
+  }
+]

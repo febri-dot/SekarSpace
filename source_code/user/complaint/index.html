@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Keluhan Penyewa Sekar Space - Lihat riwayat keluhan, keluhan umum, dan buat keluhan baru.">
+    <title>Keluhan — Sekar Space</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="../user-dashboard.css">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- ========== SIDEBAR ========== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="../../index.html" class="sidebar-logo">
+                    <i class='bx bxs-home-heart'></i>
+                    <span>Sekar<strong>Space</strong></span>
+                </a>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Menu Dashboard">
+                <span class="nav-section-title">Menu Utama</span>
+                <a href="../index.html" class="sidebar-link" id="navDashboard">
+                    <i class='bx bxs-dashboard'></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="index.html" class="sidebar-link active" id="navComplaint">
+                    <i class='bx bxs-message-square-error'></i>
+                    <span>Keluhan</span>
+                    <span class="badge-count">2</span>
+                </a>
+                <a href="../payments/index.html" class="sidebar-link" id="navPayment">
+                    <i class='bx bxs-wallet'></i>
+                    <span>Pembayaran</span>
+                </a>
+
+                <span class="nav-section-title">Lainnya</span>
+                <a href="../../index.html" class="sidebar-link" id="navLanding">
+                    <i class='bx bx-globe'></i>
+                    <span>Website</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-profile">
+                <div class="profile-avatar">KA</div>
+                <div class="profile-info">
+                    <h4>Keyla Asyfa</h4>
+                    <span>Kamar 07 · Deluxe</span>
+                </div>
+                <button class="logout-btn" title="Keluar" id="btnLogout">
+                    <i class='bx bx-log-out'></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <!-- ========== MAIN CONTENT ========== -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="mobile-toggle" id="mobileToggle" aria-label="Toggle sidebar">
+                        <i class='bx bx-menu'></i>
+                    </button>
+                    <div class="header-greeting">
+                        <h1>Pengaduan Keluhan</h1>
+                        <p>Kelola dan pantau keluhan Anda</p>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="header-date" id="currentDate">
+                        <i class='bx bx-calendar'></i>
+                        <span>-</span>
+                    </div>
+                    <button class="header-btn" id="btnNotification" title="Notifikasi">
+                        <i class='bx bx-bell'></i>
+                        <span class="notif-dot"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-content">
+                <!-- Page Title -->
+                <div class="page-title-section animate-in">
+                    <h1>Keluhan Penyewa</h1>
+                    <p>Lihat riwayat keluhan, keluhan penghuni lain, atau buat keluhan baru</p>
+                </div>
+
+                <!-- ===== TAB NAVIGATION ===== -->
+                <div class="tabs-container animate-in">
+                    <div class="tabs-nav" role="tablist" aria-label="Tab keluhan">
+                        <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tabMyComplaints" data-tab="my-complaints" id="tabBtnMy">
+                            <i class='bx bx-message-square-detail'></i>
+                            Keluhan Saya
+                            <span class="tab-count">3</span>
+                        </button>
+                        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabPublicComplaints" data-tab="public-complaints" id="tabBtnPublic">
+                            <i class='bx bx-group'></i>
+                            Keluhan Umum
+                            <span class="tab-count">8</span>
+                        </button>
+                        <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tabNewComplaint" data-tab="new-complaint" id="tabBtnNew">
+                            <i class='bx bx-message-square-add'></i>
+                            Buat Keluhan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ===== TAB 1: KELUHAN SAYA ===== -->
+                <div class="tab-content active" id="tabMyComplaints" role="tabpanel">
+                    <div class="complaint-list">
+                        <!-- Complaint 1 — Diproses -->
+                        <div class="complaint-card" id="complaint1">
+                            <div class="complaint-card-main" onclick="toggleComplaint('complaint1')">
+                                <div class="complaint-category-icon cat-ac">
+                                    <i class='bx bx-wind'></i>
+                                </div>
+                                <div class="complaint-body">
+                                    <div class="complaint-body-top">
+                                        <span class="complaint-category-tag">AC</span>
+                                        <span class="complaint-date"><i class='bx bx-calendar'></i> 2 Agustus 2026</span>
+                                    </div>
+                                    <h4>AC kamar tidak dingin</h4>
+                                    <p>AC kamar sudah tidak dingin sejak kemarin malam dan membuat kamar terasa panas. Sudah dicoba matikan dan nyalakan ulang tapi tetap tidak dingin.</p>
+                                </div>
+                                <div class="complaint-status">
+                                    <span class="status-badge status-process">
+                                        <i class='bx bx-loader-alt'></i> Diproses
+                                    </span>
+                                </div>
+                                <i class='bx bx-chevron-down complaint-expand'></i>
+                            </div>
+                            <div class="complaint-reply">
+                                <div class="reply-box">
+                                    <div class="reply-label">
+                                        <i class='bx bxs-user-badge'></i> Balasan Admin
+                                    </div>
+                                    <p>Terima kasih atas laporannya. Teknisi kami akan datang besok pagi (3 Agustus) pukul 09.00 untuk memeriksa AC kamar Anda. Mohon pastikan kamar dalam keadaan bisa diakses.</p>
+                                    <span class="reply-time">2 Agustus 2026, 14:30</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Complaint 2 — Menunggu -->
+                        <div class="complaint-card" id="complaint2">
+                            <div class="complaint-card-main" onclick="toggleComplaint('complaint2')">
+                                <div class="complaint-category-icon cat-wifi">
+                                    <i class='bx bx-wifi'></i>
+                                </div>
+                                <div class="complaint-body">
+                                    <div class="complaint-body-top">
+                                        <span class="complaint-category-tag">WiFi</span>
+                                        <span class="complaint-date"><i class='bx bx-calendar'></i> 31 Juli 2026</span>
+                                    </div>
+                                    <h4>WiFi sering terputus-putus</h4>
+                                    <p>WiFi di lantai 2 sering terputus terutama saat malam hari. Sangat mengganggu untuk bekerja dan belajar online. Sudah terjadi selama 3 hari berturut-turut.</p>
+                                </div>
+                                <div class="complaint-status">
+                                    <span class="status-badge status-waiting">
+                                        <i class='bx bx-time'></i> Menunggu
+                                    </span>
+                                </div>
+                                <i class='bx bx-chevron-down complaint-expand'></i>
+                            </div>
+                            <div class="complaint-reply">
+                                <div class="no-reply">
+                                    <i class='bx bx-info-circle'></i>
+                                    Belum ada balasan dari admin. Keluhan Anda sedang dalam antrian.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Complaint 3 — Selesai -->
+                        <div class="complaint-card" id="complaint3">
+                            <div class="complaint-card-main" onclick="toggleComplaint('complaint3')">
+                                <div class="complaint-category-icon cat-listrik">
+                                    <i class='bx bx-bulb'></i>
+                                </div>
+                                <div class="complaint-body">
+                                    <div class="complaint-body-top">
+                                        <span class="complaint-category-tag">Listrik</span>
+                                        <span class="complaint-date"><i class='bx bx-calendar'></i> 20 Juli 2026</span>
+                                    </div>
+                                    <h4>Lampu kamar mandi mati</h4>
+                                    <p>Lampu di kamar mandi dalam kamar saya mati dan tidak bisa dinyalakan. Mohon segera diperbaiki karena sangat tidak nyaman.</p>
+                                </div>
+                                <div class="complaint-status">
+                                    <span class="status-badge status-done">
+                                        <i class='bx bx-check-circle'></i> Selesai
+                                    </span>
+                                </div>
+                                <i class='bx bx-chevron-down complaint-expand'></i>
+                            </div>
+                            <div class="complaint-reply">
+                                <div class="reply-box">
+                                    <div class="reply-label">
+                                        <i class='bx bxs-user-badge'></i> Balasan Admin
+                                    </div>
+                                    <p>Lampu kamar mandi sudah diganti dengan yang baru. Mohon cek apakah sudah berfungsi dengan baik. Terima kasih atas laporannya.</p>
+                                    <span class="reply-time">21 Juli 2026, 10:15</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== TAB 2: KELUHAN UMUM ===== -->
+                <div class="tab-content" id="tabPublicComplaints" role="tabpanel">
+                    <div class="complaint-list">
+                        <!-- Community 1 -->
+                        <div class="community-complaint-card">
+                            <div class="community-top">
+                                <span class="complaint-category-tag">Kebersihan</span>
+                                <span class="status-badge status-process">
+                                    <i class='bx bx-loader-alt'></i> Diproses
+                                </span>
+                                <span class="complaint-date" style="margin-left: auto;"><i class='bx bx-calendar'></i> 3 Agustus 2026</span>
+                            </div>
+                            <h4>Area dapur bersama kurang bersih</h4>
+                            <p>Dapur bersama di lantai 1 sering kotor terutama di area kompor dan wastafel. Mohon dibersihkan lebih sering atau dibuat jadwal piket.</p>
+                            <div class="community-top" style="margin-top: 12px;">
+                                <span class="anon-badge">
+                                    <i class='bx bxs-user-circle'></i> Penghuni Anonim
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Community 2 -->
+                        <div class="community-complaint-card">
+                            <div class="community-top">
+                                <span class="complaint-category-tag">Air</span>
+                                <span class="status-badge status-done">
+                                    <i class='bx bx-check-circle'></i> Selesai
+                                </span>
+                                <span class="complaint-date" style="margin-left: auto;"><i class='bx bx-calendar'></i> 30 Juli 2026</span>
+                            </div>
+                            <h4>Air di kamar mandi lantai 2 kecil</h4>
+                            <p>Debit air di kamar mandi bersama lantai 2 sangat kecil, terutama saat pagi hari. Mandi jadi memakan waktu lama.</p>
+                            <div class="community-top" style="margin-top: 12px;">
+                                <span class="anon-badge">
+                                    <i class='bx bxs-user-circle'></i> Penghuni Anonim
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Community 3 -->
+                        <div class="community-complaint-card">
+                            <div class="community-top">
+                                <span class="complaint-category-tag">WiFi</span>
+                                <span class="status-badge status-waiting">
+                                    <i class='bx bx-time'></i> Menunggu
+                                </span>
+                                <span class="complaint-date" style="margin-left: auto;"><i class='bx bx-calendar'></i> 29 Juli 2026</span>
+                            </div>
+                            <h4>WiFi di lantai 3 sering mati</h4>
+                            <p>WiFi di lantai 3 sering mati tiba-tiba, terutama di malam hari. Sangat mengganggu karena saya harus bekerja online dari kamar.</p>
+                            <div class="community-top" style="margin-top: 12px;">
+                                <span class="anon-badge">
+                                    <i class='bx bxs-user-circle'></i> Penghuni Anonim
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Community 4 -->
+                        <div class="community-complaint-card">
+                            <div class="community-top">
+                                <span class="complaint-category-tag">Listrik</span>
+                                <span class="status-badge status-done">
+                                    <i class='bx bx-check-circle'></i> Selesai
+                                </span>
+                                <span class="complaint-date" style="margin-left: auto;"><i class='bx bx-calendar'></i> 25 Juli 2026</span>
+                            </div>
+                            <h4>Stop kontak di kamar tidak berfungsi</h4>
+                            <p>Stop kontak di dekat meja belajar tidak berfungsi. Sudah dicoba berbagai charger tapi tetap tidak ada aliran listrik.</p>
+                            <div class="community-top" style="margin-top: 12px;">
+                                <span class="anon-badge">
+                                    <i class='bx bxs-user-circle'></i> Penghuni Anonim
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Community 5 -->
+                        <div class="community-complaint-card">
+                            <div class="community-top">
+                                <span class="complaint-category-tag">AC</span>
+                                <span class="status-badge status-done">
+                                    <i class='bx bx-check-circle'></i> Selesai
+                                </span>
+                                <span class="complaint-date" style="margin-left: auto;"><i class='bx bx-calendar'></i> 22 Juli 2026</span>
+                            </div>
+                            <h4>AC berbunyi aneh saat dinyalakan</h4>
+                            <p>AC mengeluarkan bunyi berdengung keras saat pertama kali dinyalakan. Bunyi tersebut baru hilang setelah 15-20 menit.</p>
+                            <div class="community-top" style="margin-top: 12px;">
+                                <span class="anon-badge">
+                                    <i class='bx bxs-user-circle'></i> Penghuni Anonim
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Community 6 -->
+                        <div class="community-complaint-card">
+                            <div class="community-top">
+                                <span class="complaint-category-tag">Kebersihan</span>
+                                <span class="status-badge status-done">
+                                    <i class='bx bx-check-circle'></i> Selesai
+                                </span>
+                                <span class="complaint-date" style="margin-left: auto;"><i class='bx bx-calendar'></i> 18 Juli 2026</span>
+                            </div>
+                            <h4>Toilet bersama lantai 1 bau</h4>
+                            <p>Toilet bersama di lantai 1 sering mengeluarkan bau tidak sedap. Mohon diperiksa saluran air atau dibuatkan pengharum ruangan otomatis.</p>
+                            <div class="community-top" style="margin-top: 12px;">
+                                <span class="anon-badge">
+                                    <i class='bx bxs-user-circle'></i> Penghuni Anonim
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Community 7 -->
+                        <div class="community-complaint-card">
+                            <div class="community-top">
+                                <span class="complaint-category-tag">Lainnya</span>
+                                <span class="status-badge status-process">
+                                    <i class='bx bx-loader-alt'></i> Diproses
+                                </span>
+                                <span class="complaint-date" style="margin-left: auto;"><i class='bx bx-calendar'></i> 15 Juli 2026</span>
+                            </div>
+                            <h4>Pintu gerbang sering tidak terkunci</h4>
+                            <p>Pintu gerbang depan beberapa kali ditemukan tidak terkunci saat malam hari. Mohon diperhatikan untuk keamanan penghuni.</p>
+                            <div class="community-top" style="margin-top: 12px;">
+                                <span class="anon-badge">
+                                    <i class='bx bxs-user-circle'></i> Penghuni Anonim
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Community 8 -->
+                        <div class="community-complaint-card">
+                            <div class="community-top">
+                                <span class="complaint-category-tag">Air</span>
+                                <span class="status-badge status-done">
+                                    <i class='bx bx-check-circle'></i> Selesai
+                                </span>
+                                <span class="complaint-date" style="margin-left: auto;"><i class='bx bx-calendar'></i> 10 Juli 2026</span>
+                            </div>
+                            <h4>Keran air di wastafel dapur bocor</h4>
+                            <p>Keran air di wastafel dapur bersama bocor dan menetes terus-menerus. Membuat lantai di sekitar wastafel selalu basah.</p>
+                            <div class="community-top" style="margin-top: 12px;">
+                                <span class="anon-badge">
+                                    <i class='bx bxs-user-circle'></i> Penghuni Anonim
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== TAB 3: BUAT KELUHAN ===== -->
+                <div class="tab-content" id="tabNewComplaint" role="tabpanel">
+                    <div class="complaint-form-wrapper animate-in">
+                        <div class="form-header">
+                            <h3><i class='bx bx-message-square-add' style="vertical-align: middle; margin-right: 6px; color: var(--primary);"></i> Formulir Keluhan Baru</h3>
+                            <p>Isi formulir di bawah untuk menyampaikan keluhan Anda. Admin akan merespons secepat mungkin.</p>
+                        </div>
+
+                        <form id="complaintForm" onsubmit="submitComplaint(event)">
+                            <div class="form-group">
+                                <label for="complaintCategory">Kategori Keluhan <span class="required">*</span></label>
+                                <select class="form-select" id="complaintCategory" required>
+                                    <option value="" disabled selected>Pilih kategori keluhan</option>
+                                    <option value="ac">🌬️ AC / Pendingin Ruangan</option>
+                                    <option value="listrik">💡 Listrik</option>
+                                    <option value="air">💧 Air</option>
+                                    <option value="wifi">📶 WiFi / Internet</option>
+                                    <option value="kebersihan">🧹 Kebersihan</option>
+                                    <option value="lainnya">📋 Lainnya</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="complaintSubject">Judul Keluhan <span class="required">*</span></label>
+                                <input type="text" class="form-input" id="complaintSubject" placeholder="Contoh: AC kamar tidak dingin" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="complaintDesc">Deskripsi Keluhan <span class="required">*</span></label>
+                                <textarea class="form-textarea" id="complaintDesc" placeholder="Jelaskan keluhan Anda secara detail. Sertakan informasi seperti lokasi, waktu kejadian, dan dampak yang dirasakan..." required></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Lampiran Foto (Opsional)</label>
+                                <div class="file-upload-zone" id="fileUploadZone" onclick="document.getElementById('fileInput').click()">
+                                    <i class='bx bx-cloud-upload'></i>
+                                    <p>Klik atau seret file ke sini untuk mengunggah</p>
+                                    <span>Format: JPG, PNG, WEBP · Maks. 5MB</span>
+                                    <input type="file" id="fileInput" accept="image/*">
+                                </div>
+                                <p id="fileName" style="font-size: 0.82rem; color: var(--success); margin-top: 8px; display: none;">
+                                    <i class='bx bx-check-circle'></i> <span></span>
+                                </p>
+                            </div>
+
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary btn-lg" id="btnSubmitComplaint">
+                                    <i class='bx bx-send'></i>
+                                    Kirim Keluhan
+                                </button>
+                                <button type="reset" class="btn btn-outline" id="btnResetComplaint" onclick="resetFileUpload()">
+                                    <i class='bx bx-reset'></i>
+                                    Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast toast-success" id="toast">
+        <i class='bx bx-check-circle'></i>
+        <span id="toastMessage">Keluhan berhasil dikirim!</span>
+    </div>
+
+    <script>
+        // ===== SIDEBAR TOGGLE (Mobile) =====
+        const mobileToggle = document.getElementById('mobileToggle');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('show');
+            sidebarOverlay.classList.toggle('show');
+        }
+
+        mobileToggle.addEventListener('click', toggleSidebar);
+        sidebarOverlay.addEventListener('click', toggleSidebar);
+
+        // ===== CURRENT DATE =====
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+            const dateStr = now.toLocaleDateString('id-ID', options);
+            document.querySelector('#currentDate span').textContent = dateStr;
+        }
+        updateDate();
+
+        // ===== TAB NAVIGATION =====
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all
+                tabBtns.forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-selected', 'false');
+                });
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                // Activate clicked
+                btn.classList.add('active');
+                btn.setAttribute('aria-selected', 'true');
+
+                const tabId = btn.getAttribute('data-tab');
+                const panelMap = {
+                    'my-complaints': 'tabMyComplaints',
+                    'public-complaints': 'tabPublicComplaints',
+                    'new-complaint': 'tabNewComplaint'
+                };
+                document.getElementById(panelMap[tabId]).classList.add('active');
+            });
+        });
+
+        // ===== EXPAND COMPLAINT CARD =====
+        function toggleComplaint(id) {
+            const card = document.getElementById(id);
+            card.classList.toggle('expanded');
+        }
+
+        // ===== FILE UPLOAD =====
+        const fileInput = document.getElementById('fileInput');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        fileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fileNameDisplay.style.display = 'block';
+                fileNameDisplay.querySelector('span').textContent = this.files[0].name;
+            }
+        });
+
+        // Drag & Drop
+        const dropZone = document.getElementById('fileUploadZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--primary)';
+            dropZone.style.background = 'var(--tertiary)';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '';
+            dropZone.style.background = '';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '';
+            dropZone.style.background = '';
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileNameDisplay.style.display = 'block';
+                fileNameDisplay.querySelector('span').textContent = e.dataTransfer.files[0].name;
+            }
+        });
+
+        function resetFileUpload() {
+            fileNameDisplay.style.display = 'none';
+        }
+
+        // ===== SUBMIT COMPLAINT =====
+        function submitComplaint(e) {
+            e.preventDefault();
+
+            const category = document.getElementById('complaintCategory').value;
+            const subject = document.getElementById('complaintSubject').value;
+            const desc = document.getElementById('complaintDesc').value;
+
+            if (!category || !subject || !desc) return;
+
+            // Show toast
+            showToast('Keluhan berhasil dikirim! Admin akan segera merespons.');
+
+            // Reset form
+            e.target.reset();
+            resetFileUpload();
+
+            // Switch to "Keluhan Saya" tab after short delay
+            setTimeout(() => {
+                tabBtns.forEach(b => {
+                    b.classList.remove('active');
+                    b.setAttribute('aria-selected', 'false');
+                });
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                document.getElementById('tabBtnMy').classList.add('active');
+                document.getElementById('tabBtnMy').setAttribute('aria-selected', 'true');
+                document.getElementById('tabMyComplaints').classList.add('active');
+            }, 1500);
+        }
+
+        // ===== TOAST =====
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        // ===== CHECK URL PARAMS FOR TAB =====
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam) {
+            const targetBtn = document.querySelector(`[data-tab="${tabParam}"]`);
+            if (targetBtn) targetBtn.click();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "CMP-001",
+    "tenantName": "Keyla Asyfa Zahra",
+    "title": "AC Kamar Kurang Dingin",
+    "category": "Fasilitas Kamar",
+    "roomNumber": "Kamar 07",
+    "date": "11 Ags 2026",
+    "status": "in-progress",
+    "priority": "high",
+    "description": "AC kamar terasa kurang dingin sejak kemarin malam meskipun suhu sudah diatur ke 18 derajat.",
+    "response": "Teknisi AC telah dijadwalkan untuk melakukan servis freon pada jam 14.00 WIB."
+  },
+  {
+    "id": "CMP-002",
+    "tenantName": "Zulfa Tsaniyatul Fadilah",
+    "title": "Lampu Wastafel Mati",
+    "category": "Fasilitas Kamar",
+    "roomNumber": "Kamar 02",
+    "date": "02 Ags 2026",
+    "status": "resolved",
+    "priority": "low",
+    "description": "Lampu bohlam di atas wastafel kamar mandi mati.",
+    "response": "Bohlam lampu telah diganti baru oleh pengurus kost pada 03 Ags 2026."
+  },
+  {
+    "id": "CMP-003",
+    "tenantName": "Zalfa Nadya Alfialini",
+    "title": "WiFi Sering Terputus",
+    "category": "Jaringan Internet / WiFi",
+    "roomNumber": "Kamar 04",
+    "date": "10 Ags 2026",
+    "status": "pending",
+    "priority": "medium",
+    "description": "Koneksi WiFi sering terputus-putus terutama di area balkon lantai 2.",
+    "response": ""
+  }
+]

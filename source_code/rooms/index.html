@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Pilih kamar dan gedung di Sekar Space - Kost Muslimah Sekar Wangi. Pilihan kamar mandi dalam dan kamar mandi luar di 3 gedung.">
+    <title>Pilihan Kamar & Gedung — Sekar Space</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+
+    <!-- Boxicons -->
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- Tombol Kembali ke Beranda -->
+    <a href="../index.html" class="back-btn" aria-label="Kembali ke Beranda">
+        <i class='bx bx-left-arrow-alt'></i>
+        <span>Beranda</span>
+    </a>
+
+    <!-- ========== PAGE HEADER ========== -->
+    <header class="page-header">
+        <div class="page-header-content">
+            <nav class="breadcrumb" aria-label="Breadcrumb">
+                <a href="../index.html">Beranda</a>
+                <span>/</span>
+                <span class="current">Pilih Kamar</span>
+            </nav>
+            <h1>Cari & Pesan <span class="text-gradient">Kamar Kost</span></h1>
+            <p>Pilih tipe kamar, gedung pilihan Anda, dan tentukan nomor kamar yang masih tersedia.</p>
+        </div>
+    </header>
+
+    <!-- ========== STEP PROGRESS ========== -->
+    <div class="step-progress" aria-label="Kemajuan Pemilihan">
+        <div class="step-item active" id="stepIndicator1">
+            <div class="step-number">1</div>
+            <span class="step-label">Tipe Kamar</span>
+        </div>
+        <div class="step-connector" id="connector1"></div>
+        <div class="step-item" id="stepIndicator2">
+            <div class="step-number">2</div>
+            <span class="step-label">Pilih Gedung</span>
+        </div>
+        <div class="step-connector" id="connector2"></div>
+        <div class="step-item" id="stepIndicator3">
+            <div class="step-number">3</div>
+            <span class="step-label">Detail & Pesan</span>
+        </div>
+    </div>
+
+    <!-- ========== MAIN CONTENT AREA ========== -->
+    <main class="rooms-main">
+
+        <!-- Selection Summary Bar (tampil jika sudah memilih) -->
+        <div class="selection-summary" id="selectionSummary" style="display: none;">
+            <span class="summary-chip" id="summaryTypeChip">
+                <i class='bx bx-bed'></i> <span id="summaryTypeText">-</span>
+            </span>
+            <span class="summary-separator" id="summarySep1" style="display: none;">›</span>
+            <span class="summary-chip" id="summaryBuildingChip" style="display: none;">
+                <i class='bx bx-building-house'></i> <span id="summaryBuildingText">-</span>
+            </span>
+            <span class="summary-separator" id="summarySep2" style="display: none;">›</span>
+            <span class="summary-chip" id="summaryRoomChip" style="display: none;">
+                <i class='bx bx-key'></i> <span id="summaryRoomText">-</span>
+            </span>
+        </div>
+
+        <!-- ==================== STEP 1: PILIH TIPE KAMAR ==================== -->
+        <section class="step-panel active" id="step1">
+            <div class="step-title">
+                <h2>Pilih Tipe Kamar</h2>
+                <p>Silakan tentukan jenis kamar yang Anda inginkan</p>
+            </div>
+
+            <div class="type-selection-grid">
+                <!-- Kamar Mandi Luar -->
+                <div class="type-card" onclick="selectRoomType('km-luar')">
+                    <div class="type-card-icon">
+                        <i class='bx bx-door-open'></i>
+                    </div>
+                    <h3>Kamar Mandi Luar</h3>
+                    <p class="type-desc">Kamar bersih & ekonomis dengan fasilitas kamar mandi luar terawat bersama.</p>
+                    <ul class="type-features">
+                        <li><i class='bx bx-check'></i> Ukuran 3 x 3 Meter</li>
+                        <li><i class='bx bx-check'></i> Kasur, Bantal & Lemari</li>
+                        <li><i class='bx bx-check'></i> WiFi Cepat 24 Jam</li>
+                        <li><i class='bx bx-check'></i> Dapur & Kulkas Bersama</li>
+                    </ul>
+                    <div class="type-price">
+                        <span class="price-label">Mulai dari</span>
+                        <div class="price-amount">Rp 700.000 <span>/ bulan</span></div>
+                    </div>
+                </div>
+
+                <!-- Kamar Mandi Dalam -->
+                <div class="type-card" onclick="selectRoomType('km-dalam')">
+                    <div class="type-card-popular">
+                        <i class='bx bxs-star'></i> Populer
+                    </div>
+                    <div class="type-card-icon">
+                        <i class='bx bx-bath'></i>
+                    </div>
+                    <h3>Kamar Mandi Dalam</h3>
+                    <p class="type-desc">Kamar lebih luas dengan kamar mandi pribadi untuk kenyamanan & privasi ekstra.
+                    </p>
+                    <ul class="type-features">
+                        <li><i class='bx bx-check'></i> Ukuran 3 x 4 Meter</li>
+                        <li><i class='bx bx-check'></i> Kamar Mandi Dalam (Shower & Closet)</li>
+                        <li><i class='bx bx-check'></i> Kasur, Bantal, Meja & Lemari</li>
+                        <li><i class='bx bx-check'></i> WiFi Cepat 24 Jam</li>
+                    </ul>
+                    <div class="type-price">
+                        <span class="price-label">Mulai dari</span>
+                        <div class="price-amount">Rp 950.000 <span>/ bulan</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== STEP 2: PILIH GEDUNG ==================== -->
+        <section class="step-panel" id="step2">
+            <div class="step-title">
+                <h2>Pilih Lokasi Gedung</h2>
+                <p>Tersedia 3 pilihan gedung dengan fasilitas masing-masing</p>
+            </div>
+
+            <div class="building-grid" id="buildingGridContainer">
+                <!-- Will be dynamically populated by JS based on room type -->
+            </div>
+        </section>
+
+        <!-- ==================== STEP 3: DETAIL KAMAR & PESAN ==================== -->
+        <section class="step-panel" id="step3">
+            <div class="room-detail-layout">
+                <!-- Gallery Foto -->
+                <div class="room-gallery">
+                    <div class="gallery-main" id="galleryMainContainer">
+                        <span class="gallery-badge" id="galleryBadgeText">Kamar Mandi Dalam</span>
+                        <img src="../assets/images/room-single.png" id="mainGalleryImage" alt="Foto Kamar Kost">
+                    </div>
+                    <div class="gallery-thumbs" id="galleryThumbsContainer">
+                        <!-- Thumbs rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Spesifikasi Kamar & Gedung -->
+                <div class="room-specs">
+                    <div class="room-specs-header">
+                        <span class="type-badge" id="detailTypeBadge">Kamar Mandi Dalam</span>
+                        <h2 id="detailBuildingTitle">Gedung Utama</h2>
+                        <div class="building-name" id="detailAddressSub">
+                            <i class='bx bxs-map-pin'></i> Kost Muslimah Sekar Wangi
+                        </div>
+                    </div>
+
+                    <div class="room-price-display">
+                        <span class="price-label">Harga Sewa Bulanan</span>
+                        <div class="price-main" id="detailPriceText">Rp 950.000 <span>/ bulan</span></div>
+                    </div>
+
+                    <div class="spec-grid">
+                        <div class="spec-item">
+                            <div class="spec-icon"><i class='bx bx-ruler'></i></div>
+                            <div class="spec-text">
+                                <small>Ukuran Room</small>
+                                <strong id="specSizeText">3 x 4 m</strong>
+                            </div>
+                        </div>
+                        <div class="spec-item">
+                            <div class="spec-icon"><i class='bx bx-bath'></i></div>
+                            <div class="spec-text">
+                                <small>Kamar Mandi</small>
+                                <strong id="specBathText">Dalam Kamar</strong>
+                            </div>
+                        </div>
+                        <div class="spec-item">
+                            <div class="spec-icon"><i class='bx bx-wifi'></i></div>
+                            <div class="spec-text">
+                                <small>Fasilitas Utama</small>
+                                <strong>Free High-Speed WiFi</strong>
+                            </div>
+                        </div>
+                        <div class="spec-item">
+                            <div class="spec-icon"><i class='bx bx-zap'></i></div>
+                            <div class="spec-text">
+                                <small>Listrik</small>
+                                <strong>Token (Meteran Sendiri)</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- List Nomor Kamar Kosong -->
+            <div class="room-number-section">
+                <h3>Pilih Nomor Kamar Kosong</h3>
+                <p>Klik salah satu nomor kamar di bawah ini yang siap dihuni:</p>
+                <div class="room-number-grid" id="roomNumberGrid">
+                    <!-- Dynamic room numbers rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Booking Action Buttons -->
+            <div class="booking-cta">
+                <button class="btn-back-step" onclick="goToStep(2)">
+                    <i class='bx bx-left-arrow-alt'></i>
+                    <span>Ganti Gedung</span>
+                </button>
+                <a href="#" id="btnBookWhatsapp" class="btn-wa disabled" target="_blank" rel="noopener">
+                    <i class='bx bxl-whatsapp'></i>
+                    <span>Pesan via WhatsApp</span>
+                </a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER MINI -->
+    <footer class="footer-mini">
+        <p>&copy; 2026 Sekar Space — Kost Muslimah Sekar Wangi. Butuh bantuan? <a href="https://wa.me/6281234567890"
+                target="_blank" rel="noopener">Hubungi Pengelola</a></p>
+    </footer>
+
+    <!-- ========== JAVASCRIPT DATA & LOGIC ========== -->
+    <script>
+        // Data gedung dan kamar
+        const ROOM_DATA = {
+            'km-luar': {
+                name: 'Kamar Mandi Luar',
+                size: '3 × 3 meter',
+                bath: 'Luar (Bersama)',
+                price: 'Rp 700.000',
+                priceVal: '700.000',
+                images: [
+                    '../assets/images/room-single.png',
+                    '../assets/images/room-double.png',
+                    '../assets/images/room-deluxe.png',
+                    '../assets/images/hero-bg.png'
+                ],
+                buildings: [
+                    {
+                        id: 'gedung-a',
+                        name: 'Gedung A (Depan)',
+                        desc: 'Dekat dengan pagar utama & area parkir utama',
+                        facilities: ['Parkir Motor Luar', 'CCTV 24 Jam', 'Dapur Bersama Lt.1', 'Jemuran Lt.3'],
+                        availableRooms: ['A-101', 'A-103', 'A-105', 'A-202']
+                    },
+                    {
+                        id: 'gedung-b',
+                        name: 'Gedung B (Tengah)',
+                        desc: 'Suasana tenang dekat ruang santai & musholla',
+                        facilities: ['Musholla Bersama', 'Dapur Bersama Lt.1', 'WiFi Masing-Masing Lt.', 'Dispenser Air'],
+                        availableRooms: ['B-102', 'B-104', 'B-201', 'B-205']
+                    },
+                    {
+                        id: 'gedung-c',
+                        name: 'Gedung C (Belakang)',
+                        desc: 'Asri, tenang, dan dekat dengan area laundry',
+                        facilities: ['Mesin Cuci Bersama', 'Area Jemur Atas', 'Parkir Motor Dalam', 'Kulkas Bersama'],
+                        availableRooms: [] // Gedung C Penuh (0 Kamar Kosong)
+                    }
+                ]
+            },
+            'km-dalam': {
+                name: 'Kamar Mandi Dalam',
+                size: '3 × 4 meter',
+                bath: 'Dalam (Pribadi)',
+                price: 'Rp 950.000',
+                priceVal: '950.000',
+                images: [
+                    '../assets/images/room-double.png',
+                    '../assets/images/room-deluxe.png',
+                    '../assets/images/room-single.png',
+                    '../assets/images/hero-bg.png'
+                ],
+                buildings: [
+                    {
+                        id: 'gedung-a',
+                        name: 'Gedung A (Depan)',
+                        desc: 'Akses cepat ke jalan raya, balkon view depan',
+                        facilities: ['Kamar Mandi Dalam', 'Parkir Motor', 'CCTV 24 Jam', 'Balkon Bersama'],
+                        availableRooms: ['A-201', 'A-203', 'A-301']
+                    },
+                    {
+                        id: 'gedung-b',
+                        name: 'Gedung B (Tengah)',
+                        desc: 'Kamar mandi dalam dengan ventilasi baik & tenang',
+                        facilities: ['Kamar Mandi Dalam', 'Musholla', 'WiFi Dedicated', 'Ruang Tamu Muslimah'],
+                        availableRooms: ['B-201', 'B-204', 'B-302']
+                    },
+                    {
+                        id: 'gedung-c',
+                        name: 'Gedung C (Belakang)',
+                        desc: 'Fasilitas premium dengan pemandangan taman belakang',
+                        facilities: ['Kamar Mandi Dalam', 'Taman Santai', 'Dapur Bersama', 'Area Jemur'],
+                        availableRooms: [] // Gedung C Penuh (0 Kamar Kosong)
+                    }
+                ]
+            }
+        };
+
+        // State aplikasi
+        let selectedType = null;
+        let selectedBuilding = null;
+        let selectedRoomNumber = null;
+        const WA_PHONE = '6281234567890'; // Nomor WA Admin
+
+        // Inisialisasi saat load
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const typeParam = urlParams.get('tipe');
+
+            if (typeParam && (typeParam === 'km-luar' || typeParam === 'km-dalam')) {
+                selectRoomType(typeParam);
+            }
+        });
+
+        // Step Navigation Logic
+        function goToStep(stepNumber) {
+            // Update active indicators & connectors
+            for (let i = 1; i <= 3; i++) {
+                const indicator = document.getElementById(`stepIndicator${i}`);
+                const panel = document.getElementById(`step${i}`);
+
+                if (i === stepNumber) {
+                    indicator.className = 'step-item active';
+                    panel.className = 'step-panel active';
+                } else if (i < stepNumber) {
+                    indicator.className = 'step-item completed';
+                    panel.className = 'step-panel';
+                } else {
+                    indicator.className = 'step-item';
+                    panel.className = 'step-panel';
+                }
+            }
+
+            // Connectors
+            document.getElementById('connector1').className = stepNumber >= 2 ? 'step-connector filled' : 'step-connector';
+            document.getElementById('connector2').className = stepNumber >= 3 ? 'step-connector filled' : 'step-connector';
+
+            // Scroll Smooth to Top of Main
+            document.querySelector('.rooms-main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // 1. Pilih Tipe Kamar
+        function selectRoomType(typeKey) {
+            selectedType = typeKey;
+            selectedBuilding = null;
+            selectedRoomNumber = null;
+
+            // Highlight card
+            document.querySelectorAll('.type-card').forEach(card => card.classList.remove('selected'));
+
+            // Render Step 2 (Buildings)
+            renderBuildings(typeKey);
+
+            // Update Summary Bar
+            updateSummary();
+
+            // Go to Step 2
+            goToStep(2);
+        }
+
+        // Render Gedung di Step 2
+        function renderBuildings(typeKey) {
+            const typeData = ROOM_DATA[typeKey];
+            const container = document.getElementById('buildingGridContainer');
+
+            let html = '';
+            typeData.buildings.forEach(b => {
+                const availCount = b.availableRooms.length;
+                const isFull = availCount === 0;
+
+                html += `
+                    <div class="building-card ${isFull ? 'building-full' : ''} ${selectedBuilding && selectedBuilding.id === b.id ? 'selected' : ''}" 
+                         ${isFull ? 'title="Gedung ini sedang penuh (0 kamar kosong)"' : `onclick="selectBuilding('${b.id}')"`}>
+                        
+                        ${isFull ? `<div class="building-badge-full"><i class='bx bx-x-circle'></i> Penuh</div>` : ''}
+
+                        <div class="building-header">
+                            <div class="building-icon">
+                                <i class='bx bx-building-house'></i>
+                            </div>
+                            <div class="building-header-text">
+                                <h3>${b.name}</h3>
+                                <span>${b.desc}</span>
+                            </div>
+                        </div>
+                        <div class="building-facilities">
+                            <h4>Fasilitas Gedung:</h4>
+                            <ul>
+                                ${b.facilities.map(f => `<li><i class='bx bx-check'></i> ${f}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="building-availability">
+                            <span class="avail-count ${isFull ? 'avail-full' : ''}">
+                                <i class='bx bxs-circle'></i> ${isFull ? 'Kamar Penuh' : `${availCount} Kamar Kosong`}
+                            </span>
+                            <div class="avail-arrow">
+                                <i class='bx ${isFull ? 'bx-block' : 'bx-right-arrow-alt'}'></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // 2. Pilih Gedung
+        function selectBuilding(buildingId) {
+            const typeData = ROOM_DATA[selectedType];
+            selectedBuilding = typeData.buildings.find(b => b.id === buildingId);
+            selectedRoomNumber = null;
+
+            // Render Step 3 Detail
+            renderRoomDetail();
+
+            // Update Summary
+            updateSummary();
+
+            // Go to Step 3
+            goToStep(3);
+        }
+
+        // Render Detail di Step 3
+        function renderRoomDetail() {
+            const typeData = ROOM_DATA[selectedType];
+
+            // Badges & Labels
+            document.getElementById('galleryBadgeText').textContent = typeData.name;
+            document.getElementById('detailTypeBadge').textContent = typeData.name;
+            document.getElementById('detailBuildingTitle').textContent = selectedBuilding.name;
+            document.getElementById('detailPriceText').innerHTML = `${typeData.price} <span>/ bulan</span>`;
+            document.getElementById('specSizeText').textContent = typeData.size;
+            document.getElementById('specBathText').textContent = typeData.bath;
+
+            // Gallery
+            const mainImg = document.getElementById('mainGalleryImage');
+            mainImg.src = typeData.images[0];
+
+            const thumbsContainer = document.getElementById('galleryThumbsContainer');
+            thumbsContainer.innerHTML = typeData.images.map((img, idx) => `
+                <div class="gallery-thumb ${idx === 0 ? 'active' : ''}" onclick="changeGalleryImage('${img}', this)">
+                    <img src="${img}" alt="Foto kamar thumb ${idx + 1}">
+                </div>
+            `).join('');
+
+            // Room numbers
+            const numberGrid = document.getElementById('roomNumberGrid');
+            numberGrid.innerHTML = selectedBuilding.availableRooms.map(num => `
+                <button class="room-number-btn" onclick="selectRoomNumber('${num}', this)">
+                    <span class="room-status"></span>
+                    <span>No. ${num}</span>
+                </button>
+            `).join('');
+
+            // Reset WA button
+            updateWaButton();
+        }
+
+        // Ganti gambar gallery utama
+        function changeGalleryImage(src, thumbEl) {
+            document.getElementById('mainGalleryImage').src = src;
+            document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+            thumbEl.classList.add('active');
+        }
+
+        // 3. Pilih Nomor Kamar
+        function selectRoomNumber(roomNum, btnEl) {
+            selectedRoomNumber = roomNum;
+
+            // Highlight button
+            document.querySelectorAll('.room-number-btn').forEach(b => b.classList.remove('selected'));
+            btnEl.classList.add('selected');
+
+            // Update Summary & WA Button
+            updateSummary();
+            updateWaButton();
+        }
+
+        // Update WhatsApp Button Link
+        function updateWaButton() {
+            const btn = document.getElementById('btnBookWhatsapp');
+
+            if (!selectedType || !selectedBuilding || !selectedRoomNumber) {
+                btn.classList.add('disabled');
+                btn.href = '#';
+                return;
+            }
+
+            btn.classList.remove('disabled');
+            const typeName = ROOM_DATA[selectedType].name;
+            const buildingName = selectedBuilding.name;
+            const price = ROOM_DATA[selectedType].price;
+
+            const text = `Halo Pengelola Sekar Space, saya ingin memesan kamar kost:\n\n` +
+                `• *Tipe Kamar*: ${typeName}\n` +
+                `• *Gedung*: ${buildingName}\n` +
+                `• *Nomor Kamar*: ${selectedRoomNumber}\n` +
+                `• *Harga*: ${price}/bulan\n\n` +
+                `Apakah nomor kamar ini masih tersedia dan bisa saya survei/booking? Terima kasih!`;
+
+            btn.href = `https://wa.me/${WA_PHONE}?text=${encodeURIComponent(text)}`;
+        }
+
+        // Update Summary Bar Upper Panel
+        function updateSummary() {
+            const summaryBar = document.getElementById('selectionSummary');
+
+            if (!selectedType) {
+                summaryBar.style.display = 'none';
+                return;
+            }
+
+            summaryBar.style.display = 'flex';
+
+            // Type
+            document.getElementById('summaryTypeText').textContent = ROOM_DATA[selectedType].name;
+
+            // Building
+            const bChip = document.getElementById('summaryBuildingChip');
+            const sep1 = document.getElementById('summarySep1');
+            if (selectedBuilding) {
+                bChip.style.display = 'inline-flex';
+                sep1.style.display = 'inline';
+                document.getElementById('summaryBuildingText').textContent = selectedBuilding.name;
+            } else {
+                bChip.style.display = 'none';
+                sep1.style.display = 'none';
+            }
+
+            // Room Number
+            const rChip = document.getElementById('summaryRoomChip');
+            const sep2 = document.getElementById('summarySep2');
+            if (selectedRoomNumber) {
+                rChip.style.display = 'inline-flex';
+                sep2.style.display = 'inline';
+                document.getElementById('summaryRoomText').textContent = `Kamar No. ${selectedRoomNumber}`;
+            } else {
+                rChip.style.display = 'none';
+                sep2.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>

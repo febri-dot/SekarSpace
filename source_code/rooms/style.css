@@ -1,0 +1,1202 @@
+/* ============================
+   SEKAR SPACE — Rooms Page
+   Multi-Step Room Selection
+   ============================ */
+
+/* ===== CSS CUSTOM PROPERTIES (inherits from main) ===== */
+:root {
+    --primary: #541A1A;
+    --primary-light: #6d2e2e;
+    --primary-dark: #3d1212;
+    --secondary: #DCC3AA;
+    --secondary-light: #e8d5c2;
+    --tertiary: #F1E2D1;
+    --tertiary-light: #f7efe5;
+    --white: #FFFFFF;
+    --off-white: #FDFBF9;
+    --dark: #2C1810;
+    --dark-soft: #4A3728;
+    --text: #3D2B1F;
+    --text-muted: #8B7355;
+    --border: #E8DDD2;
+    --success: #2ecc71;
+    --success-dark: #27ae60;
+
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Inter', sans-serif;
+
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 3px rgba(84, 26, 26, 0.06);
+    --shadow-md: 0 4px 16px rgba(84, 26, 26, 0.08);
+    --shadow-lg: 0 8px 32px rgba(84, 26, 26, 0.1);
+    --shadow-xl: 0 16px 48px rgba(84, 26, 26, 0.12);
+
+    --transition-fast: 0.2s ease;
+    --transition-base: 0.3s ease;
+    --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== RESET ===== */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text);
+    background-color: var(--off-white);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--dark);
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ===== PAGE HEADER ===== */
+.page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    padding: 100px 24px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.page-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -10%;
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(220, 195, 170, 0.12) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.page-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(241, 226, 209, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.page-header-content {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+}
+
+.breadcrumb a {
+    color: rgba(255, 255, 255, 0.6);
+    transition: color var(--transition-fast);
+}
+
+.breadcrumb a:hover {
+    color: var(--secondary);
+}
+
+.breadcrumb span {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.breadcrumb .current {
+    color: var(--white);
+    font-weight: 500;
+}
+
+.page-header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    color: var(--white);
+    margin-bottom: 12px;
+}
+
+.page-header h1 .text-gradient {
+    background: linear-gradient(135deg, var(--secondary), var(--tertiary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.page-header p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1rem;
+}
+
+/* ===== BACK BUTTON ===== */
+.back-btn {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--dark);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-md);
+}
+
+.back-btn:hover {
+    background: var(--primary);
+    color: var(--white);
+    border-color: var(--primary);
+    transform: translateX(-4px);
+}
+
+.back-btn i {
+    font-size: 1.1rem;
+}
+
+/* ===== STEP PROGRESS ===== */
+.step-progress {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 32px 24px;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 0.9rem;
+    background: var(--border);
+    color: var(--text-muted);
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+}
+
+.step-label {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color var(--transition-base);
+    white-space: nowrap;
+}
+
+.step-item.active .step-number {
+    background: var(--primary);
+    color: var(--white);
+    box-shadow: 0 4px 14px rgba(84, 26, 26, 0.3);
+}
+
+.step-item.active .step-label {
+    color: var(--dark);
+    font-weight: 600;
+}
+
+.step-item.completed .step-number {
+    background: var(--success);
+    color: var(--white);
+}
+
+.step-item.completed .step-label {
+    color: var(--success-dark);
+}
+
+.step-connector {
+    flex: 1;
+    height: 2px;
+    background: var(--border);
+    margin: 0 12px;
+    position: relative;
+    min-width: 30px;
+}
+
+.step-connector::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+    background: var(--success);
+    transition: width 0.5s ease;
+}
+
+.step-connector.filled::after {
+    width: 100%;
+}
+
+/* ===== MAIN CONTENT ===== */
+.rooms-main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+/* ===== STEP PANELS ===== */
+.step-panel {
+    display: none;
+    animation: fadeSlideIn 0.5s ease forwards;
+}
+
+.step-panel.active {
+    display: block;
+}
+
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.step-title {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.step-title h2 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    margin-bottom: 8px;
+}
+
+.step-title p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+/* ===== STEP 1: ROOM TYPE SELECTION ===== */
+.type-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 28px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.type-card {
+    position: relative;
+    padding: 44px 32px 36px;
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xl);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-smooth);
+    overflow: hidden;
+}
+
+.type-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--secondary), var(--primary));
+    transform: scaleX(0);
+    transition: transform var(--transition-base);
+}
+
+.type-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--secondary);
+}
+
+.type-card:hover::before {
+    transform: scaleX(1);
+}
+
+.type-card.selected {
+    border-color: var(--primary);
+    box-shadow: 0 8px 32px rgba(84, 26, 26, 0.15);
+}
+
+.type-card.selected::before {
+    transform: scaleX(1);
+    background: var(--primary);
+}
+
+.type-card-popular {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 4px 12px;
+    background: linear-gradient(135deg, #E8A838, #D4912A);
+    color: var(--white);
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.type-card-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--tertiary), var(--secondary-light));
+    border-radius: 22px;
+    transition: all var(--transition-smooth);
+}
+
+.type-card-icon i {
+    font-size: 2.4rem;
+    color: var(--primary);
+    transition: all var(--transition-base);
+}
+
+.type-card:hover .type-card-icon,
+.type-card.selected .type-card-icon {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    transform: scale(1.05) rotate(-2deg);
+}
+
+.type-card:hover .type-card-icon i,
+.type-card.selected .type-card-icon i {
+    color: var(--white);
+}
+
+.type-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+}
+
+.type-card .type-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+.type-card .type-features {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.type-card .type-features li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.83rem;
+    color: var(--text);
+    padding: 5px 0;
+}
+
+.type-card .type-features li i {
+    color: var(--success);
+    font-size: 1rem;
+}
+
+.type-card .type-price {
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.type-card .type-price .price-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 2px;
+}
+
+.type-card .type-price .price-amount {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.type-card .type-price .price-amount span {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+/* ===== STEP 2: BUILDING SELECTION ===== */
+.building-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.building-card {
+    position: relative;
+    padding: 36px 28px 32px;
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: all var(--transition-smooth);
+    overflow: hidden;
+}
+
+.building-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform var(--transition-base);
+}
+
+.building-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--secondary);
+}
+
+.building-card:hover::after {
+    transform: scaleX(1);
+}
+
+.building-card.selected {
+    border-color: var(--primary);
+    box-shadow: 0 8px 28px rgba(84, 26, 26, 0.14);
+}
+
+.building-card.selected::after {
+    transform: scaleX(1);
+    background: var(--primary);
+}
+
+/* Gedung Penuh (Disabled) */
+.building-card.building-full {
+    opacity: 0.7;
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+    cursor: not-allowed;
+}
+
+.building-card.building-full:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: #E2E8F0;
+}
+
+.building-badge-full {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    background: #EF4444;
+    color: #FFFFFF;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    z-index: 2;
+}
+
+.avail-count.avail-full {
+    color: #EF4444 !important;
+}
+
+.building-card.building-full .avail-arrow {
+    background: #F1F5F9;
+    color: #94A3B8;
+}
+
+.building-card.building-full:hover .avail-arrow {
+    background: #F1F5F9;
+    color: #94A3B8;
+    transform: none;
+}
+
+.building-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.building-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--tertiary), var(--secondary-light));
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+    transition: all var(--transition-base);
+}
+
+.building-icon i {
+    font-size: 1.6rem;
+    color: var(--primary);
+    transition: color var(--transition-base);
+}
+
+.building-card:hover .building-icon,
+.building-card.selected .building-icon {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+}
+
+.building-card:hover .building-icon i,
+.building-card.selected .building-icon i {
+    color: var(--white);
+}
+
+.building-header-text h3 {
+    font-size: 1.15rem;
+    margin-bottom: 2px;
+}
+
+.building-header-text span {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.building-facilities {
+    margin-bottom: 20px;
+}
+
+.building-facilities h4 {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.building-facilities ul {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.building-facilities li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--text);
+}
+
+.building-facilities li i {
+    font-size: 0.95rem;
+    color: var(--success);
+    flex-shrink: 0;
+}
+
+.building-availability {
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.building-availability .avail-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--success-dark);
+}
+
+.building-availability .avail-count i {
+    font-size: 1.1rem;
+}
+
+.building-availability .avail-arrow {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tertiary);
+    border-radius: 50%;
+    color: var(--primary);
+    font-size: 1.1rem;
+    transition: all var(--transition-base);
+}
+
+.building-card:hover .avail-arrow {
+    background: var(--primary);
+    color: var(--white);
+    transform: translateX(4px);
+}
+
+/* ===== STEP 3: ROOM DETAIL ===== */
+.room-detail-layout {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+/* Photo Gallery */
+.room-gallery {
+    position: relative;
+}
+
+.gallery-main {
+    width: 100%;
+    height: 380px;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    margin-bottom: 12px;
+    position: relative;
+}
+
+.gallery-main img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-smooth);
+}
+
+.gallery-main:hover img {
+    transform: scale(1.03);
+}
+
+.gallery-badge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    padding: 6px 16px;
+    background: var(--primary);
+    color: var(--white);
+    font-size: 0.78rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    z-index: 2;
+}
+
+.gallery-thumbs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.gallery-thumb {
+    height: 80px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all var(--transition-fast);
+    opacity: 0.7;
+}
+
+.gallery-thumb:hover,
+.gallery-thumb.active {
+    opacity: 1;
+    border-color: var(--primary);
+}
+
+.gallery-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Room Specifications */
+.room-specs {
+    display: flex;
+    flex-direction: column;
+}
+
+.room-specs-header {
+    margin-bottom: 24px;
+}
+
+.room-specs-header .type-badge {
+    display: inline-block;
+    padding: 4px 14px;
+    background: var(--tertiary);
+    color: var(--primary);
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.room-specs-header h2 {
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+}
+
+.room-specs-header .building-name {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.room-specs-header .building-name i {
+    color: var(--primary);
+}
+
+/* Spec grid */
+.spec-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.spec-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    background: var(--off-white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    transition: border-color var(--transition-fast);
+}
+
+.spec-item:hover {
+    border-color: var(--secondary);
+}
+
+.spec-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--tertiary), var(--secondary-light));
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.spec-icon i {
+    font-size: 1.2rem;
+    color: var(--primary);
+}
+
+.spec-text {
+    flex: 1;
+}
+
+.spec-text small {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.spec-text strong {
+    font-size: 0.9rem;
+    color: var(--dark);
+    font-weight: 600;
+}
+
+/* Price display */
+.room-price-display {
+    padding: 20px;
+    background: linear-gradient(135deg, var(--tertiary-light), var(--tertiary));
+    border-radius: var(--radius-lg);
+    margin-bottom: 20px;
+}
+
+.room-price-display .price-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.room-price-display .price-main {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.room-price-display .price-main span {
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+/* ===== ROOM NUMBER SELECTION ===== */
+.room-number-section {
+    margin-bottom: 36px;
+}
+
+.room-number-section h3 {
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+}
+
+.room-number-section p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.room-number-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+}
+
+.room-number-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 14px 12px;
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-md);
+    font-family: var(--font-heading);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--dark);
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.room-number-btn:hover {
+    border-color: var(--secondary);
+    background: var(--tertiary-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.room-number-btn.selected {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: var(--white);
+    box-shadow: 0 4px 14px rgba(84, 26, 26, 0.25);
+}
+
+.room-number-btn .room-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+}
+
+/* ===== BOOKING CTA ===== */
+.booking-cta {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-wa {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    background: #25D366;
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius-full);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    text-decoration: none;
+}
+
+.btn-wa:hover {
+    background: #1fb855;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(37, 211, 102, 0.35);
+}
+
+.btn-wa:active {
+    transform: translateY(0);
+}
+
+.btn-wa i {
+    font-size: 1.3rem;
+}
+
+.btn-wa.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.btn-back-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 28px;
+    background: transparent;
+    color: var(--text);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-full);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+.btn-back-step:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateX(-4px);
+}
+
+.btn-back-step i {
+    font-size: 1.1rem;
+}
+
+/* ===== SELECTION SUMMARY ===== */
+.selection-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 24px;
+    background: var(--tertiary-light);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+}
+
+.summary-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--dark);
+}
+
+.summary-chip i {
+    color: var(--primary);
+    font-size: 0.95rem;
+}
+
+.summary-separator {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+/* ===== FOOTER MINI ===== */
+.footer-mini {
+    text-align: center;
+    padding: 32px 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+}
+
+.footer-mini p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.footer-mini a {
+    color: var(--primary);
+    font-weight: 500;
+}
+
+.footer-mini a:hover {
+    text-decoration: underline;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .building-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .room-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .gallery-main {
+        height: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        padding: 80px 20px 36px;
+    }
+
+    .step-progress {
+        padding: 24px 16px;
+    }
+
+    .step-label {
+        display: none;
+    }
+
+    .step-connector {
+        min-width: 20px;
+        margin: 0 8px;
+    }
+
+    .type-selection-grid {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+    }
+
+    .building-grid {
+        grid-template-columns: 1fr;
+        max-width: 420px;
+        margin: 0 auto;
+    }
+
+    .rooms-main {
+        padding: 24px 16px 60px;
+    }
+
+    .spec-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .gallery-main {
+        height: 240px;
+    }
+
+    .gallery-thumbs {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .gallery-thumb {
+        height: 60px;
+    }
+
+    .booking-cta {
+        flex-direction: column;
+    }
+
+    .btn-wa,
+    .btn-back-step {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .back-btn {
+        top: 12px;
+        left: 12px;
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+
+    .room-number-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .building-facilities ul {
+        grid-template-columns: 1fr;
+    }
+
+    .selection-summary {
+        padding: 12px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .room-number-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .gallery-thumbs {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
