@@ -21,9 +21,9 @@ const formCms = ref({
   priceKmLuarYearly: cmsSettings.value.priceKmLuarYearly || 650000,
   priceKmDalamYearly: cmsSettings.value.priceKmDalamYearly || 880000,
   // Images
-  heroImage1: cmsSettings.value.heroImage1 || '/assets/images/hero-bg.png',
-  heroImage2: cmsSettings.value.heroImage2 || '/assets/images/room-deluxe.png',
-  heroImage3: cmsSettings.value.heroImage3 || '/assets/images/room-single.png'
+  heroImage1: cmsSettings.value.heroImage1 || '/assets/images/hero-gedung-depan.png',
+  heroImage2: cmsSettings.value.heroImage2 || '/assets/images/hero-kamar.png',
+  heroImage3: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.png'
 })
 
 const noticeMessage = ref('')

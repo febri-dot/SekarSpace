@@ -27,7 +27,7 @@ let heroTimer: any = null
 const heroSlides = computed(() => [
   {
     id: 1,
-    image: cmsSettings.value.heroImage1 || '/assets/images/hero-bg.png',
+    image: cmsSettings.value.heroImage1 || '/assets/images/hero-gedung-depan.png',
     tag: cmsSettings.value.heroBadgeText || 'Kost Muslimah Terpercaya',
     titleMain: cmsSettings.value.heroHeadline || 'Kost Muslimah Sekar Wangi',
     titleGradient: 'Nyaman & Aman',
@@ -35,7 +35,7 @@ const heroSlides = computed(() => [
   },
   {
     id: 2,
-    image: cmsSettings.value.heroImage2 || '/assets/images/room-deluxe.png',
+    image: cmsSettings.value.heroImage2 || '/assets/images/hero-kamar.png',
     tag: 'Kamar Mandi Dalam Premium',
     titleMain: 'Privasi & Ketenangan',
     titleGradient: 'Maksimal Setiap Hari',
@@ -43,7 +43,7 @@ const heroSlides = computed(() => [
   },
   {
     id: 3,
-    image: cmsSettings.value.heroImage3 || '/assets/images/room-single.png',
+    image: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.png',
     tag: 'Dapur Bersama Lengkap',
     titleMain: 'Memasak Lebih Praktis',
     titleGradient: '& Selalu Bersih',
@@ -54,7 +54,7 @@ const heroSlides = computed(() => [
 const currentHeroSlide = computed(() => {
   return heroSlides.value[activeHeroSlide.value] || heroSlides.value[0] || {
     id: 1,
-    image: '/assets/images/hero-bg.png',
+    image: '/assets/images/hero-gedung-depan.png',
     tag: 'Kost Muslimah Terpercaya',
     titleMain: 'Kost Muslimah Sekar Wangi',
     titleGradient: 'Nyaman & Aman',
@@ -364,25 +364,25 @@ const galleryRow1All = [
     title: 'Ruang Tamu & Bersantai',
     category: 'facilities',
     categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/gallery-livingroom.png',
+    image: '/assets/images/fasilitas-sofa.png',
     sizeClass: 'card-wide',
     desc: 'Ruang tamu hangat dan nyaman untuk berkumpul, bersantai, atau menerima kunjungan keluarga.'
   },
   {
     id: 102,
-    title: 'Kamar Mandi Luar',
+    title: 'Kamar Mandi Umum',
     category: 'rooms',
     categoryLabel: 'Kamar Standard',
-    image: '/assets/images/room-single.png',
+    image: '/assets/images/fasilitas-km-luar.png',
     sizeClass: 'card-standard',
     desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur empuk, lemari, cermin, dan meja belajar.'
   },
   {
     id: 103,
-    title: 'Dapur Bersama Bersih',
+    title: 'Dapur Bersama',
     category: 'facilities',
     categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/gallery-kitchen.png',
+    image: '/assets/images/fasilitas-dapur.png',
     sizeClass: 'card-tall',
     desc: 'Dapur lengkap dengan kompor, kulkas bersama, dan kabinet penyimpanan yang rapi dan selalu terawat.'
   },
@@ -391,27 +391,70 @@ const galleryRow1All = [
     title: 'Kamar Mandi Dalam',
     category: 'rooms',
     categoryLabel: 'Kamar Premium',
-    image: '/assets/images/room-deluxe.png',
+    image: '/assets/images/foto-km-dalam.png',
     sizeClass: 'card-standard',
     desc: 'Kamar mandi dalam eksklusif dengan pencahayaan alami, cermin, dan interior modern minimalis yang bersih.'
   },
   {
     id: 105,
-    title: 'Tampak Depan & Halaman',
+    title: 'Tampak Depan Gedung',
     category: 'environment',
     categoryLabel: 'Suasana Kost',
-    image: '/assets/images/hero-bg.png',
+    image: '/assets/images/foto-gedung.png',
     sizeClass: 'card-large',
     desc: 'Lingkungan kost yang asri, tenang, dan aman khusus muslimah dengan pagar pengaman terpadu.'
-  },
-  {
+  },  {
     id: 106,
-    title: 'Kamar Double / Shared',
+    title: 'Kamar',
     category: 'rooms',
-    categoryLabel: 'Kamar Kapasitas 2',
-    image: '/assets/images/room-double.png',
+    categoryLabel: 'Kapasitas 2 Orang',
+    image: '/assets/images/fasilitas-luas-kamar.png',
     sizeClass: 'card-standard',
     desc: 'Kamar luas untuk berdua dengan kasur berkualitas, lemari ganda, dan suasana belajar yang kondusif.'
+  },
+  {
+    id: 107,
+    title: 'Parkir Indoor',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/fasilitas-parkir.png',
+    sizeClass: 'card-wide',
+    desc: 'Area parkir indoor yang luas untuk motor dan sepeda, terlindung dari panas dan hujan sehingga kendaraan tetap aman.'
+  },
+  {
+    id: 108,
+    title: 'Kulkas Bersama',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/fasilitas-kulkas.png',
+    sizeClass: 'card-standard',
+    desc: 'Kulkas bersama tersedia untuk menyimpan bahan makanan dengan aman dan praktis tanpa biaya tambahan.'
+  },  {
+    id: 109,
+    title: 'Mesin Cuci',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/mesin-cuci.png',
+    sizeClass: 'card-tall',
+    desc: 'Mesin cuci bersama tersedia untuk memudahkan kebutuhan mencuci pakaian sehari-hari.'
+  },
+  {
+    id: 110,
+    title: 'TV Bersama',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/fasilitas-tv.png',
+    sizeClass: 'card-standard',
+    desc: 'Ruang bersama dengan TV, kursi, karpet, dan koneksi Smart TV untuk bersantai dan menikmati tayangan favorit.'
+  },
+  {
+    id: 111,
+    title: 'Area Jemuran',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/fasilitas-jemuran.png',
+    sizeClass: 'card-wide',
+    desc: 'Area jemuran yang luas dan bersih, dengan ruang yang cukup untuk menjemur pakaian dengan nyaman dan rapi.'
   }
 ]
 
@@ -421,54 +464,99 @@ const galleryRow2All = [
     title: 'Kamar Mandi Dalam',
     category: 'rooms',
     categoryLabel: 'Kamar Premium',
-    image: '/assets/images/room-deluxe.png',
+    image: '/assets/images/foto-km-dalam.png',
     sizeClass: 'card-standard',
     desc: 'Kamar mandi dalam eksklusif dengan pencahayaan alami, cermin, dan interior modern minimalis yang bersih.'
   },
   {
     id: 202,
-    title: 'Dapur Bersama Bersih',
+    title: 'Dapur Bersama',
     category: 'facilities',
     categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/gallery-kitchen.png',
+    image: '/assets/images/fasilitas-dapur.png',
     sizeClass: 'card-large',
     desc: 'Dapur lengkap dengan kompor, kulkas bersama, dan kabinet penyimpanan yang rapi dan selalu terawat.'
   },
   {
     id: 203,
-    title: 'Kamar Double / Shared',
+    title: 'Kamar',
     category: 'rooms',
-    categoryLabel: 'Kamar Kapasitas 2',
-    image: '/assets/images/room-double.png',
+    categoryLabel: 'Kapasitas 2 Orang',
+    image: '/assets/images/fasilitas-luas-kamar.png',
     sizeClass: 'card-tall',
     desc: 'Kamar luas untuk berdua dengan kasur berkualitas, lemari ganda, dan suasana belajar yang kondusif.'
   },
   {
     id: 204,
-    title: 'Ruang Tamu & Santai',
+    title: 'Ruang Tamu & Bersantai',
     category: 'facilities',
     categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/gallery-livingroom.png',
+    image: '/assets/images/fasilitas-sofa.png',
     sizeClass: 'card-wide',
     desc: 'Ruang tamu hangat dan nyaman untuk berkumpul, bersantai, atau menerima kunjungan keluarga.'
   },
   {
     id: 205,
-    title: 'Kamar Mandi Luar',
+    title: 'Kamar Mandi Umum',
     category: 'rooms',
     categoryLabel: 'Kamar Standard',
-    image: '/assets/images/room-single.png',
+    image: '/assets/images/fasilitas-km-luar.png',
     sizeClass: 'card-standard',
     desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur empuk, lemari, cermin, dan meja belajar.'
   },
   {
     id: 206,
-    title: 'Tampak Depan & Halaman',
+    title: 'Tampak Depan Gedung',
     category: 'environment',
     categoryLabel: 'Suasana Kost',
-    image: '/assets/images/hero-bg.png',
+    image: '/assets/images/foto-gedung.png',
     sizeClass: 'card-large',
     desc: 'Lingkungan kost yang asri, tenang, dan aman khusus muslimah dengan pagar pengaman terpadu.'
+  },
+  {
+    id: 207,
+    title: 'Mesin Cuci',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/mesin-cuci.png',
+    sizeClass: 'card-tall',
+    desc: 'Mesin cuci bersama tersedia untuk memudahkan kebutuhan mencuci pakaian sehari-hari.'
+  },
+  {
+    id: 208,
+    title: 'Kulkas Bersama',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/fasilitas-kulkas.png',
+    sizeClass: 'card-standard',
+    desc: 'Kulkas bersama tersedia untuk menyimpan bahan makanan dengan aman dan praktis tanpa biaya tambahan.'
+  },
+  {
+    id: 209,
+    title: 'Parkir Indoor',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/fasilitas-parkir.png',
+    sizeClass: 'card-wide',
+    desc: 'Area parkir indoor yang luas untuk motor dan sepeda, terlindung dari panas dan hujan sehingga kendaraan tetap aman.'
+  },
+  {
+    id: 210,
+    title: 'Area Jemuran',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/fasilitas-jemuran.png',
+    sizeClass: 'card-wide',
+    desc: 'Area jemuran yang luas dan bersih, dengan ruang yang cukup untuk menjemur pakaian dengan nyaman dan rapi.'
+  },
+  {
+    id: 211,
+    title: 'TV Bersama',
+    category: 'facilities',
+    categoryLabel: 'Fasilitas Umum',
+    image: '/assets/images/fasilitas-tv.png',
+    sizeClass: 'card-standard',
+    desc: ' Ruang bersama dengan TV, kursi, karpet, dan koneksi Smart TV untuk bersantai dan menikmati tayangan favorit.'
   }
 ]
 
@@ -870,14 +958,14 @@ onUnmounted(() => {
             <!-- Kamar Mandi Luar -->
             <RouterLink to="/rooms?tipe=km-luar" class="room-type-card" id="roomKmLuar">
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/room-single.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
+                <img src="/assets/images/hero-bg.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
                   <i class='bx bx-door-open'></i>
                 </div>
               </div>
               <div class="room-type-content">
-                <span class="room-type-tag">Terjangkau</span>
+                <span class="room-type-tag">Standard</span>
                 <h3>Kamar Mandi Luar</h3>
                 <p class="room-type-desc">Kamar nyaman dengan akses kamar mandi bersama yang selalu bersih dan terawat.</p>
                 <ul class="room-type-features">
@@ -910,7 +998,7 @@ onUnmounted(() => {
                 <i class='bx bxs-star'></i> Populer
               </div>
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/room-deluxe.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
+                <img src="/assets/images/hero-bg.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
                   <i class='bx bx-bath'></i>
