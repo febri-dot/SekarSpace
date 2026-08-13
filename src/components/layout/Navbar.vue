@@ -64,7 +64,7 @@ onUnmounted(() => {
           <a href="/#contact" class="nav-link" role="menuitem" @click="closeMobileNav">Kontak</a>
         </li>
         <li role="none" class="portal-nav-item">
-          <RouterLink v-if="isAdmin" to="/admin/tenants" class="nav-link" @click="closeMobileNav">
+          <RouterLink v-if="isAdmin" to="/admin/dashboard" class="nav-link" @click="closeMobileNav">
             <i class='bx bxs-shield'></i> Portal Admin
           </RouterLink>
 
@@ -79,7 +79,7 @@ onUnmounted(() => {
       </ul>
 
       <div class="nav-actions">
-        <RouterLink v-if="isAdmin" to="/admin/tenants" class="btn btn-primary nav-btn">
+        <RouterLink v-if="isAdmin" to="/admin/dashboard" class="btn btn-primary nav-btn">
           <i class='bx bxs-shield'></i> Portal Admin
         </RouterLink>
 

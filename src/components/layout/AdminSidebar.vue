@@ -46,6 +46,16 @@ const handleLogout = () => {
       <nav class="sidebar-nav" aria-label="Menu Admin">
         <span class="nav-section-title">Manajemen Kost</span>
         <RouterLink 
+          to="/admin/dashboard" 
+          class="sidebar-link" 
+          :class="{ active: route.path === '/admin/dashboard' || route.path === '/admin' }"
+          @click="closeSidebar"
+        >
+          <i class='bx bxs-dashboard'></i>
+          <span>Dashboard Overview</span>
+        </RouterLink>
+
+        <RouterLink 
           to="/admin/tenants" 
           class="sidebar-link" 
           :class="{ active: route.path.startsWith('/admin/tenants') }"
@@ -56,6 +66,26 @@ const handleLogout = () => {
         </RouterLink>
 
         <RouterLink 
+          to="/admin/rooms" 
+          class="sidebar-link" 
+          :class="{ active: route.path.startsWith('/admin/rooms') }"
+          @click="closeSidebar"
+        >
+          <i class='bx bxs-bed'></i>
+          <span>Kelola Kamar & Status</span>
+        </RouterLink>
+
+        <RouterLink 
+          to="/admin/payments" 
+          class="sidebar-link" 
+          :class="{ active: route.path.startsWith('/admin/payments') }"
+          @click="closeSidebar"
+        >
+          <i class='bx bxs-credit-card-front'></i>
+          <span>Tagihan & Pembayaran</span>
+        </RouterLink>
+
+        <RouterLink 
           to="/admin/complaints" 
           class="sidebar-link" 
           :class="{ active: route.path.startsWith('/admin/complaints') }"
@@ -63,6 +93,17 @@ const handleLogout = () => {
         >
           <i class='bx bxs-error-alt'></i>
           <span>Keluhan Penyewa</span>
+        </RouterLink>
+
+        <span class="nav-section-title">Pengaturan Website</span>
+        <RouterLink 
+          to="/admin/cms" 
+          class="sidebar-link" 
+          :class="{ active: route.path.startsWith('/admin/cms') }"
+          @click="closeSidebar"
+        >
+          <i class='bx bxs-megaphone'></i>
+          <span>Kelola Landing Page</span>
         </RouterLink>
 
         <span class="nav-section-title">Navigasi Utama</span>

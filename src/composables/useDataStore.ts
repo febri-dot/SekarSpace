@@ -37,12 +37,56 @@ export interface PaymentData {
   amount: number
   method: string
   date: string
+  dueDate?: string
   status: 'paid' | 'pending' | 'rejected'
+  proofImage?: string
+  notes?: string
 }
 
-const STORAGE_ROOMS = 'sekar_space_rooms_v2'
-const STORAGE_COMPLAINTS = 'sekar_space_complaints_v2'
-const STORAGE_PAYMENTS = 'sekar_space_payments_v2'
+export interface CmsSettings {
+  announcementBarText: string
+  heroBadgeText: string
+  heroHeadline: string
+  heroDescription: string
+  contactPhone: string
+  contactEmail: string
+  contactAddress: string
+  promoActive: boolean
+  promoText: string
+  // Dynamic Pricing for Landing Page
+  priceKmLuarMonthly: number
+  priceKmDalamMonthly: number
+  priceKmLuarYearly: number
+  priceKmDalamYearly: number
+  // Hero Images for Banner
+  heroImage1: string
+  heroImage2: string
+  heroImage3: string
+}
+
+const STORAGE_ROOMS = 'sekar_space_rooms_v4'
+const STORAGE_COMPLAINTS = 'sekar_space_complaints_v4'
+const STORAGE_PAYMENTS = 'sekar_space_payments_v4'
+const STORAGE_CMS = 'sekar_space_cms_v2'
+
+const defaultCmsSettings: CmsSettings = {
+  announcementBarText: '✨ Promo Merdeka: Diskon Rp 100.000 untuk pembayaran 6 bulan pertama! Chat WhatsApp Admin sekarang.',
+  heroBadgeText: 'Hunian Khusus Muslimah di Jogja',
+  heroHeadline: 'Kost Muslimah Sekar Wangi',
+  heroDescription: 'Hunian eksklusif, aman, nyaman, dan strategis dekat Kampus UTY & MMTC Jogja dengan fasilitas lengkap.',
+  contactPhone: '+62 895-3780-20456',
+  contactEmail: 'info@sekarspace.com',
+  contactAddress: 'Kost Muslimah Sekar Wangi, Trini, Sinduadi, Kec. Mlati, Kabupaten Sleman, D.I. Yogyakarta 55284',
+  promoActive: true,
+  promoText: 'Diskon Rp 100.000 / bulan untuk sewa tahunan!',
+  priceKmLuarMonthly: 700000,
+  priceKmDalamMonthly: 950000,
+  priceKmLuarYearly: 650000,
+  priceKmDalamYearly: 880000,
+  heroImage1: '/assets/images/hero-bg.png',
+  heroImage2: '/assets/images/room-deluxe.png',
+  heroImage3: '/assets/images/room-single.png'
+}
 
 const loadStorage = <T>(key: string, defaultValue: T): T => {
   const saved = localStorage.getItem(key)
@@ -60,6 +104,7 @@ const loadStorage = <T>(key: string, defaultValue: T): T => {
 const rooms = ref<RoomData[]>(loadStorage(STORAGE_ROOMS, defaultRooms as RoomData[]))
 const complaints = ref<ComplaintData[]>(loadStorage(STORAGE_COMPLAINTS, defaultComplaints as ComplaintData[]))
 const payments = ref<PaymentData[]>(loadStorage(STORAGE_PAYMENTS, defaultPayments as PaymentData[]))
+const cmsSettings = ref<CmsSettings>(loadStorage(STORAGE_CMS, defaultCmsSettings))
 
 // Helper to physically write to disk JSON file via Vite API
 const writeJsonDisk = async (filename: 'rooms' | 'complaints' | 'payments', data: any) => {
@@ -78,6 +123,7 @@ const saveAll = () => {
   localStorage.setItem(STORAGE_ROOMS, JSON.stringify(rooms.value))
   localStorage.setItem(STORAGE_COMPLAINTS, JSON.stringify(complaints.value))
   localStorage.setItem(STORAGE_PAYMENTS, JSON.stringify(payments.value))
+  localStorage.setItem(STORAGE_CMS, JSON.stringify(cmsSettings.value))
 
   writeJsonDisk('rooms', rooms.value)
   writeJsonDisk('complaints', complaints.value)
@@ -114,6 +160,44 @@ export function useDataStore() {
     return created
   }
 
+  const updatePaymentStatus = (id: string, status: 'paid' | 'pending' | 'rejected', notes?: string) => {
+    const item = payments.value.find(p => p.id === id)
+    if (item) {
+      item.status = status
+      if (notes) item.notes = notes
+      saveAll()
+    }
+  }
+
+  const addRoom = (newRoom: Omit<RoomData, 'id'>): RoomData => {
+    const id = `rm-${Date.now().toString(36)}`
+    const created: RoomData = { ...newRoom, id }
+    rooms.value.push(created)
+    saveAll()
+    return created
+  }
+
+  const updateRoom = (id: string, updatedData: Partial<RoomData>) => {
+    const item = rooms.value.find(r => r.id === id)
+    if (item) {
+      Object.assign(item, updatedData)
+      saveAll()
+    }
+  }
+
+  const deleteRoom = (id: string) => {
+    const idx = rooms.value.findIndex(r => r.id === id)
+    if (idx !== -1) {
+      rooms.value.splice(idx, 1)
+      saveAll()
+    }
+  }
+
+  const updateCmsSettings = (newSettings: Partial<CmsSettings>) => {
+    Object.assign(cmsSettings.value, newSettings)
+    saveAll()
+  }
+
   const bookRoom = (roomId: string) => {
     const rm = rooms.value.find(r => r.id === roomId)
     if (rm) {
@@ -126,6 +210,7 @@ export function useDataStore() {
     rooms.value = defaultRooms as RoomData[]
     complaints.value = defaultComplaints as ComplaintData[]
     payments.value = defaultPayments as PaymentData[]
+    cmsSettings.value = defaultCmsSettings
     saveAll()
   }
 
@@ -133,9 +218,15 @@ export function useDataStore() {
     rooms,
     complaints,
     payments,
+    cmsSettings,
     addComplaint,
     updateComplaintResponse,
     addPayment,
+    updatePaymentStatus,
+    addRoom,
+    updateRoom,
+    deleteRoom,
+    updateCmsSettings,
     bookRoom,
     resetDataToJSON
   }

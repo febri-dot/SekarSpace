@@ -2,27 +2,32 @@
 import { ref, computed } from 'vue'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { RouterLink } from 'vue-router'
-import { useAuth } from '../../composables/useAuth'
+import { useAuth, type User } from '../../composables/useAuth'
 
-const { tenants, addMember } = useAuth()
+const { tenants, addMember, deleteMember } = useAuth()
 
 const searchQuery = ref('')
 const isAddModalOpen = ref(false)
 const successNotice = ref('')
 
 // Form Tambah Member Baru
-const formMember = ref({
+const formMember = ref<Omit<User, 'id' | 'role'>>({
   name: '',
   username: '',
   password: '',
   email: '',
+  nik: '',
+  address: '',
   phone: '',
-  roomNumber: 'Kamar 08',
-  roomType: 'Kamar Mandi Dalam (Deluxe)',
-  building: 'Gedung Utama (Lantai 2)',
+  birthDate: '',
+  parentPhone: '',
+  roomNumber: 'Kamar 01',
+  roomType: 'Kamar Mandi Dalam',
+  building: 'Gedung Utama',
   monthlyRent: 950000,
   startDate: new Date().toISOString().substring(0, 10),
-  endDate: '2027-08-31'
+  endDate: '2027-08-31',
+  status: 'aktif'
 })
 
 const filteredTenants = computed(() => {
@@ -30,9 +35,10 @@ const filteredTenants = computed(() => {
   const q = searchQuery.value.toLowerCase()
   return tenants.value.filter(t => 
     t.name.toLowerCase().includes(q) || 
-    (t.roomNumber && t.roomNumber.toLowerCase().includes(q)) ||
-    (t.phone && t.phone.includes(q)) ||
-    t.username.toLowerCase().includes(q)
+    t.username.toLowerCase().includes(q) ||
+    (t.nik && t.nik.includes(q)) ||
+    (t.address && t.address.toLowerCase().includes(q)) ||
+    (t.phone && t.phone.includes(q))
   )
 })
 
@@ -52,36 +58,31 @@ const handleSaveMember = () => {
   }
 
   const created = addMember({
-    name: formMember.value.name,
-    username: formMember.value.username,
-    password: formMember.value.password,
-    email: formMember.value.email || `${formMember.value.username}@sekarspace.com`,
-    phone: formMember.value.phone,
-    roomNumber: formMember.value.roomNumber,
-    roomType: formMember.value.roomType,
-    building: formMember.value.building,
-    monthlyRent: formMember.value.monthlyRent,
-    startDate: formMember.value.startDate,
-    endDate: formMember.value.endDate,
-    status: 'aktif'
+    ...formMember.value,
+    email: formMember.value.email || `${formMember.value.username}@sekarspace.com`
   })
 
-  successNotice.value = `Member "${created.name}" (Username: ${created.username}) berhasil ditambahkan & disimpan ke users.json!`
+  successNotice.value = `Data Penyewa "${created.name}" (Username: ${created.username}) berhasil ditambahkan!`
   closeAddModal()
 
-  // Reset form
+  // Reset Form
   formMember.value = {
     name: '',
     username: '',
     password: '',
     email: '',
+    nik: '',
+    address: '',
     phone: '',
-    roomNumber: 'Kamar 08',
-    roomType: 'Kamar Mandi Dalam (Deluxe)',
-    building: 'Gedung Utama (Lantai 2)',
+    birthDate: '',
+    parentPhone: '',
+    roomNumber: 'Kamar 01',
+    roomType: 'Kamar Mandi Dalam',
+    building: 'Gedung Utama',
     monthlyRent: 950000,
     startDate: new Date().toISOString().substring(0, 10),
-    endDate: '2027-08-31'
+    endDate: '2027-08-31',
+    status: 'aktif'
   }
 
   setTimeout(() => {
@@ -89,9 +90,14 @@ const handleSaveMember = () => {
   }, 5000)
 }
 
-const formatRupiah = (val?: number) => {
-  if (!val) return 'Rp 0'
-  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
+const handleDelete = (t: User) => {
+  if (confirm(`Apakah Anda yakin ingin menghapus penyewa "${t.name}" (@${t.username}) dari sistem?`)) {
+    deleteMember(t.id)
+    successNotice.value = `Penyewa "${t.name}" berhasil dihapus.`
+    setTimeout(() => {
+      successNotice.value = ''
+    }, 4000)
+  }
 }
 </script>
 
@@ -99,169 +105,147 @@ const formatRupiah = (val?: number) => {
   <div class="admin-page">
     <AdminSidebar />
 
-    <main class="main-content">
-      <header class="top-header">
+    <main class="admin-main">
+      <!-- HEADER -->
+      <header class="admin-header">
         <div>
-          <h1>Kelola Data Penyewa</h1>
-          <p>Daftar seluruh penghuni Kost Sekar Space & Pembuatan Akun Baru</p>
+          <span class="header-tag">Management Console</span>
+          <h1>Manajemen <span class="text-gradient">Penyewa Kost</span></h1>
+          <p>Daftar data penyewa Kost Muslimah Sekar Wangi sesuai database master.</p>
         </div>
-
-        <div class="header-actions">
-          <div class="header-search">
-            <i class='bx bx-search'></i>
-            <input type="text" v-model="searchQuery" placeholder="Cari nama, username, atau kamar..." />
-          </div>
-
-          <button class="btn btn-primary add-member-btn" @click="openAddModal">
-            <i class='bx bx-user-plus'></i> Tambah Member Baru
-          </button>
-        </div>
+        <button class="btn btn-primary" @click="openAddModal">
+          <i class='bx bx-user-plus'></i> Tambah Penyewa Baru
+        </button>
       </header>
 
-      <div class="page-body">
-        <div v-if="successNotice" class="alert-success">
-          <i class='bx bx-check-circle'></i> {{ successNotice }}
+      <!-- SUCCESS NOTICE -->
+      <div v-if="successNotice" class="alert-notice">
+        <i class='bx bx-check-circle'></i> {{ successNotice }}
+      </div>
+
+      <!-- MAIN TABLE CONTAINER -->
+      <div class="admin-card">
+        <div class="admin-card-header">
+          <div class="search-box">
+            <i class='bx bx-search'></i>
+            <input type="text" v-model="searchQuery" placeholder="Cari berdasarkan nama, username, NIK, atau no hp..." />
+          </div>
+          <span class="count-badge">{{ filteredTenants.length }} Penyewa Terdata</span>
         </div>
 
-        <div class="table-card">
-          <div class="table-header-bar">
-            <h2>Daftar Penghuni ({{ filteredTenants.length }})</h2>
-          </div>
-
-          <div class="table-responsive">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>Nama Member</th>
-                  <th>Username</th>
-                  <th>Nomor Kamar</th>
-                  <th>No. WhatsApp</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="(t, index) in filteredTenants" :key="t.id">
-                  <td>{{ index + 1 }}</td>
-                  <td>
-                    <strong>{{ t.name }}</strong>
-                    <span class="user-email">{{ t.email }}</span>
-                  </td>
-                  <td>
-                    <span class="username-badge">@{{ t.username }}</span>
-                  </td>
-                  <td>
-                    <span class="room-tag"><i class='bx bx-key'></i> {{ t.roomNumber || 'Kamar -' }}</span>
-                  </td>
-                  <td>{{ t.phone || '-' }}</td>
-                  <td>
-                    <span 
-                      class="status-pill" 
-                      :class="t.status === 'aktif' ? 'pill-active' : 'pill-warning'"
-                    >
-                      {{ t.status === 'aktif' ? 'Aktif' : 'Hampir Habis' }}
-                    </span>
-                  </td>
-                  <td>
-                    <RouterLink :to="`/admin/tenants/${t.id}`" class="btn-detail">
+        <div class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Password</th>
+                <th>Nama Lengkap</th>
+                <th>NIK</th>
+                <th>Alamat</th>
+                <th>No Telepon</th>
+                <th>Tanggal Lahir</th>
+                <th>No Telp Ortu</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="t in filteredTenants" :key="t.id">
+                <td>
+                  <span class="username-badge">@{{ t.username }}</span>
+                </td>
+                <td><code class="pass-mask">••••••••</code></td>
+                <td>
+                  <strong>{{ t.name }}</strong>
+                </td>
+                <td><span class="nik-text">{{ t.nik || '-' }}</span></td>
+                <td>{{ t.address || '-' }}</td>
+                <td><a :href="`tel:${t.phone}`" class="phone-link"><i class='bx bxs-phone'></i> {{ t.phone || '-' }}</a></td>
+                <td>{{ t.birthDate || '-' }}</td>
+                <td>{{ t.parentPhone || '-' }}</td>
+                <td>
+                  <div class="action-buttons">
+                    <RouterLink :to="`/admin/tenants/${t.id}`" class="btn-action btn-detail" title="Detail Penyewa">
                       <i class='bx bx-show'></i> Detail
                     </RouterLink>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    <button class="btn-action btn-delete" title="Hapus Penyewa" @click="handleDelete(t)">
+                      <i class='bx bx-trash'></i> Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr v-if="filteredTenants.length === 0">
+                <td colspan="9" class="empty-cell">Tidak ada data penyewa yang sesuai pencarian.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </main>
 
-    <!-- MODAL TAMBAH MEMBER BARU (KHUSUS ADMIN) -->
+    <!-- MODAL TAMBAH PENYEWA BARU -->
     <div v-if="isAddModalOpen" class="modal-backdrop" @click.self="closeAddModal">
       <div class="modal-box">
         <button class="modal-close" @click="closeAddModal"><i class='bx bx-x'></i></button>
 
         <div class="modal-header">
-          <h2><i class='bx bx-user-plus'></i> Tambah Member Baru</h2>
-          <p>Buat akun penyewa baru agar dapat login ke Portal Penyewa</p>
+          <h2><i class='bx bx-user-plus'></i> Tambah Penyewa Baru</h2>
+          <p>Masukkan data identitas lengkap penyewa untuk dicatat di database</p>
         </div>
 
         <form @submit.prevent="handleSaveMember" class="add-member-form">
-          <div class="form-group">
-            <label>Nama Lengkap Penyewa (Sesuai KTP)</label>
-            <input type="text" v-model="formMember.name" placeholder="Contoh: Siti Nurhaliza" required />
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nama Lengkap Penyewa</label>
+              <input type="text" v-model="formMember.name" placeholder="Contoh: Keyla Asyfa Zahra" required />
+            </div>
+            <div class="form-group">
+              <label>NIK KTP</label>
+              <input type="text" v-model="formMember.nik" placeholder="Contoh: 3401234567890001" />
+            </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>Username Login</label>
-              <input type="text" v-model="formMember.username" placeholder="Contoh: siti" required />
+              <input type="text" v-model="formMember.username" placeholder="Contoh: keyla01" required />
             </div>
-
             <div class="form-group">
               <label>Password Login</label>
-              <input type="text" v-model="formMember.password" placeholder="Contoh: password123" required />
+              <input type="text" v-model="formMember.password" placeholder="Contoh: user123" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Alamat Asal</label>
+            <input type="text" v-model="formMember.address" placeholder="Contoh: Sleman, Yogyakarta" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>No Telepon (WhatsApp)</label>
+              <input type="tel" v-model="formMember.phone" placeholder="Contoh: 081234567890" />
+            </div>
+            <div class="form-group">
+              <label>No Telepon Orang Tua</label>
+              <input type="tel" v-model="formMember.parentPhone" placeholder="Contoh: 081298765432" />
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label>Alamat Email</label>
-              <input type="email" v-model="formMember.email" placeholder="Contoh: siti@gmail.com" />
+              <label>Tanggal Lahir</label>
+              <input type="date" v-model="formMember.birthDate" />
             </div>
-
-            <div class="form-group">
-              <label>Nomor WhatsApp / HP</label>
-              <input type="tel" v-model="formMember.phone" placeholder="Contoh: 08123456789" />
-            </div>
-          </div>
-
-          <div class="form-row">
             <div class="form-group">
               <label>Nomor Kamar</label>
-              <input type="text" v-model="formMember.roomNumber" placeholder="Contoh: Kamar 08" required />
-            </div>
-
-            <div class="form-group">
-              <label>Tipe Kamar</label>
-              <select v-model="formMember.roomType">
-                <option value="Kamar Mandi Dalam (Deluxe)">Kamar Mandi Dalam (Deluxe)</option>
-                <option value="Kamar Mandi Luar">Kamar Mandi Luar</option>
-              </select>
+              <input type="text" v-model="formMember.roomNumber" placeholder="Contoh: Kamar 07" />
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>Gedung Hunian</label>
-              <select v-model="formMember.building">
-                <option value="Gedung Utama (Lantai 2)">Gedung Utama</option>
-                <option value="Gedung Timur (Lantai 1)">Gedung Timur</option>
-                <option value="Gedung Barat (Lantai 2)">Gedung Barat</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Biaya Sewa / Bulan (Rp)</label>
-              <input type="number" v-model="formMember.monthlyRent" required />
-            </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" @click="closeAddModal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan Data Penyewa</button>
           </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Tanggal Mulai Sewa</label>
-              <input type="date" v-model="formMember.startDate" required />
-            </div>
-
-            <div class="form-group">
-              <label>Tanggal Akhir Sewa</label>
-              <input type="date" v-model="formMember.endDate" required />
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary submit-member-btn">
-            <i class='bx bx-check-circle'></i> Simpan & Buat Akun Member
-          </button>
         </form>
       </div>
     </div>
@@ -275,181 +259,195 @@ const formatRupiah = (val?: number) => {
   background: var(--off-white);
 }
 
-.main-content {
+.admin-main {
   flex: 1;
   margin-left: 260px;
   padding: 32px;
-  min-width: 0;
+  transition: margin var(--transition-smooth);
 }
 
-.top-header {
+.admin-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-  gap: 16px;
+  margin-bottom: 28px;
 }
 
-.top-header h1 {
+.header-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--tertiary);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  margin-bottom: 6px;
+}
+
+.admin-header h1 {
   font-size: 1.8rem;
-  margin-bottom: 4px;
+  color: var(--dark);
 }
 
-.top-header p {
+.admin-header p {
   color: var(--text-muted);
   font-size: 0.9rem;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-}
-
-.header-search {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--white);
-  border: 1px solid var(--border);
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  width: 260px;
-}
-
-.header-search input {
-  border: none;
-  outline: none;
-  width: 100%;
-  font-size: 0.88rem;
-}
-
-.add-member-btn {
-  padding: 10px 20px;
-  font-size: 0.9rem;
-}
-
-.alert-success {
-  background: var(--success-bg);
-  color: var(--success);
-  padding: 14px 20px;
+.alert-notice {
+  background: #DCFCE7;
+  color: #15803D;
+  padding: 12px 20px;
   border-radius: var(--radius-md);
-  margin-bottom: 20px;
-  font-weight: 600;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
   gap: 8px;
+  font-weight: 600;
 }
 
-.table-card {
+.admin-card {
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 24px;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
-.table-header-bar {
-  margin-bottom: 20px;
+.admin-card-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
 }
 
-.table-header-bar h2 {
-  font-size: 1.2rem;
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  width: 320px;
+}
+
+.search-box input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.88rem;
+  width: 100%;
+}
+
+.count-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  background: var(--tertiary);
+  color: var(--primary);
+  border-radius: var(--radius-full);
+}
+
+.table-wrapper {
+  overflow-x: auto;
 }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 0.88rem;
 }
 
 .admin-table th {
-  text-align: left;
-  padding: 12px 16px;
-  background: var(--tertiary-light);
-  color: var(--primary);
-  font-size: 0.85rem;
+  background: #DCC3AA;
+  color: #541A1A;
   font-weight: 700;
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
 }
 
 .admin-table td {
-  padding: 16px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--border);
-  font-size: 0.9rem;
-}
-
-.admin-table tbody tr {
-  transition: all var(--transition-fast);
-}
-
-.admin-table tbody tr:hover {
-  background: var(--tertiary-light);
-}
-
-.user-email {
-  display: block;
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  font-weight: normal;
+  color: var(--dark);
 }
 
 .username-badge {
   font-family: monospace;
-  background: var(--off-white);
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  font-size: 0.82rem;
-}
-
-.room-tag {
-  background: var(--tertiary);
-  color: var(--primary);
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.82rem;
-}
-
-.status-pill {
-  font-size: 0.75rem;
   font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
+  color: var(--primary);
+  background: var(--tertiary-light);
+  padding: 2px 8px;
+  border-radius: var(--radius-md);
 }
 
-.pill-active { background: var(--success-bg); color: var(--success); }
-.pill-warning { background: var(--warning-bg); color: var(--warning); }
+.pass-mask {
+  color: var(--text-muted);
+  letter-spacing: 2px;
+}
 
-.btn-detail {
+.phone-link {
+  color: var(--primary);
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 14px;
-  background: var(--primary);
-  color: white;
-  border-radius: var(--radius-sm);
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-action {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
   font-size: 0.8rem;
   font-weight: 600;
-  transition: background var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  transition: opacity 0.2s ease;
 }
 
-.btn-detail:hover {
-  background: var(--primary-light);
+.btn-detail {
+  background: #541A1A;
+  color: white;
+  text-decoration: none;
 }
 
-/* MODAL */
+.btn-delete {
+  background: #DCC3AA;
+  color: black;
+}
+
+.btn-action:hover {
+  opacity: 0.9;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-muted);
+}
+
+/* MODAL STYLES */
 .modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(4px);
   z-index: 2000;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  animation: fadeIn 0.25s ease-out;
 }
 
 .modal-box {
@@ -459,72 +457,61 @@ const formatRupiah = (val?: number) => {
   width: 100%;
   padding: 32px;
   position: relative;
-  max-height: 90vh;
-  overflow-y: auto;
   box-shadow: var(--shadow-xl);
-  animation: successPop 0.3s ease-out;
 }
 
 .modal-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
+  top: 16px;
+  right: 16px;
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  color: var(--text-muted);
-}
-
-.modal-header h2 {
-  font-size: 1.35rem;
-  margin-bottom: 4px;
-}
-
-.modal-header p {
-  font-size: 0.88rem;
-  color: var(--text-muted);
-  margin-bottom: 24px;
 }
 
 .add-member-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.form-group label {
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
-.form-group input, .form-group select {
-  padding: 10px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  font-size: 0.9rem;
+  gap: 14px;
+  margin-top: 20px;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 14px;
 }
 
-.submit-member-btn {
+.form-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dark);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.form-group input {
   width: 100%;
-  margin-top: 8px;
-  padding: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 @media (max-width: 992px) {
-  .main-content { margin-left: 0; padding: 20px; }
-  .form-row { grid-template-columns: 1fr; }
+  .admin-main { margin-left: 0; }
 }
 </style>

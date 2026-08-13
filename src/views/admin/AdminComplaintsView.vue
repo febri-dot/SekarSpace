@@ -13,48 +13,34 @@ const { complaints } = useDataStore()
     <main class="main-content">
       <header class="top-header">
         <div>
-          <h1>Keluhan Masuk</h1>
-          <p>Kelola dan tanggapi laporan pengaduan dari penghuni kost</p>
+          <h1>Daftar Keluhan</h1>
+          <p>Keluhan yang dikirim oleh penyewa Kost Muslimah Sekar Wangi</p>
         </div>
       </header>
 
       <div class="page-body">
         <div class="table-card">
-          <div class="table-header-bar">
-            <h2>Daftar Pengaduan Keluhan ({{ complaints.length }})</h2>
-          </div>
-
           <div class="table-responsive">
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th>Penyewa</th>
-                  <th>Kamar</th>
-                  <th>Deskripsi Keluhan</th>
-                  <th>Tanggal</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
+                  <th>Nama Pembuat</th>
+                  <th>Deskripsi</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="c in complaints" :key="c.id">
                   <td><strong>{{ c.tenantName }}</strong></td>
-                  <td><span class="room-tag">{{ c.roomNumber }}</span></td>
                   <td class="desc-cell">{{ c.description }}</td>
-                  <td>{{ c.date }}</td>
                   <td>
-                    <span 
-                      class="status-pill" 
-                      :class="c.status === 'resolved' ? 'pill-resolved' : c.status === 'in-progress' ? 'pill-progress' : 'pill-pending'"
-                    >
-                      {{ c.status === 'resolved' ? 'Selesai' : c.status === 'in-progress' ? 'Diproses' : 'Menunggu' }}
-                    </span>
-                  </td>
-                  <td>
-                    <RouterLink :to="`/admin/complaints/${c.id}`" class="btn-detail">
-                      <i class='bx bx-message-square-dots'></i> Tanggapi
+                    <RouterLink :to="`/admin/complaints/${c.id}`">
+                      <button class="btn-detail">Detail</button>
                     </RouterLink>
                   </td>
+                </tr>
+                <tr v-if="complaints.length === 0">
+                  <td colspan="3" class="empty-cell">Belum ada keluhan yang masuk.</td>
                 </tr>
               </tbody>
             </table>
@@ -79,8 +65,13 @@ const { complaints } = useDataStore()
   min-width: 0;
 }
 
+.top-header {
+  margin-bottom: 24px;
+}
+
 .top-header h1 {
   font-size: 1.8rem;
+  color: #541A1A;
   margin-bottom: 4px;
 }
 
@@ -94,79 +85,54 @@ const { complaints } = useDataStore()
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px;
-}
-
-.table-header-bar h2 {
-  font-size: 1.2rem;
-  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
+  background-color: white;
 }
 
 .admin-table th {
-  text-align: left;
-  padding: 12px 16px;
-  background: var(--tertiary-light);
-  color: var(--primary);
-  font-size: 0.85rem;
+  background-color: #DCC3AA;
+  color: #541A1A;
   font-weight: 700;
+  padding: 12px 14px;
+  text-align: left;
+  border: 1px solid #ddd;
 }
 
 .admin-table td {
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+  border: 1px solid #ddd;
   font-size: 0.9rem;
 }
 
-.admin-table tbody tr {
-  transition: all var(--transition-fast);
-}
-
-.admin-table tbody tr:hover {
-  background: var(--tertiary-light);
-}
-
-.room-tag {
-  background: var(--tertiary);
-  color: var(--primary);
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-  font-size: 0.82rem;
-}
-
 .desc-cell {
-  max-width: 320px;
+  line-height: 1.5;
 }
-
-.status-pill {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-}
-
-.pill-pending { background: var(--warning-bg); color: var(--warning); }
-.pill-progress { background: var(--info-bg); color: var(--info); }
-.pill-resolved { background: var(--success-bg); color: var(--success); }
 
 .btn-detail {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
   padding: 6px 14px;
-  background: var(--primary);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #541A1A;
   color: white;
-  border-radius: var(--radius-sm);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 600;
+  transition: opacity 0.2s ease;
 }
 
 .btn-detail:hover {
-  background: var(--primary-light);
+  opacity: 0.9;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 30px;
+  color: var(--text-muted);
 }
 
 @media (max-width: 992px) {

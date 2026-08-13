@@ -36,7 +36,7 @@ import { RouterLink } from 'vue-router'
           <h3>Portal & Layanan</h3>
           <ul>
             <li><RouterLink to="/user">Portal Penyewa</RouterLink></li>
-            <li><RouterLink to="/admin/tenants">Portal Admin</RouterLink></li>
+            <li><RouterLink to="/admin/dashboard">Portal Admin</RouterLink></li>
           </ul>
         </nav>
 

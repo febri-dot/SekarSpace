@@ -5,8 +5,11 @@ import Footer from '../components/layout/Footer.vue'
 import { RouterLink } from 'vue-router'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { useDataStore } from '../composables/useDataStore'
 
 gsap.registerPlugin(ScrollTrigger)
+
+const { cmsSettings } = useDataStore()
 
 // Interactive State
 const activeFaq = ref<number | null>(0)
@@ -21,18 +24,18 @@ const roomPricingPeriod = ref<'monthly' | 'quarterly' | 'yearly'>('monthly')
 const activeHeroSlide = ref(0)
 let heroTimer: any = null
 
-const heroSlides = [
+const heroSlides = computed(() => [
   {
     id: 1,
-    image: '/assets/images/hero-bg.png',
-    tag: 'Kost Muslimah Terpercaya',
-    titleMain: 'Temukan Hunian',
+    image: cmsSettings.value.heroImage1 || '/assets/images/hero-bg.png',
+    tag: cmsSettings.value.heroBadgeText || 'Kost Muslimah Terpercaya',
+    titleMain: cmsSettings.value.heroHeadline || 'Kost Muslimah Sekar Wangi',
     titleGradient: 'Nyaman & Aman',
-    desc: 'Sekar Space menyediakan kost muslimah dengan fasilitas lengkap, lingkungan yang kondusif, dan harga terjangkau untuk kenyamanan Anda.'
+    desc: cmsSettings.value.heroDescription || 'Sekar Space menyediakan kost muslimah dengan fasilitas lengkap, lingkungan yang kondusif, dan harga terjangkau untuk kenyamanan Anda.'
   },
   {
     id: 2,
-    image: '/assets/images/room-deluxe.png',
+    image: cmsSettings.value.heroImage2 || '/assets/images/room-deluxe.png',
     tag: 'Kamar Mandi Dalam Premium',
     titleMain: 'Privasi & Ketenangan',
     titleGradient: 'Maksimal Setiap Hari',
@@ -40,37 +43,31 @@ const heroSlides = [
   },
   {
     id: 3,
-    image: '/assets/images/gallery-livingroom.png',
-    tag: 'Ruang Tamu & Bersantai',
-    titleMain: 'Suasana Hangat',
-    titleGradient: '& Penuh Kekeluargaan',
-    desc: 'Fasilitas area santai untuk menerima kunjungan keluarga atau teman wanita dengan suasana rapi, sopan, dan terawat.'
-  },
-  {
-    id: 4,
-    image: '/assets/images/gallery-kitchen.png',
+    image: cmsSettings.value.heroImage3 || '/assets/images/room-single.png',
     tag: 'Dapur Bersama Lengkap',
     titleMain: 'Memasak Lebih Praktis',
     titleGradient: '& Selalu Bersih',
     desc: 'Dilengkapi kompor gas, kulkas bersama, kabinet penyimpanan, serta dispenser air minum untuk menunjang harian Anda.'
   }
-]
+])
 
-const currentHeroSlide = computed<{
-  id: number
-  image: string
-  tag: string
-  titleMain: string
-  titleGradient: string
-  desc: string
-}>(() => heroSlides[activeHeroSlide.value] ?? heroSlides[0]!)
+const currentHeroSlide = computed(() => {
+  return heroSlides.value[activeHeroSlide.value] || heroSlides.value[0] || {
+    id: 1,
+    image: '/assets/images/hero-bg.png',
+    tag: 'Kost Muslimah Terpercaya',
+    titleMain: 'Kost Muslimah Sekar Wangi',
+    titleGradient: 'Nyaman & Aman',
+    desc: 'Sekar Space menyediakan hunian kost muslimah eksklusif.'
+  }
+})
 
 const nextHeroSlide = () => {
-  activeHeroSlide.value = (activeHeroSlide.value + 1) % heroSlides.length
+  activeHeroSlide.value = (activeHeroSlide.value + 1) % heroSlides.value.length
 }
 
 const prevHeroSlide = () => {
-  activeHeroSlide.value = (activeHeroSlide.value - 1 + heroSlides.length) % heroSlides.length
+  activeHeroSlide.value = (activeHeroSlide.value - 1 + heroSlides.value.length) % heroSlides.value.length
 }
 
 const setHeroSlide = (index: number) => {
@@ -531,17 +528,23 @@ const faqs = [
   }
 ]
 
-// Dynamic Pricing Calculator
+const formatRupiah = (val: number) => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
+}
+
+// Dynamic Pricing Calculator using CMS settings
 const getPriceKmLuar = computed(() => {
-  if (roomPricingPeriod.value === 'quarterly') return 'Rp 675.000'
-  if (roomPricingPeriod.value === 'yearly') return 'Rp 650.000'
-  return 'Rp 700.000'
+  const base = cmsSettings.value.priceKmLuarMonthly || 700000
+  if (roomPricingPeriod.value === 'quarterly') return formatRupiah(Math.round(base * 0.95))
+  if (roomPricingPeriod.value === 'yearly') return formatRupiah(cmsSettings.value.priceKmLuarYearly || 650000)
+  return formatRupiah(base)
 })
 
 const getPriceKmDalam = computed(() => {
-  if (roomPricingPeriod.value === 'quarterly') return 'Rp 910.000'
-  if (roomPricingPeriod.value === 'yearly') return 'Rp 880.000'
-  return 'Rp 950.000'
+  const base = cmsSettings.value.priceKmDalamMonthly || 950000
+  if (roomPricingPeriod.value === 'quarterly') return formatRupiah(Math.round(base * 0.95))
+  if (roomPricingPeriod.value === 'yearly') return formatRupiah(cmsSettings.value.priceKmDalamYearly || 880000)
+  return formatRupiah(base)
 })
 
 // Scroll Progress
@@ -710,8 +713,12 @@ onUnmounted(() => {
 
 <template>
   <div class="home-page">
-    <!-- Top Scroll Progress Bar -->
-    <div class="scroll-progress-bar" :style="{ width: `${scrollProgress}%` }"></div>
+    <!-- Announcement Bar from CMS -->
+    <div v-if="cmsSettings.announcementBarText" class="top-announcement-bar">
+      <div class="announcement-content">
+        <span><i class='bx bxs-megaphone'></i> {{ cmsSettings.announcementBarText }}</span>
+      </div>
+    </div>
 
     <Navbar />
 
@@ -1354,6 +1361,29 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.top-announcement-bar {
+  background: linear-gradient(90deg, #541A1A 0%, #7A2828 100%);
+  color: #FFF;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  text-align: center;
+  position: relative;
+  z-index: 1001;
+  box-shadow: inset 0 -1px 0 rgba(255,255,255,0.1);
+}
+
+.announcement-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.announcement-content i {
+  color: #FCD34D;
+}
+
 .home-page {
   display: flex;
   flex-direction: column;

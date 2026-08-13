@@ -13,12 +13,15 @@ const tenant = computed(() => {
   return getTenantById(tenantId) || {
     id: tenantId,
     name: 'Keyla Asyfa Zahra',
-    username: 'keyla',
+    username: 'keyla01',
+    nik: '3401234567890001',
+    address: 'Sleman, Yogyakarta',
     phone: '081234567890',
-    email: 'keyla.asyfa@gmail.com',
-    roomNumber: 'Kamar 07',
+    birthDate: '12 Mei 2004',
+    parentPhone: '081298765432',
+    roomNumber: 'Kamar 07 (A01)',
     roomType: 'Kamar Mandi Dalam (Deluxe)',
-    building: 'Gedung Utama (Lantai 2)',
+    building: 'Gedung Utama (Gedung A)',
     monthlyRent: 950000,
     startDate: '01 September 2025',
     endDate: '01 September 2026',
@@ -46,7 +49,7 @@ const formatRupiah = (val?: number) => {
           <RouterLink to="/admin/tenants" class="back-link">
             <i class='bx bx-left-arrow-alt'></i> Kembali ke Daftar Penyewa
           </RouterLink>
-          <h1>Detail Data Penyewa</h1>
+          <h1>Detail Penyewa</h1>
         </div>
       </header>
 
@@ -56,55 +59,61 @@ const formatRupiah = (val?: number) => {
             <div class="avatar-circle">{{ getInitials(tenant.name) }}</div>
             <div>
               <h2>{{ tenant.name }}</h2>
-              <span class="status-badge"><i class='bx bx-check-circle'></i> Status: {{ tenant.status === 'aktif' ? 'Aktif' : 'Hampir Habis' }}</span>
+              <span class="status-badge"><i class='bx bx-check-circle'></i> Status: {{ tenant.status === 'aktif' ? 'Aktif (Terisi)' : 'Hampir Habis' }}</span>
             </div>
           </div>
 
-          <div class="detail-grid">
-            <div class="info-group">
-              <label>Username Account</label>
-              <p><strong>@{{ tenant.username }}</strong></p>
-            </div>
-
-            <div class="info-group">
-              <label>Nomor Telepon / WhatsApp</label>
-              <p v-if="tenant.phone">
-                <a :href="`https://wa.me/${tenant.phone.replace(/[^0-9]/g, '')}`" target="_blank" class="wa-link">
-                  <i class='bx bxl-whatsapp'></i> {{ tenant.phone }}
+          <!-- Section 1: Informasi Penyewa -->
+          <div class="section-box">
+            <h2>Informasi Penyewa</h2>
+            <div class="info-list">
+              <p class="info"><span class="label">Username:</span> {{ tenant.username }}</p>
+              <p class="info"><span class="label">Nama Lengkap:</span> {{ tenant.name }}</p>
+              <p class="info"><span class="label">NIK:</span> {{ tenant.nik || '3401234567890001' }}</p>
+              <p class="info"><span class="label">Alamat:</span> {{ tenant.address || 'Sleman, Yogyakarta' }}</p>
+              <p class="info">
+                <span class="label">No Telepon:</span> 
+                <a :href="`https://wa.me/${(tenant.phone || '081234567890').replace(/[^0-9]/g, '')}`" target="_blank" class="wa-link">
+                  <i class='bx bxl-whatsapp'></i> {{ tenant.phone || '081234567890' }}
                 </a>
               </p>
-              <p v-else>-</p>
-            </div>
-
-            <div class="info-group">
-              <label>Alamat Email</label>
-              <p>{{ tenant.email }}</p>
-            </div>
-
-            <div class="info-group">
-              <label>Nomor & Tipe Kamar</label>
-              <p><strong>{{ tenant.roomNumber || 'Kamar -' }}</strong> ({{ tenant.roomType || 'Standar' }})</p>
-            </div>
-
-            <div class="info-group">
-              <label>Gedung Hunian</label>
-              <p>{{ tenant.building || 'Gedung Utama' }}</p>
-            </div>
-
-            <div class="info-group">
-              <label>Biaya Sewa Bulanan</label>
-              <p class="price-highlight">{{ formatRupiah(tenant.monthlyRent) }}</p>
-            </div>
-
-            <div class="info-group">
-              <label>Masa Berlaku Sewa</label>
-              <p>{{ tenant.startDate || '-' }} s.d {{ tenant.endDate || '-' }}</p>
+              <p class="info"><span class="label">Tanggal Lahir:</span> {{ tenant.birthDate || '12 Mei 2004' }}</p>
+              <p class="info"><span class="label">No Telepon Orang Tua:</span> {{ tenant.parentPhone || '081298765432' }}</p>
             </div>
           </div>
 
-          <div class="notes-box">
-            <label>Catatan Pengelola Admin</label>
-            <p>Akun penyewa terdaftar resmi di sistem Sekar Space Kost Muslimah.</p>
+          <!-- Section 2: Informasi Kamar -->
+          <div class="section-box">
+            <h2>Informasi Kamar</h2>
+            <div class="info-list">
+              <p class="info"><span class="label">Nomor Kamar:</span> {{ tenant.roomNumber || 'Kamar 07' }}</p>
+              <p class="info"><span class="label">Tipe Kamar:</span> {{ tenant.roomType || 'Kamar Mandi Dalam' }}</p>
+              <p class="info"><span class="label">Gedung:</span> {{ tenant.building || 'Gedung Utama' }}</p>
+              <p class="info"><span class="label">Status:</span> {{ tenant.status === 'aktif' ? 'Terisi' : 'Hampir Habis' }}</p>
+            </div>
+          </div>
+
+          <!-- Section 3: Informasi Sewa -->
+          <div class="section-box">
+            <h2>Informasi Sewa</h2>
+            <div class="info-list">
+              <p class="info"><span class="label">Mulai Sewa:</span> {{ tenant.startDate || '01 September 2025' }}</p>
+              <p class="info"><span class="label">Selesai Sewa:</span> {{ tenant.endDate || '01 September 2026' }}</p>
+            </div>
+          </div>
+
+          <!-- Section 4: Informasi Pembayaran -->
+          <div class="section-box">
+            <h2>Informasi Pembayaran</h2>
+            <div class="info-list">
+              <p class="info"><span class="label">Status Pembayaran:</span> <strong class="text-success">Lunas</strong></p>
+              <p class="info"><span class="label">Total Pembayaran:</span> {{ formatRupiah(tenant.monthlyRent || 950000) }} / bulan</p>
+              <p class="info"><span class="label">Tenggat Pembayaran:</span> {{ tenant.endDate || '01 September 2026' }}</p>
+            </div>
+          </div>
+
+          <div class="action-footer">
+            <RouterLink to="/admin/tenants" class="btn btn-primary">Kembali ke Daftar Penyewa</RouterLink>
           </div>
         </div>
       </div>
@@ -138,68 +147,80 @@ const formatRupiah = (val?: number) => {
 
 .top-header h1 {
   font-size: 1.8rem;
+  color: var(--dark);
 }
 
 .detail-card {
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   padding: 32px;
   max-width: 850px;
+  box-shadow: var(--shadow-sm);
 }
 
 .profile-banner {
   display: flex;
   align-items: center;
   gap: 20px;
-  padding-bottom: 24px;
+  padding-bottom: 20px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .avatar-circle {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
-  background: var(--primary);
+  background: #541A1A;
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
 }
 
 .profile-banner h2 {
   font-size: 1.5rem;
   margin-bottom: 4px;
+  color: #541A1A;
 }
 
 .status-badge {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: var(--success);
+  color: #16A34A;
 }
 
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-bottom: 28px;
+.section-box {
+  margin-bottom: 24px;
 }
 
-.info-group label {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: block;
-  margin-bottom: 4px;
+.section-box h2 {
+  color: #541A1A;
+  font-size: 1.15rem;
+  border-bottom: 2px solid #DCC3AA;
+  padding-bottom: 6px;
+  margin-bottom: 12px;
 }
 
-.info-group p {
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info {
   font-size: 0.95rem;
-  color: var(--text);
+  color: var(--dark);
+}
+
+.label {
+  font-weight: bold;
+  color: #541A1A;
+  display: inline-block;
+  min-width: 170px;
 }
 
 .wa-link {
@@ -207,34 +228,18 @@ const formatRupiah = (val?: number) => {
   font-weight: 600;
 }
 
-.price-highlight {
-  font-size: 1.15rem !important;
-  font-weight: 700;
-  color: var(--primary) !important;
+.text-success {
+  color: #16A34A;
 }
 
-.notes-box {
-  background: var(--tertiary-light);
-  padding: 20px;
-  border-radius: var(--radius-md);
-  border-left: 4px solid var(--primary);
-}
-
-.notes-box label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--primary);
-  text-transform: uppercase;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.notes-box p {
-  font-size: 0.9rem;
+.action-footer {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
 }
 
 @media (max-width: 992px) {
   .main-content { margin-left: 0; padding: 20px; }
-  .detail-grid { grid-template-columns: 1fr; }
+  .label { min-width: auto; display: block; margin-bottom: 2px; }
 }
 </style>

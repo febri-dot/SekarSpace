@@ -1,0 +1,431 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import AdminSidebar from '../../components/layout/AdminSidebar.vue'
+import { useDataStore } from '../../composables/useDataStore'
+
+const { cmsSettings, updateCmsSettings } = useDataStore()
+
+const formCms = ref({
+  announcementBarText: cmsSettings.value.announcementBarText,
+  heroBadgeText: cmsSettings.value.heroBadgeText,
+  heroHeadline: cmsSettings.value.heroHeadline,
+  heroDescription: cmsSettings.value.heroDescription,
+  contactPhone: cmsSettings.value.contactPhone,
+  contactEmail: cmsSettings.value.contactEmail,
+  contactAddress: cmsSettings.value.contactAddress,
+  promoActive: cmsSettings.value.promoActive,
+  promoText: cmsSettings.value.promoText,
+  // Prices
+  priceKmLuarMonthly: cmsSettings.value.priceKmLuarMonthly || 700000,
+  priceKmDalamMonthly: cmsSettings.value.priceKmDalamMonthly || 950000,
+  priceKmLuarYearly: cmsSettings.value.priceKmLuarYearly || 650000,
+  priceKmDalamYearly: cmsSettings.value.priceKmDalamYearly || 880000,
+  // Images
+  heroImage1: cmsSettings.value.heroImage1 || '/assets/images/hero-bg.png',
+  heroImage2: cmsSettings.value.heroImage2 || '/assets/images/room-deluxe.png',
+  heroImage3: cmsSettings.value.heroImage3 || '/assets/images/room-single.png'
+})
+
+const noticeMessage = ref('')
+
+const handleFileUpload = (event: Event, imageKey: 'heroImage1' | 'heroImage2' | 'heroImage3') => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files[0]) {
+    const file = target.files[0]
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        formCms.value[imageKey] = e.target.result as string
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+const handleSaveCms = () => {
+  updateCmsSettings(formCms.value)
+  noticeMessage.value = 'Pengaturan Konten, Harga, dan Gambar Landing Page Berhasil Disimpan!'
+  setTimeout(() => {
+    noticeMessage.value = ''
+  }, 4000)
+}
+
+const formatRupiah = (val: number) => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
+}
+</script>
+
+<template>
+  <div class="admin-page">
+    <AdminSidebar />
+
+    <main class="admin-main">
+      <header class="admin-header">
+        <div>
+          <span class="header-tag">Landing Page CMS & Pricing Console</span>
+          <h1>Kelola Konten, <span class="text-gradient">Harga & Gambar Landing Page</span></h1>
+          <p>Ubah tarif sewa yang tampil di beranda, upload foto banner hero, dan atur running text promo.</p>
+        </div>
+        <button class="btn btn-primary" @click="handleSaveCms">
+          <i class='bx bx-save'></i> Simpan Semua Perubahan
+        </button>
+      </header>
+
+      <!-- NOTICE ALERT -->
+      <div v-if="noticeMessage" class="notice-alert">
+        <i class='bx bx-check-circle'></i> {{ noticeMessage }}
+      </div>
+
+      <div class="cms-grid">
+        <!-- 1. PENGATURAN HARGA KAMAR LANDING PAGE -->
+        <div class="cms-card">
+          <div class="card-header">
+            <h3><i class='bx bxs-dollar-circle'></i> Tarif Harga Sewa (Tampil di Landing Page)</h3>
+          </div>
+
+          <div class="form-row mb-3">
+            <div class="form-group">
+              <label>Kamar Mandi Luar (Bulanan - Rp)</label>
+              <input type="number" v-model="formCms.priceKmLuarMonthly" class="form-control" placeholder="700000" />
+              <small class="help-text">Tampil: {{ formatRupiah(formCms.priceKmLuarMonthly) }}/bln</small>
+            </div>
+
+            <div class="form-group">
+              <label>Kamar Mandi Dalam (Bulanan - Rp)</label>
+              <input type="number" v-model="formCms.priceKmDalamMonthly" class="form-control" placeholder="950000" />
+              <small class="help-text">Tampil: {{ formatRupiah(formCms.priceKmDalamMonthly) }}/bln</small>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Kamar Mandi Luar (Diskon Tahunan - Rp)</label>
+              <input type="number" v-model="formCms.priceKmLuarYearly" class="form-control" placeholder="650000" />
+              <small class="help-text">Tampil: {{ formatRupiah(formCms.priceKmLuarYearly) }}/bln (paket 1 tahun)</small>
+            </div>
+
+            <div class="form-group">
+              <label>Kamar Mandi Dalam (Diskon Tahunan - Rp)</label>
+              <input type="number" v-model="formCms.priceKmDalamYearly" class="form-control" placeholder="880000" />
+              <small class="help-text">Tampil: {{ formatRupiah(formCms.priceKmDalamYearly) }}/bln (paket 1 tahun)</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. UPLOAD & GANTI GAMBAR HERO BANNER SLIDESHOW -->
+        <div class="cms-card">
+          <div class="card-header">
+            <h3><i class='bx bxs-image-add'></i> Upload & Ganti Gambar Banner Hero</h3>
+          </div>
+
+          <div class="image-upload-grid">
+            <!-- Slide 1 Image -->
+            <div class="image-upload-item">
+              <label class="img-title">Gambar Slide 1 (Gedung Utama)</label>
+              <div class="preview-box">
+                <img :src="formCms.heroImage1" alt="Slide 1 Preview" />
+              </div>
+              <div class="upload-controls">
+                <input type="file" @change="handleFileUpload($event, 'heroImage1')" accept="image/*" id="uploadSlide1" class="file-input" />
+                <label for="uploadSlide1" class="btn-file"><i class='bx bx-upload'></i> Upload Foto Baru</label>
+              </div>
+            </div>
+
+            <!-- Slide 2 Image -->
+            <div class="image-upload-item">
+              <label class="img-title">Gambar Slide 2 (Interior Kamar)</label>
+              <div class="preview-box">
+                <img :src="formCms.heroImage2" alt="Slide 2 Preview" />
+              </div>
+              <div class="upload-controls">
+                <input type="file" @change="handleFileUpload($event, 'heroImage2')" accept="image/*" id="uploadSlide2" class="file-input" />
+                <label for="uploadSlide2" class="btn-file"><i class='bx bx-upload'></i> Upload Foto Baru</label>
+              </div>
+            </div>
+
+            <!-- Slide 3 Image -->
+            <div class="image-upload-item">
+              <label class="img-title">Gambar Slide 3 (Kamar Standard)</label>
+              <div class="preview-box">
+                <img :src="formCms.heroImage3" alt="Slide 3 Preview" />
+              </div>
+              <div class="upload-controls">
+                <input type="file" @change="handleFileUpload($event, 'heroImage3')" accept="image/*" id="uploadSlide3" class="file-input" />
+                <label for="uploadSlide3" class="btn-file"><i class='bx bx-upload'></i> Upload Foto Baru</label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. ANNOUNCEMENT & PROMO CARD -->
+        <div class="cms-card">
+          <div class="card-header">
+            <h3><i class='bx bxs-megaphone'></i> Announcement Bar & Banner Promo</h3>
+          </div>
+
+          <div class="form-group mb-3">
+            <label>Running Text Announcement Bar (Top Marquee)</label>
+            <textarea 
+              v-model="formCms.announcementBarText" 
+              rows="2" 
+              class="form-control" 
+              placeholder="Pesan pengumuman running text..."
+            ></textarea>
+          </div>
+
+          <div class="form-group mb-3">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="formCms.promoActive" />
+              <span>Aktifkan Highlight Banner Promo di Beranda</span>
+            </label>
+          </div>
+
+          <div v-if="formCms.promoActive" class="form-group">
+            <label>Teks Banner Promo</label>
+            <input 
+              type="text" 
+              v-model="formCms.promoText" 
+              class="form-control" 
+              placeholder="Diskon Rp 100.000 / bulan untuk sewa tahunan!" 
+            />
+          </div>
+        </div>
+
+        <!-- 4. HERO TEXT & CONTACT INFO CARD -->
+        <div class="cms-card">
+          <div class="card-header">
+            <h3><i class='bx bxs-carousel'></i> Headline Hero & Kontak Official</h3>
+          </div>
+
+          <div class="form-row mb-3">
+            <div class="form-group">
+              <label>Sub-Headline Badge Top</label>
+              <input type="text" v-model="formCms.heroBadgeText" class="form-control" />
+            </div>
+
+            <div class="form-group">
+              <label>Judul Utama (Headline H1)</label>
+              <input type="text" v-model="formCms.heroHeadline" class="form-control" />
+            </div>
+          </div>
+
+          <div class="form-group mb-3">
+            <label>Deskripsi Hero Section</label>
+            <textarea v-model="formCms.heroDescription" rows="2" class="form-control"></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>No WhatsApp Official</label>
+              <input type="text" v-model="formCms.contactPhone" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>Email Official</label>
+              <input type="email" v-model="formCms.contactEmail" class="form-control" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</template>
+
+<style scoped>
+.admin-page {
+  display: flex;
+  min-height: 100vh;
+  background: var(--off-white);
+}
+
+.admin-main {
+  flex: 1;
+  margin-left: 260px;
+  padding: 32px;
+  transition: margin var(--transition-smooth);
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--tertiary);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  margin-bottom: 6px;
+}
+
+.admin-header h1 {
+  font-size: 1.8rem;
+  color: var(--dark);
+}
+
+.admin-header p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.notice-alert {
+  background: #DCFCE7;
+  color: #15803D;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.cms-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.cms-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-header h3 {
+  font-size: 1.15rem;
+  color: var(--dark);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-header h3 i {
+  color: var(--primary);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.help-text {
+  font-size: 0.75rem;
+  color: var(--primary);
+  font-weight: 600;
+  margin-top: 4px;
+  display: block;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.mb-3 {
+  margin-bottom: 16px;
+}
+
+/* IMAGE UPLOAD STYLES */
+.image-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.image-upload-item {
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.img-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.preview-box {
+  width: 100%;
+  height: 90px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 8px;
+  background: #000;
+}
+
+.preview-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-input {
+  display: none;
+}
+
+.btn-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: var(--primary);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.btn-file:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 1100px) {
+  .cms-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 992px) {
+  .admin-main { margin-left: 0; }
+}
+
+@media (max-width: 600px) {
+  .image-upload-grid { grid-template-columns: 1fr; }
+}
+</style>

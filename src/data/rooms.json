@@ -56,7 +56,7 @@
     "id": "U-04",
     "number": "04",
     "floor": 2,
-    "buildingId": "utama",
+    "buildingId": "bld-utama",
     "buildingName": "Gedung Utama",
     "typeId": "km-dalam",
     "typeName": "Kamar Mandi Dalam",

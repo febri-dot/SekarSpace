@@ -7,10 +7,14 @@ export interface User {
   name: string
   email: string
   role: 'admin' | 'member'
+  nik?: string
+  address?: string
+  phone?: string
+  birthDate?: string
+  parentPhone?: string
   roomNumber?: string
   roomType?: string
   building?: string
-  phone?: string
   startDate?: string
   endDate?: string
   status?: 'aktif' | 'hampir-habis' | 'non-aktif'
@@ -110,6 +114,14 @@ export function useAuth() {
     return member
   }
 
+  const deleteMember = (id: string) => {
+    const idx = users.value.findIndex(u => u.id === id || u.username === id)
+    if (idx !== -1) {
+      users.value.splice(idx, 1)
+      saveUsers()
+    }
+  }
+
   const getTenantById = (id: string | number): User | undefined => {
     return users.value.find(u => u.id === String(id) || u.username === String(id) || u.id.endsWith(String(id)))
   }
@@ -129,6 +141,7 @@ export function useAuth() {
     login,
     logout,
     addMember,
+    deleteMember,
     getTenantById,
     resetUsersToJSON
   }

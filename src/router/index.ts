@@ -35,6 +35,15 @@ const router = createRouter({
       component: () => import('../views/user/UserPaymentsView.vue')
     },
     {
+      path: '/admin',
+      redirect: '/admin/dashboard'
+    },
+    {
+      path: '/admin/dashboard',
+      name: 'admin-dashboard',
+      component: () => import('../views/admin/AdminDashboardView.vue')
+    },
+    {
       path: '/admin/tenants',
       name: 'admin-tenants',
       component: () => import('../views/admin/AdminTenantsView.vue')
@@ -45,6 +54,16 @@ const router = createRouter({
       component: () => import('../views/admin/AdminTenantDetailView.vue')
     },
     {
+      path: '/admin/rooms',
+      name: 'admin-rooms',
+      component: () => import('../views/admin/AdminRoomsView.vue')
+    },
+    {
+      path: '/admin/payments',
+      name: 'admin-payments',
+      component: () => import('../views/admin/AdminPaymentsView.vue')
+    },
+    {
       path: '/admin/complaints',
       name: 'admin-complaints',
       component: () => import('../views/admin/AdminComplaintsView.vue')
@@ -53,6 +72,11 @@ const router = createRouter({
       path: '/admin/complaints/:id',
       name: 'admin-complaint-detail',
       component: () => import('../views/admin/AdminComplaintDetailView.vue')
+    },
+    {
+      path: '/admin/cms',
+      name: 'admin-cms',
+      component: () => import('../views/admin/AdminCmsView.vue')
     }
   ],
   scrollBehavior(to, from, savedPosition) {
