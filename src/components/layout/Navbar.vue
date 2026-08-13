@@ -58,6 +58,9 @@ onUnmounted(() => {
           </RouterLink>
         </li>
         <li role="none">
+          <a href="/#gallery" class="nav-link" role="menuitem" @click="closeMobileNav">Galeri</a>
+        </li>
+        <li role="none">
           <a href="/#contact" class="nav-link" role="menuitem" @click="closeMobileNav">Kontak</a>
         </li>
         <li role="none" class="portal-nav-item">

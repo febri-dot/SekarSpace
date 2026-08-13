@@ -26,6 +26,8 @@ import { RouterLink } from 'vue-router'
             <li><RouterLink to="/">Beranda</RouterLink></li>
             <li><a href="/#facilities">Fasilitas</a></li>
             <li><RouterLink to="/rooms">Pilihan Kamar</RouterLink></li>
+            <li><a href="/#gallery">Galeri Foto</a></li>
+            <li><a href="/#faq">FAQ</a></li>
             <li><a href="/#contact">Kontak Kami</a></li>
           </ul>
         </nav>
@@ -34,8 +36,6 @@ import { RouterLink } from 'vue-router'
           <h3>Portal & Layanan</h3>
           <ul>
             <li><RouterLink to="/user">Portal Penyewa</RouterLink></li>
-            <li><RouterLink to="/user/payments">Konfirmasi Pembayaran</RouterLink></li>
-            <li><RouterLink to="/user/complaints">Pengaduan Keluhan</RouterLink></li>
             <li><RouterLink to="/admin/tenants">Portal Admin</RouterLink></li>
           </ul>
         </nav>
@@ -43,8 +43,8 @@ import { RouterLink } from 'vue-router'
         <div class="footer-contact">
           <h3>Kontak Kami</h3>
           <address>
-            <p><i class='bx bxs-map'></i> Jl. Sekar Wangi No. 123</p>
-            <p><i class='bx bxs-phone'></i> <a href="tel:+6281234567890">+62 812-3456-7890</a></p>
+            <p><i class='bx bxs-map'></i> Kost Muslimah Sekar Wangi, Trini, Sinduadi, Kec. Mlati, Kabupaten Sleman, D.I. Yogyakarta 55284</p>
+            <p><i class='bx bxs-phone'></i> <a href="tel:+62895378020456">+62 895-3780-20456</a></p>
             <p><i class='bx bxs-envelope'></i> <a href="mailto:info@sekarspace.com">info@sekarspace.com</a></p>
           </address>
         </div>
