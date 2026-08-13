@@ -242,4 +242,19 @@ const formatRupiah = (val?: number) => {
   .main-content { margin-left: 0; padding: 20px; }
   .label { min-width: auto; display: block; margin-bottom: 2px; }
 }
+
+@media (max-width: 768px) {
+  .main-content { padding: 16px; }
+  .detail-card { padding: 18px 14px; }
+  .profile-banner { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .profile-banner h2 { font-size: 1.3rem; }
+  .top-bar { margin-bottom: 16px; }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 12px; }
+  .detail-card { padding: 14px 12px; border-radius: var(--radius-md); }
+  .profile-banner h2 { font-size: 1.15rem; }
+  .info-item { font-size: 0.85rem; }
+}
 </style>

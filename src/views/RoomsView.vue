@@ -2066,5 +2066,135 @@ watch(() => route.query.tipe, () => {
   .step-connector {
     margin: 0 6px 24px;
   }
+  .step-label {
+    font-size: 0.72rem;
+  }
+  .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 0.82rem;
+  }
+  .selection-summary {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+  }
+  .summary-chip {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+  .step-title h2 {
+    font-size: 1.3rem;
+  }
+  .step-title p {
+    font-size: 0.85rem;
+  }
+  .type-card {
+    padding: 24px 18px;
+  }
+  .type-card h3 {
+    font-size: 1.15rem;
+  }
+  .type-desc {
+    font-size: 0.85rem;
+  }
+  .building-card {
+    padding: 20px 16px;
+  }
+  .building-card h3 {
+    font-size: 1.05rem;
+  }
+  .room-detail-header h2 {
+    font-size: 1.25rem;
+  }
+  .gallery-main img {
+    height: 240px;
+  }
+  .gallery-thumbs img {
+    width: 60px;
+    height: 45px;
+  }
+  .estimator-box {
+    padding: 20px 16px;
+  }
+  .modal-content {
+    width: 92vw;
+    max-height: 90vh;
+    padding: 24px 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .step-progress {
+    gap: 2px;
+    padding: 0 6px;
+  }
+  .step-connector {
+    margin: 0 4px 24px;
+    min-width: 20px;
+  }
+  .step-label {
+    font-size: 0.65rem;
+    max-width: 70px;
+    text-align: center;
+  }
+  .step-number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+  .selection-summary {
+    padding: 8px 10px;
+  }
+  .summary-chip {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+  .summary-separator {
+    display: none;
+  }
+  .step-title h2 {
+    font-size: 1.15rem;
+  }
+  .step-title p {
+    font-size: 0.8rem;
+  }
+  .type-card {
+    padding: 20px 14px;
+  }
+  .type-features li {
+    font-size: 0.82rem;
+  }
+  .price-amount {
+    font-size: 1.15rem;
+  }
+  .floor-node-grid {
+    gap: 10px;
+  }
+  .room-node {
+    padding: 14px 12px;
+  }
+  .gallery-main img {
+    height: 200px;
+  }
+  .gallery-thumbs {
+    gap: 6px;
+  }
+  .gallery-thumbs img {
+    width: 50px;
+    height: 38px;
+  }
+  .spec-item {
+    padding: 10px 12px;
+  }
+  .estimator-box {
+    padding: 16px 12px;
+  }
+  .modal-content {
+    width: 96vw;
+    padding: 20px 14px;
+    border-radius: var(--radius-lg);
+  }
 }
 </style>

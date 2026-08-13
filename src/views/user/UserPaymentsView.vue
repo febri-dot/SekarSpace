@@ -189,6 +189,30 @@ const printReceipt = () => {
                 </tbody>
               </table>
             </div>
+
+            <!-- MOBILE CARD VIEW FOR PAYMENTS -->
+            <div class="mobile-payment-cards">
+              <div v-for="p in paymentHistory" :key="'mob-' + p.id" class="mobile-pay-card">
+                <div class="pay-card-header">
+                  <div>
+                    <strong class="pay-period">{{ p.period }}</strong>
+                    <span class="pay-date-sub">{{ p.date }}</span>
+                  </div>
+                  <span class="status-pill" :class="p.status === 'paid' ? 'pill-paid' : 'pill-pending'">
+                    {{ p.status === 'paid' ? 'Lunas' : 'Verifikasi' }}
+                  </span>
+                </div>
+                <div class="pay-card-body">
+                  <div class="pay-amount-box">
+                    <span>Nominal:</span>
+                    <strong class="pay-val">{{ formatRupiah(p.amount) }}</strong>
+                  </div>
+                  <button class="btn-invoice" @click="viewInvoice(p)">
+                    <i class='bx bx-file'></i> Struk
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -572,13 +596,83 @@ const printReceipt = () => {
   letter-spacing: 1px;
 }
 
-.print-btn {
-  width: 100%;
+.mobile-payment-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-pay-card {
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pay-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pay-period {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--dark);
+}
+
+.pay-date-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.pay-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.pay-amount-box span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.pay-val {
+  font-size: 1.05rem;
+  color: var(--primary);
 }
 
 @media (max-width: 992px) {
   .main-content { margin-left: 0; padding: 20px; }
   .bank-accounts-grid { grid-template-columns: 1fr; }
   .payments-layout { grid-template-columns: 1fr; }
+  .table-responsive { display: none !important; }
+  .mobile-payment-cards { display: flex; }
+}
+
+@media (max-width: 768px) {
+  .main-content { padding: 16px; }
+  .top-header { margin-bottom: 20px; }
+  .top-header h1 { font-size: 1.4rem; }
+  .payment-box { padding: 18px 14px; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .modal-box { max-width: 92vw; max-height: 90vh; overflow-y: auto; padding: 24px 16px; }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 12px; }
+  .top-header h1 { font-size: 1.2rem; }
+  .top-header p { font-size: 0.78rem; }
+  .payment-box { padding: 14px 12px; border-radius: var(--radius-md); }
+  .bank-card { padding: 12px; }
+  .bank-header h4 { font-size: 0.92rem; }
+  .account-num strong { font-size: 0.95rem; }
+  .modal-box { max-width: 96vw; padding: 20px 12px; border-radius: var(--radius-lg); }
 }
 </style>

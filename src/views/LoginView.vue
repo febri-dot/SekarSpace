@@ -329,4 +329,44 @@ const quickLoginMember = () => {
   line-height: 1.5;
   text-align: center;
 }
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px 12px;
+  }
+  .login-card {
+    padding: 28px 20px;
+    border-radius: var(--radius-lg);
+  }
+  .brand-header h2 {
+    font-size: 1.25rem;
+  }
+  .brand-header p {
+    font-size: 0.82rem;
+  }
+  .login-logo {
+    font-size: 1.4rem;
+  }
+  .back-home-btn {
+    top: 14px;
+    left: 14px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+  }
+  .demo-buttons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .demo-btn {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+  .login-footer-info {
+    font-size: 0.75rem;
+  }
+  .input-icon-wrapper input {
+    padding: 11px 12px 11px 38px;
+    font-size: 0.88rem;
+  }
+}
 </style>

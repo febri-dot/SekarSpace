@@ -483,4 +483,68 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 16px;
+  }
+  .top-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .header-greeting h1 {
+    font-size: 1.4rem;
+  }
+  .countdown-card {
+    padding: 20px 16px;
+    margin-bottom: 20px;
+  }
+  .countdown-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .countdown-header h2 {
+    font-size: 1.15rem;
+  }
+  .countdown-grid {
+    gap: 6px;
+  }
+  .time-box {
+    min-width: 55px;
+    padding: 10px 6px;
+  }
+  .time-value {
+    font-size: 1.3rem;
+  }
+  .time-separator {
+    font-size: 1.2rem;
+  }
+  .dashboard-box {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .countdown-grid {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .time-box {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 4px;
+  }
+  .time-value {
+    font-size: 1.1rem;
+  }
+  .time-label {
+    font-size: 0.65rem;
+  }
+  .time-separator {
+    display: none;
+  }
+}
 </style>
