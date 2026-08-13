@@ -12,7 +12,7 @@ gsap.registerPlugin(ScrollTrigger)
 const { cmsSettings } = useDataStore()
 
 // Interactive State
-const activeFaq = ref<number | null>(0)
+const activeFaq = ref<number | null>(null)
 const selectedCategory = ref('all')
 const activeLightboxItem = ref<any | null>(null)
 const selectedFacilityModal = ref<any | null>(null)
@@ -504,9 +504,13 @@ const faqs = [
   },
   {
     number: '02',
-    question: 'Apakah biaya sewa sudah termasuk Wi-Fi dan air?',
-    isList: false,
-    text: 'Ya, biaya sewa bulanan sudah mencakup penggunaan air bersih dan Wi-Fi untuk kebutuhan sehari-hari. Biaya listrik belum termasuk dalam biaya sewa dan akan dibayarkan secara terpisah sesuai pemakaian.'
+    question: 'Apakah biaya sewa sudah termasuk listrik, gas, air, dan fasilitas lainnya?',
+    isList: true,
+    list: [
+      { label: 'Fasilitas Termasuk:', text: 'Biaya sewa bulanan sudah mencakup pemakaian air bersih dan jaringan Wi-Fi.' },
+      { label: 'Listrik & Gas:', text: 'Biaya listrik dan gas di luar (tidak termasuk) biaya sewa kamar. Penyewa mengurus dan membayar sendiri biaya listrik dan gas tersebut.' },
+      { label: 'Kapasitas 2 Orang:', text: 'Jika 1 kamar disewa oleh 2 orang, maka akan dikenakan biaya tambahan sebesar Rp 250.000 per bulan.' }
+    ]
   },
   {
     number: '03',

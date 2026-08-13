@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
 
@@ -7,6 +7,35 @@ const route = useRoute()
 const { isLoggedIn, currentUser, isAdmin } = useAuth()
 const isMobileNavOpen = ref(false)
 const isScrolled = ref(false)
+const activeSection = ref('hero')
+
+const navMenuRef = ref<HTMLElement | null>(null)
+const indicatorStyle = ref<{ left: string; width: string; opacity: string }>({
+  left: '0px',
+  width: '0px',
+  opacity: '0'
+})
+
+const updateIndicator = () => {
+  if (!navMenuRef.value) return
+  const activeLink = navMenuRef.value.querySelector('.nav-link.active') as HTMLElement
+  if (activeLink) {
+    const linkRect = activeLink.getBoundingClientRect()
+    const menuRect = navMenuRef.value.getBoundingClientRect()
+    const left = linkRect.left - menuRect.left
+    const width = linkRect.width
+    indicatorStyle.value = {
+      left: `${left}px`,
+      width: `${width}px`,
+      opacity: '1'
+    }
+  } else {
+    indicatorStyle.value = {
+      ...indicatorStyle.value,
+      opacity: '0'
+    }
+  }
+}
 
 const toggleMobileNav = () => {
   isMobileNavOpen.value = !isMobileNavOpen.value
@@ -24,14 +53,68 @@ const closeMobileNav = () => {
 
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 50
+
+  if (route.path === '/') {
+    const sections = [
+      { id: 'contact', name: 'contact' },
+      { id: 'gallery', name: 'gallery' },
+      { id: 'faq', name: 'faq' },
+      { id: 'rooms', name: 'rooms' },
+      { id: 'facilities', name: 'facilities' },
+      { id: 'hero', name: 'hero' }
+    ]
+
+    const scrollY = window.scrollY
+    const windowHeight = window.innerHeight
+    const documentHeight = document.documentElement.scrollHeight
+
+    if (scrollY + windowHeight >= documentHeight - 80) {
+      if (activeSection.value !== 'contact') {
+        activeSection.value = 'contact'
+      }
+      return
+    }
+
+    const scrollPosition = scrollY + 160
+
+    for (const sec of sections) {
+      const el = document.getElementById(sec.id)
+      if (el) {
+        const top = el.offsetTop
+        if (scrollPosition >= top) {
+          if (activeSection.value !== sec.name) {
+            activeSection.value = sec.name
+          }
+          break
+        }
+      }
+    }
+  } else if (route.path === '/rooms') {
+    activeSection.value = 'rooms'
+  } else {
+    activeSection.value = ''
+  }
 }
 
+watch([() => route.path, activeSection], () => {
+  handleScroll()
+  nextTick(() => {
+    updateIndicator()
+  })
+})
+
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  window.addEventListener('resize', updateIndicator, { passive: true })
+  handleScroll()
+  nextTick(() => {
+    updateIndicator()
+  })
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  window.removeEventListener('resize', updateIndicator)
 })
 </script>
 
@@ -43,25 +126,28 @@ onUnmounted(() => {
         <span>Sekar<strong>Space</strong></span>
       </RouterLink>
 
-      <ul class="nav-menu" :class="{ 'show': isMobileNavOpen }" role="menubar">
+      <ul class="nav-menu" ref="navMenuRef" :class="{ 'show': isMobileNavOpen }" role="menubar">
         <li role="none">
-          <RouterLink to="/" class="nav-link" :class="{ active: route.path === '/' }" role="menuitem" @click="closeMobileNav">
+          <RouterLink to="/" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'hero' }" role="menuitem" @click="closeMobileNav">
             Beranda
           </RouterLink>
         </li>
         <li role="none">
-          <a href="/#facilities" class="nav-link" role="menuitem" @click="closeMobileNav">Fasilitas</a>
+          <a href="/#facilities" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'facilities' }" role="menuitem" @click="closeMobileNav">Fasilitas</a>
         </li>
         <li role="none">
-          <RouterLink to="/rooms" class="nav-link" :class="{ active: route.path === '/rooms' }" role="menuitem" @click="closeMobileNav">
+          <RouterLink to="/rooms" class="nav-link" :class="{ active: route.path === '/rooms' || (route.path === '/' && activeSection === 'rooms') }" role="menuitem" @click="closeMobileNav">
             Kamar
           </RouterLink>
         </li>
         <li role="none">
-          <a href="/#gallery" class="nav-link" role="menuitem" @click="closeMobileNav">Galeri</a>
+          <a href="/#faq" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'faq' }" role="menuitem" @click="closeMobileNav">FAQ</a>
         </li>
         <li role="none">
-          <a href="/#contact" class="nav-link" role="menuitem" @click="closeMobileNav">Kontak</a>
+          <a href="/#gallery" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'gallery' }" role="menuitem" @click="closeMobileNav">Galeri</a>
+        </li>
+        <li role="none">
+          <a href="/#contact" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'contact' }" role="menuitem" @click="closeMobileNav">Kontak</a>
         </li>
         <li role="none" class="portal-nav-item">
           <RouterLink v-if="isAdmin" to="/admin/dashboard" class="nav-link" @click="closeMobileNav">
@@ -76,6 +162,7 @@ onUnmounted(() => {
             <i class='bx bx-log-in'></i> Login Akun
           </RouterLink>
         </li>
+        <div class="nav-indicator" :style="indicatorStyle"></div>
       </ul>
 
       <div class="nav-actions">
@@ -164,6 +251,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 32px;
+  position: relative;
 }
 
 .nav-link {
@@ -171,7 +259,8 @@ onUnmounted(() => {
   font-size: 0.95rem;
   color: var(--text);
   position: relative;
-  padding: 4px 0;
+  padding: 6px 0;
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-link::after {
@@ -179,15 +268,41 @@ onUnmounted(() => {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: 0;
-  height: 2px;
+  width: 100%;
+  height: 1.5px;
   background-color: var(--primary);
-  transition: width var(--transition-fast);
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  opacity: 0;
 }
 
-.nav-link:hover::after,
+.nav-link:hover::after {
+  transform: scaleX(1);
+  opacity: 0.4;
+}
+
+.nav-link.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Hide static line on desktop when active because dynamic sliding indicator handles active track */
 .nav-link.active::after {
-  width: 100%;
+  display: none;
+}
+
+/* Dynamic sliding indicator track across active navbar items */
+.nav-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 1.5px;
+  background: var(--primary);
+  border-radius: 2px;
+  box-shadow: 0 1px 3px rgba(84, 26, 26, 0.15);
+  pointer-events: none;
+  transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1), width 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
 }
 
 .nav-actions {
@@ -264,6 +379,16 @@ onUnmounted(() => {
 
   .nav-menu.show {
     right: 0;
+  }
+
+  .nav-indicator {
+    display: none;
+  }
+
+  .nav-link.active::after {
+    display: block;
+    transform: scaleX(1);
+    opacity: 1;
   }
 }
 </style>
