@@ -3471,49 +3471,97 @@ onUnmounted(() => {
   }
 }
 
-/* RESPONSIVE MEDIA QUERIES */
+/* =====================================================================
+   RESPONSIVE MEDIA QUERIES — Comprehensive Mobile-First Overhaul
+   ===================================================================== */
+
+/* ---------- Tablet landscape / small desktop (≤ 1024px) ---------- */
 @media (max-width: 1024px) {
+  /* Facilities grid → 2 columns */
   .facilities-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Estimator → single-column */
   .estimator-box {
     grid-template-columns: 1fr;
   }
+
+  /* Accessibility → 2 columns */
   .accessibility-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Floor plan → 2 columns */
   .floor-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Contact → stacked */
   .contact-grid {
     grid-template-columns: 1fr;
   }
   .contact-map {
     min-height: 350px;
   }
+
+  /* FAQ → stacked */
   .faq-grid {
     grid-template-columns: 1fr;
     gap: 40px;
   }
   .faq-intro {
     position: static;
+    text-align: center;
   }
+
+  /* Lightbox → stacked */
   .lightbox-body {
     grid-template-columns: 1fr;
   }
   .lightbox-img {
     height: 260px;
   }
+
+  /* Hide hero & testimonial desktop arrows */
   .hero-arrow,
   .testi-arrow {
     display: none;
   }
+
+  /* Testimonial card gets more room without arrows */
+  .testimonial-slider-box {
+    max-width: 100%;
+  }
 }
 
+/* ---------- Tablet portrait / large phone (≤ 768px) ---------- */
 @media (max-width: 768px) {
+  /* Announcement bar */
+  .top-announcement-bar {
+    font-size: 0.78rem;
+    padding: 6px 12px;
+  }
+
+  /* Hero section */
   .hero {
     padding: 100px 20px 60px;
+    min-height: auto;
+    min-height: unset;
   }
+  .hero h1 {
+    font-size: clamp(1.7rem, 6vw, 2.4rem);
+  }
+  .hero-desc {
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+  }
+  .hero-badge {
+    font-size: 0.78rem;
+    padding: 5px 12px;
+  }
+
+  /* Hero actions → stacked full width */
   .hero-actions {
     flex-direction: column;
     width: 100%;
@@ -3522,6 +3570,76 @@ onUnmounted(() => {
     width: 100%;
     justify-content: center;
   }
+
+  /* Hero stats → compact */
+  .hero-stats {
+    gap: 16px;
+    padding: 14px 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat-number {
+    font-size: 1.4rem;
+  }
+  .stat-item span {
+    font-size: 0.72rem;
+  }
+  .stat-divider {
+    height: 32px;
+  }
+
+  /* Slide dots */
+  .hero-slide-dots {
+    gap: 8px;
+  }
+
+  /* Section padding */
+  .section {
+    padding: 56px 0;
+  }
+
+  /* Section header */
+  .section-header {
+    margin-bottom: 28px;
+  }
+  .section-header h2 {
+    font-size: clamp(1.4rem, 5vw, 1.8rem);
+  }
+  .section-header p {
+    font-size: 0.88rem;
+  }
+
+  /* Facilities grid → 2 col smaller gap */
+  .facilities-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .facility-card {
+    padding: 20px 14px;
+  }
+  .facility-card h3 {
+    font-size: 1rem;
+  }
+  .facility-card p {
+    font-size: 0.82rem;
+  }
+
+  /* Pricing period selector → wrap nicely */
+  .pricing-period-selector {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 5px;
+  }
+  .period-btn {
+    padding: 7px 14px;
+    font-size: 0.8rem;
+  }
+  .discount-badge {
+    font-size: 0.62rem;
+    padding: 2px 6px;
+  }
+
+  /* Rooms → stacked */
   .room-comparison {
     flex-direction: column;
     max-width: 440px;
@@ -3547,51 +3665,553 @@ onUnmounted(() => {
     left: 100%;
     top: 50%;
   }
-  .facilities-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  .facility-card {
-    padding: 20px 14px;
-  }
+
+  /* Accessibility → single column */
   .accessibility-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Filter/category buttons */
+  .place-filters,
+  .gallery-filters {
+    gap: 6px;
+  }
+  .filter-btn {
+    padding: 6px 14px;
+    font-size: 0.8rem;
+  }
+
+  /* Testimonials */
+  .testimonial-card {
+    padding: 28px 20px;
+  }
+  .testi-quote {
+    font-size: 1rem;
+  }
+  .testi-user {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .testi-user h4,
+  .testi-user p {
+    text-align: center;
+  }
+
+  /* Floor plan */
   .floor-grid {
     grid-template-columns: 1fr;
   }
+  .floor-plan-card {
+    padding: 24px 16px;
+  }
+
+  /* FAQ */
+  .faq-question {
+    padding: 18px 16px;
+  }
+  .faq-question h3 {
+    font-size: 0.95rem;
+  }
+  .faq-q-text {
+    gap: 10px;
+  }
+  .faq-answer-inner > p,
+  .faq-answer-inner > ul {
+    padding: 16px;
+    font-size: 0.88rem;
+  }
+  .faq-support-card {
+    flex-direction: column;
+    text-align: center;
+    gap: 14px;
+    padding: 20px;
+  }
+  .support-icon {
+    margin: 0 auto;
+  }
+  .support-text h4 {
+    font-size: 1rem;
+  }
+  .faq-intro h2 {
+    font-size: clamp(1.5rem, 5vw, 2rem);
+  }
+
+  /* Gallery cards → smaller */
   .gallery-card.card-standard {
     width: 250px;
     min-width: 250px;
+    height: 200px;
   }
-  .gallery-card.card-wide,
+  .gallery-card.card-wide {
+    width: 310px;
+    min-width: 310px;
+    height: 200px;
+  }
+  .gallery-card.card-tall {
+    width: 270px;
+    min-width: 270px;
+    height: 220px;
+  }
   .gallery-card.card-large {
-    width: 320px;
-    min-width: 320px;
+    width: 340px;
+    min-width: 340px;
+    height: 220px;
+  }
+  .gallery-double-row-wrapper {
+    gap: 14px;
+  }
+  .gallery-marquee-track {
+    gap: 14px;
+  }
+
+  /* Contact section */
+  .contact-grid {
+    gap: 28px;
+  }
+  .contact-cta-group {
+    flex-direction: row;
+    gap: 10px;
+  }
+  .contact-cta-btn {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+  }
+  .contact-map {
+    min-height: 280px;
+  }
+
+  /* Lightbox modal */
+  .lightbox-overlay,
+  .facility-modal-overlay {
+    padding: 16px;
+  }
+  .lightbox-info {
+    padding: 20px;
+  }
+  .lightbox-info h3 {
+    font-size: 1.2rem;
+  }
+
+  /* Facility modal */
+  .facility-modal-card {
+    padding: 24px 20px;
+  }
+
+  /* Floating buttons */
+  .floating-wa {
+    width: 50px;
+    height: 50px;
+    font-size: 1.6rem;
+    bottom: 20px;
+    right: 16px;
+  }
+  .back-to-top {
+    width: 40px;
+    height: 40px;
+    bottom: 78px;
+    right: 16px;
+    font-size: 1.2rem;
   }
 }
 
+/* ---------- Mobile phone (≤ 480px) ---------- */
 @media (max-width: 480px) {
+  /* Hero */
+  .hero {
+    padding: 90px 16px 48px;
+  }
   .hero h1 {
-    font-size: 2rem;
+    font-size: 1.65rem;
+    line-height: 1.2;
   }
+  .hero-desc {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  /* Hero stats → inline compact */
   .hero-stats {
-    gap: 12px;
-    padding: 16px;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-lg);
   }
+  .stat-number {
+    font-size: 1.25rem;
+  }
+  .stat-item span {
+    font-size: 0.68rem;
+  }
+  .stat-divider {
+    height: 28px;
+  }
+
+  /* Hero orbs → smaller to avoid overflow */
+  .hero::before {
+    width: 220px;
+    height: 220px;
+    top: -80px;
+    right: -80px;
+  }
+  .hero::after {
+    width: 180px;
+    height: 180px;
+    bottom: -40px;
+    left: -60px;
+  }
+
+  /* Section spacing */
+  .section {
+    padding: 44px 0;
+  }
+  .section-header {
+    margin-bottom: 24px;
+  }
+
+  /* Facilities → single column */
   .facilities-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
-  .pricing-period-selector,
+  .facility-card {
+    padding: 18px 16px;
+  }
+
+  /* Pricing period → stacked */
+  .pricing-period-selector {
+    flex-direction: column;
+    width: 100%;
+    border-radius: var(--radius-lg);
+    align-items: stretch;
+  }
+  .period-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+  }
+
+  /* Room cards */
+  .room-comparison {
+    max-width: 100%;
+  }
+  .room-type-card {
+    padding: 12px 12px 22px;
+  }
+  .room-type-image-wrapper {
+    height: 170px;
+    margin-bottom: 14px;
+  }
+  .room-type-content h3 {
+    font-size: 1.1rem;
+  }
+  .room-type-desc {
+    font-size: 0.82rem;
+  }
+  .room-type-features li {
+    font-size: 0.82rem;
+    padding: 4px 0;
+  }
+  .room-type-price strong {
+    font-size: 1.3rem;
+  }
+  .room-type-cta {
+    padding: 10px 22px;
+    font-size: 0.85rem;
+  }
+  .room-type-badge-float {
+    top: 18px;
+    right: 18px;
+    padding: 5px 10px;
+    font-size: 0.7rem;
+  }
+
+  /* Accessibility cards */
+  .place-card {
+    padding: 18px;
+  }
+  .place-card h3 {
+    font-size: 1rem;
+  }
+  .place-desc {
+    font-size: 0.82rem;
+  }
+
+  /* Filter buttons */
+  .place-filters,
+  .gallery-filters {
+    gap: 5px;
+  }
+  .filter-btn {
+    padding: 5px 12px;
+    font-size: 0.75rem;
+  }
+
+  /* Testimonials */
+  .testimonial-card {
+    padding: 22px 16px;
+  }
+  .testi-stars {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  .testi-quote {
+    font-size: 0.92rem;
+    margin-bottom: 20px;
+  }
+  .testi-avatar {
+    width: 46px;
+    height: 46px;
+  }
+
+  /* FAQ */
+  .faq-question {
+    padding: 14px 12px;
+  }
+  .faq-number {
+    font-size: 1rem;
+  }
+  .faq-question h3 {
+    font-size: 0.88rem;
+  }
+  .faq-icon-wrapper {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+  }
+  .faq-icon-wrapper i {
+    font-size: 1.2rem;
+  }
+  .faq-answer-inner > p,
+  .faq-answer-inner > ul {
+    padding: 14px 12px;
+    font-size: 0.82rem;
+  }
+  .faq-list li {
+    padding-left: 18px;
+  }
+
+  /* Floor switcher */
   .floor-switcher {
     flex-direction: column;
     width: 100%;
     border-radius: var(--radius-lg);
   }
-  .period-btn,
   .floor-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  /* Gallery cards → smaller mobile sizes */
+  .gallery-card.card-standard {
+    width: 220px;
+    min-width: 220px;
+    height: 170px;
+  }
+  .gallery-card.card-wide {
+    width: 270px;
+    min-width: 270px;
+    height: 170px;
+  }
+  .gallery-card.card-tall {
+    width: 240px;
+    min-width: 240px;
+    height: 190px;
+  }
+  .gallery-card.card-large {
+    width: 290px;
+    min-width: 290px;
+    height: 190px;
+  }
+  .gallery-double-row-wrapper::before,
+  .gallery-double-row-wrapper::after {
+    width: 40px;
+  }
+  .gallery-marquee-track {
+    gap: 10px;
+  }
+  .gallery-overlay {
+    padding: 14px;
+  }
+  .gallery-overlay h3 {
+    font-size: 0.95rem;
+  }
+  .gallery-cat-badge {
+    font-size: 0.65rem;
+    padding: 3px 8px;
+  }
+
+  /* Contact section */
+  .contact-item {
+    gap: 12px;
+  }
+  .contact-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    font-size: 1.2rem;
+  }
+  .contact-item h3 {
+    font-size: 0.92rem;
+  }
+  .contact-item p {
+    font-size: 0.82rem;
+  }
+  .contact-cta-group {
+    flex-direction: column;
+  }
+  .contact-cta-btn {
+    padding: 12px 18px;
+    font-size: 0.88rem;
+  }
+  .contact-map {
+    min-height: 240px;
+    border-radius: var(--radius-md);
+  }
+
+  /* Lightbox modal → full screen on mobile */
+  .lightbox-overlay,
+  .facility-modal-overlay {
+    padding: 10px;
+  }
+  .lightbox-modal {
+    border-radius: var(--radius-lg);
+  }
+  .lightbox-img {
+    height: 200px;
+  }
+  .lightbox-info {
+    padding: 16px;
+  }
+  .lightbox-info h3 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+  .lightbox-info p {
+    font-size: 0.85rem;
+  }
+
+  /* Facility modal */
+  .facility-modal-card {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+  .facility-modal-icon {
+    width: 46px;
+    height: 46px;
+    font-size: 1.5rem;
+  }
+  .facility-modal-header h3 {
+    font-size: 1.1rem;
+  }
+  .facility-modal-desc {
+    font-size: 0.88rem;
+  }
+}
+
+/* ---------- Extra small phone (≤ 360px) ---------- */
+@media (max-width: 360px) {
+  .hero {
+    padding: 80px 12px 40px;
+  }
+  .hero h1 {
+    font-size: 1.45rem;
+  }
+  .hero-desc {
+    font-size: 0.82rem;
+  }
+  .hero-badge {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    gap: 5px;
+  }
+  .hero-actions .btn {
+    padding: 12px 20px;
+    font-size: 0.88rem;
+  }
+
+  /* Stats → simplified for tiny screens */
+  .hero-stats {
+    gap: 8px;
+    padding: 10px;
+  }
+  .stat-number {
+    font-size: 1.1rem;
+  }
+  .stat-item span {
+    font-size: 0.62rem;
+  }
+  .stat-divider {
+    height: 24px;
+  }
+
+  /* Section */
+  .section {
+    padding: 36px 0;
+  }
+  .section-header h2 {
+    font-size: 1.2rem;
+  }
+
+  /* Gallery even smaller */
+  .gallery-card.card-standard {
+    width: 190px;
+    min-width: 190px;
+    height: 150px;
+  }
+  .gallery-card.card-wide {
+    width: 230px;
+    min-width: 230px;
+    height: 150px;
+  }
+  .gallery-card.card-tall {
+    width: 210px;
+    min-width: 210px;
+    height: 165px;
+  }
+  .gallery-card.card-large {
+    width: 250px;
+    min-width: 250px;
+    height: 165px;
+  }
+
+  /* Room card */
+  .room-type-image-wrapper {
+    height: 150px;
+  }
+  .room-type-price strong {
+    font-size: 1.15rem;
+  }
+
+  /* Testimonials */
+  .testimonial-card {
+    padding: 18px 12px;
+  }
+  .testi-quote {
+    font-size: 0.85rem;
+  }
+
+  /* FAQ items tighter */
+  .faq-question {
+    padding: 12px 10px;
+  }
+  .faq-question h3 {
+    font-size: 0.82rem;
+  }
+
+  /* Floating buttons */
+  .floating-wa {
+    width: 46px;
+    height: 46px;
+    font-size: 1.4rem;
+    bottom: 16px;
+    right: 12px;
+  }
+  .back-to-top {
+    width: 36px;
+    height: 36px;
+    bottom: 68px;
+    right: 12px;
+    font-size: 1.1rem;
   }
 }
 </style>
