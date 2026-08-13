@@ -1,10 +1,10 @@
 [
   {
-    "id": "U-01",
-    "number": "01",
+    "id": "A-11",
+    "number": "A11",
     "floor": 1,
     "buildingId": "utama",
-    "buildingName": "Gedung Utama",
+    "buildingName": "Gedung A",
     "typeId": "km-luar",
     "typeName": "Kamar Mandi Luar",
     "price": 700000,
@@ -13,69 +13,66 @@
     "features": [
       "Kasur & Bantal",
       "Lemari Pakaian",
-      "Meja Belajar",
-      "Token Listrik"
+      "Meja & Cermin"
     ]
   },
   {
-    "id": "U-02",
-    "number": "02",
+    "id": "A-12",
+    "number": "A12",
     "floor": 1,
     "buildingId": "utama",
-    "buildingName": "Gedung Utama",
+    "buildingName": "Gedung A",
     "typeId": "km-luar",
     "typeName": "Kamar Mandi Luar",
     "price": 700000,
-    "status": "occupied",
+    "status": "available",
     "size": "3x3m",
     "features": [
       "Kasur & Bantal",
       "Lemari Pakaian",
-      "Meja Belajar"
+      "Meja & Cermin"
     ]
   },
   {
-    "id": "U-03",
-    "number": "03",
+    "id": "A-13",
+    "number": "A13",
     "floor": 1,
     "buildingId": "utama",
-    "buildingName": "Gedung Utama",
+    "buildingName": "Gedung A",
     "typeId": "km-dalam",
     "typeName": "Kamar Mandi Dalam",
     "price": 950000,
     "status": "available",
     "size": "3x4m",
     "features": [
-      "Kamar Mandi Dalam",
-      "Kasur Springbed",
-      "Lemari 2 Pintu",
-      "Token Listrik"
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
     ]
   },
   {
-    "id": "U-04",
-    "number": "04",
+    "id": "A-14",
+    "number": "A14",
+    "floor": 1,
+    "buildingId": "utama",
+    "buildingName": "Gedung A",
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "price": 950000,
+    "status": "available",
+    "size": "3x4m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "A-21",
+    "number": "A21",
     "floor": 2,
-    "buildingId": "bld-utama",
-    "buildingName": "Gedung Utama",
-    "typeId": "km-dalam",
-    "typeName": "Kamar Mandi Dalam",
-    "price": 950000,
-    "status": "available",
-    "size": "3x4m",
-    "features": [
-      "Kamar Mandi Dalam",
-      "Kasur Springbed",
-      "Lemari 2 Pintu",
-      "Balkon"
-    ]
-  },
-  {
-    "id": "T-01",
-    "number": "05",
-    "floor": 1,
-    "buildingId": "timur",
-    "buildingName": "Gedung Timur",
+    "buildingId": "utama",
+    "buildingName": "Gedung A",
     "typeId": "km-luar",
     "typeName": "Kamar Mandi Luar",
     "price": 700000,
@@ -84,75 +81,330 @@
     "features": [
       "Kasur & Bantal",
       "Lemari Pakaian",
-      "Meja Belajar"
+      "Meja & Cermin"
     ]
   },
   {
-    "id": "T-02",
-    "number": "06",
+    "id": "A-22",
+    "number": "A22",
+    "floor": 2,
+    "buildingId": "utama",
+    "buildingName": "Gedung A",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "A-23",
+    "number": "A23",
+    "floor": 2,
+    "buildingId": "utama",
+    "buildingName": "Gedung A",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "A-24",
+    "number": "A24",
+    "floor": 2,
+    "buildingId": "utama",
+    "buildingName": "Gedung A",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "A-25",
+    "number": "A25",
+    "floor": 2,
+    "buildingId": "utama",
+    "buildingName": "Gedung A",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "A-26",
+    "number": "A26",
+    "floor": 2,
+    "buildingId": "utama",
+    "buildingName": "Gedung A",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "B-11",
+    "number": "B11",
     "floor": 1,
     "buildingId": "timur",
-    "buildingName": "Gedung Timur",
-    "typeId": "km-dalam",
-    "typeName": "Kamar Mandi Dalam",
-    "price": 950000,
+    "buildingName": "Gedung B",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
     "status": "available",
-    "size": "3x4m",
+    "size": "3x3m",
     "features": [
-      "Kamar Mandi Dalam",
-      "Kasur Springbed",
-      "Lemari 2 Pintu"
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
     ]
   },
   {
-    "id": "T-03",
-    "number": "07",
+    "id": "B-12",
+    "number": "B12",
+    "floor": 1,
+    "buildingId": "timur",
+    "buildingName": "Gedung B",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "B-21",
+    "number": "B21",
     "floor": 2,
     "buildingId": "timur",
-    "buildingName": "Gedung Timur",
-    "typeId": "km-dalam",
-    "typeName": "Kamar Mandi Dalam",
-    "price": 950000,
+    "buildingName": "Gedung B",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
     "status": "available",
-    "size": "3x4m",
+    "size": "3x3m",
     "features": [
-      "Kamar Mandi Dalam",
-      "Kasur Springbed",
-      "Lemari 2 Pintu"
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
     ]
   },
   {
-    "id": "B-01",
-    "number": "08",
+    "id": "B-22",
+    "number": "B22",
+    "floor": 2,
+    "buildingId": "timur",
+    "buildingName": "Gedung B",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "B-23",
+    "number": "B23",
+    "floor": 2,
+    "buildingId": "timur",
+    "buildingName": "Gedung B",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "B-24",
+    "number": "B24",
+    "floor": 2,
+    "buildingId": "timur",
+    "buildingName": "Gedung B",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "C-11",
+    "number": "C11",
     "floor": 1,
     "buildingId": "barat",
-    "buildingName": "Gedung Barat",
+    "buildingName": "Gedung C",
     "typeId": "km-luar",
     "typeName": "Kamar Mandi Luar",
-    "price": 720000,
+    "price": 700000,
     "status": "available",
-    "size": "3.5x3m",
+    "size": "3x3m",
     "features": [
       "Kasur & Bantal",
       "Lemari Pakaian",
-      "Jendela Hadap Taman"
+      "Meja & Cermin"
     ]
   },
   {
-    "id": "B-02",
-    "number": "09",
-    "floor": 2,
+    "id": "C-12",
+    "number": "C12",
+    "floor": 1,
     "buildingId": "barat",
-    "buildingName": "Gedung Barat",
+    "buildingName": "Gedung C",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "C-13",
+    "number": "C13",
+    "floor": 1,
+    "buildingId": "barat",
+    "buildingName": "Gedung C",
     "typeId": "km-dalam",
     "typeName": "Kamar Mandi Dalam",
-    "price": 980000,
+    "price": 950000,
     "status": "available",
-    "size": "3.5x4m",
+    "size": "3x4m",
     "features": [
-      "Kamar Mandi Dalam",
-      "Kasur Springbed",
-      "Balkon Pribadi"
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "C-14",
+    "number": "C14",
+    "floor": 1,
+    "buildingId": "barat",
+    "buildingName": "Gedung C",
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "price": 950000,
+    "status": "available",
+    "size": "3x4m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "C-21",
+    "number": "C21",
+    "floor": 2,
+    "buildingId": "barat",
+    "buildingName": "Gedung C",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "C-22",
+    "number": "C22",
+    "floor": 2,
+    "buildingId": "barat",
+    "buildingName": "Gedung C",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "C-23",
+    "number": "C23",
+    "floor": 2,
+    "buildingId": "barat",
+    "buildingName": "Gedung C",
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "price": 700000,
+    "status": "available",
+    "size": "3x3m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
+    ]
+  },
+  {
+    "id": "C-24",
+    "number": "C24",
+    "floor": 2,
+    "buildingId": "barat",
+    "buildingName": "Gedung C",
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "price": 950000,
+    "status": "available",
+    "size": "3x4m",
+    "features": [
+      "Kasur & Bantal",
+      "Lemari Pakaian",
+      "Meja & Cermin"
     ]
   }
 ]

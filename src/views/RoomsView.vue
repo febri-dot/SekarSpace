@@ -10,7 +10,7 @@ const route = useRoute()
 
 // Step Management
 const currentStep = ref<number>(1)
-const selectedType = ref<'km-luar' | 'km-dalam'>('km-luar')
+const selectedType = ref<'km-luar' | 'km-dalam' | null>(null)
 const selectedBuildingId = ref<string>('utama')
 const selectedRoomId = ref<string | null>(null)
 const activeFloor = ref<'floor1' | 'floor2'>('floor1')
@@ -26,42 +26,37 @@ const galleryImages = [
 ]
 
 // Calculator & Estimator State for Step 3
-const calcDuration = ref<number>(1) // Months: 1 - 12
-const calcAddonParking = ref<boolean>(false)
-const calcAddonLaundry = ref<boolean>(false)
+const durationOptions = [1, 3, 6, 12]
+const durationIndex = ref<number>(0) // 0 = 1 month, 1 = 3 months, 2 = 6 months, 3 = 12 months
+const calcDuration = computed(() => durationOptions[durationIndex.value] || 1)
 
-// Booking Modal State
-const isModalOpen = ref(false)
-const bookingForm = ref({
-  fullName: '',
-  phone: '',
-  startDate: '',
-  notes: ''
-})
-const isSubmitted = ref(false)
+const calcAddonExtraPerson = ref<boolean>(false)
+const calcAddonCarParking = ref<boolean>(false)
+
+
 
 // Building Data Definition
 const buildingList = [
   {
     id: 'utama',
-    name: 'Gedung Utama (Depan)',
-    desc: 'Dekat dengan pagar utama, area parkir utama, dan musholla.',
+    name: 'Gedung A',
+    desc: 'Memiliki 10 kamar yang terbagi dalam 2 lantai.',
     badge: 'Favorit',
-    facilities: ['Parkir Motor Luar', 'CCTV 24 Jam', 'Dapur Bersama Lt.1', 'Ruang Tamu Utama']
+    facilities: ['Garasi Motor', 'Wi-Fi & CCTV 24 Jam', 'Dapur Umum Lt.1', 'Ruang Tamu', 'Area Jemur Atas', 'Mesin Cuci', 'Kulkas & TV', 'Token Listrik Bersama']
   },
   {
     id: 'timur',
-    name: 'Gedung Timur (Tengah)',
-    desc: 'Suasana lebih tenang, dekat area santai & musholla.',
+    name: 'Gedung B',
+    desc: 'Memiliki 6 kamar yang terbagi dalam 2 lantai.',
     badge: 'Tenang',
-    facilities: ['Musholla Bersama', 'Dapur Bersama Lt.1', 'WiFi Dedicated', 'Dispenser Air']
+    facilities: ['Garasi Motor', 'Wi-Fi & CCTV 24 Jam', 'Dapur Umum Lt.2', 'Area Jemur Atas', 'Kulkas & TV', 'Token Listrik Bersama']
   },
   {
     id: 'barat',
-    name: 'Gedung Barat (Belakang)',
-    desc: 'Balkon luas di lantai 2, pemandangan asri dekat area laundry.',
+    name: 'Gedung C',
+    desc: 'Memiliki 8 kamar yang terbagi dalam 2 lantai.',
     badge: 'View Asri',
-    facilities: ['Mesin Cuci Bersama', 'Area Jemur Atas', 'Parkir Motor Dalam', 'Balkon Santai']
+    facilities: ['Garasi Motor', 'Wi-Fi & CCTV 24 Jam', 'Dapur Umum Tiap Lantai', 'Ruang Tamu', 'Area Jemur Atas', 'Kulkas & TV', 'Token Listrik Bersama']
   }
 ]
 
@@ -85,8 +80,7 @@ const selectedRoom = computed<RoomData | null>(() => {
     const found = rooms.value.find(r => r.id === selectedRoomId.value)
     if (found) return found
   }
-  // Fallback to first available room in building or first room
-  return availableRoomsInBuilding.value[0] || roomsInSelectedBuilding.value[0] || rooms.value[0] || null
+  return null
 })
 
 // Floor Plan Nodes for Selected Building
@@ -106,47 +100,89 @@ const buildingFloorPlanNodes = computed(() => {
       roomData: r
     }))
 
-  // Add communal nodes depending on floor
-  if (floorNum === 1) {
-    return [
-      ...roomNodes,
-      { id: 'f1-dapur', number: 'F-01', title: 'Dapur Bersama', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
-      { id: 'f1-tamu', number: 'F-02', title: 'Ruang Tamu', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-group', isRoom: false }
-    ]
-  } else {
-    return [
-      ...roomNodes,
-      { id: 'f2-balkon', number: 'F-03', title: 'Balkon Santai', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-sun', isRoom: false },
-      { id: 'f2-jemuran', number: 'F-04', title: 'Area Jemuran', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-closet', isRoom: false }
-    ]
+  let communalNodes: any[] = []
+  const bId = selectedBuildingId.value
+
+  if (bId === 'utama') {
+    if (floorNum === 1) {
+      communalNodes = [
+        { id: 'u-f1-km1', number: 'F-01', title: 'Kamar Mandi Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
+        { id: 'u-f1-dapur', number: 'F-02', title: 'Dapur Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
+        { id: 'u-f1-tamu', number: 'F-03', title: 'Ruang Tamu', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-group', isRoom: false }
+      ]
+    } else {
+      communalNodes = [
+        { id: 'u-f2-km1', number: 'F-04', title: 'Kamar Mandi Umum 1', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
+        { id: 'u-f2-km2', number: 'F-05', title: 'Kamar Mandi Umum 2', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
+        { id: 'u-f2-jemuran', number: 'F-06', title: 'Area Jemuran', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-closet', isRoom: false },
+        { id: 'u-f2-balkon', number: 'F-07', title: 'Balkon', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-sun', isRoom: false }
+      ]
+    }
+  } else if (bId === 'timur') {
+    if (floorNum === 1) {
+      communalNodes = [
+        { id: 't-f1-km1', number: 'F-01', title: 'Kamar Mandi Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false }
+      ]
+    } else {
+      communalNodes = [
+        { id: 't-f2-km1', number: 'F-02', title: 'Kamar Mandi Umum 1', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
+        { id: 't-f2-km2', number: 'F-03', title: 'Kamar Mandi Umum 2', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
+        { id: 't-f2-dapur', number: 'F-04', title: 'Dapur Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
+        { id: 't-f2-balkon', number: 'F-05', title: 'Balkon', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-sun', isRoom: false },
+        { id: 't-f2-jemuran', number: 'F-06', title: 'Area Jemuran', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-closet', isRoom: false }
+      ]
+    }
+  } else if (bId === 'barat') {
+    if (floorNum === 1) {
+      communalNodes = [
+        { id: 'b-f1-km1', number: 'F-01', title: 'Kamar Mandi Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
+        { id: 'b-f1-dapur', number: 'F-02', title: 'Dapur Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
+        { id: 'b-f1-tamu', number: 'F-03', title: 'Ruang Tamu', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-group', isRoom: false }
+      ]
+    } else {
+      communalNodes = [
+        { id: 'b-f2-km1', number: 'F-04', title: 'Kamar Mandi Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
+        { id: 'b-f2-dapur', number: 'F-05', title: 'Dapur Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
+        { id: 'b-f2-jemuran', number: 'F-06', title: 'Area Jemuran', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-closet', isRoom: false },
+        { id: 'b-f2-balkon', number: 'F-07', title: 'Balkon', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-sun', isRoom: false }
+      ]
+    }
   }
+
+  return [...roomNodes, ...communalNodes]
 })
 
 // Calculator Calculations
-const basePricePerMonth = computed(() => {
-  if (!selectedRoom.value) return 700000
-  let price = selectedRoom.value.price
-  if (calcDuration.value >= 12) {
-    price = price * 0.9 // 10% discount for 1 year
-  } else if (calcDuration.value >= 3) {
-    price = price * 0.95 // 5% discount for 3 months
+const basePriceTotal = computed(() => {
+  if (!selectedRoom.value) return 0
+  
+  const typeId = selectedRoom.value.typeId
+  const duration = calcDuration.value
+  
+  if (typeId === 'km-luar') {
+    if (duration === 1) return 600000
+    if (duration === 3) return 1800000
+    if (duration === 6) return 3500000
+    if (duration === 12) return 7000000
+  } else if (typeId === 'km-dalam') {
+    if (duration === 1) return 850000
+    if (duration === 3) return 2000000
+    if (duration === 6) return 4000000
+    if (duration === 12) return 8000000
   }
-  return price
+  
+  return selectedRoom.value.price * duration
 })
 
-const totalAddonsPerMonth = computed(() => {
+const totalAddonsTotal = computed(() => {
   let addons = 0
-  if (calcAddonParking.value) addons += 50000
-  if (calcAddonLaundry.value) addons += 75000
+  if (calcAddonExtraPerson.value) addons += 250000 // Flat fee
+  if (calcAddonCarParking.value) addons += 50000 * calcDuration.value
   return addons
 })
 
-const totalPerMonthWithAddons = computed(() => {
-  return basePricePerMonth.value + totalAddonsPerMonth.value
-})
-
 const grandTotalEstimator = computed(() => {
-  return totalPerMonthWithAddons.value * calcDuration.value
+  return basePriceTotal.value + totalAddonsTotal.value
 })
 
 const calcWaMessage = computed(() => {
@@ -155,8 +191,8 @@ const calcWaMessage = computed(() => {
   const bldName = currentBuilding.value.name
   const roomType = selectedRoom.value.typeName
   const addons = []
-  if (calcAddonParking.value) addons.push('Parkir Motor Dedicated (+Rp 50rb/bln)')
-  if (calcAddonLaundry.value) addons.push('Jasa Laundry Berlangganan (+Rp 75rb/bln)')
+  if (calcAddonExtraPerson.value) addons.push('Penghuni Lebih dari 1 Orang (+Rp 250rb flat)')
+  if (calcAddonCarParking.value) addons.push('Parkir Mobil (+Rp 50rb/bln)')
   const addonStr = addons.length > 0 ? addons.join(', ') : 'Tanpa Layanan Tambahan'
 
   const text = `Halo Admin Sekar Space, saya berminat memesan Kamar ${roomNum} (${bldName} - ${roomType}) dengan rincian:
@@ -177,27 +213,39 @@ const selectType = (type: 'km-luar' | 'km-dalam') => {
 
 const selectBuilding = (bId: string) => {
   selectedBuildingId.value = bId
-  // Pick first available room in this building if available
-  const match = rooms.value.find(r => r.buildingId === bId && r.status === 'available')
-  if (match) {
-    selectedRoomId.value = match.id
-  }
-  currentStep.value = 2
+  selectedRoomId.value = null // Reset room selection when building changes
 }
 
 const selectRoomFromFloorPlan = (roomNode: any) => {
   if (!roomNode.isRoom) return
   if (roomNode.roomData.status === 'occupied') return
+  if (selectedType.value && roomNode.typeId !== selectedType.value) {
+    alert(`Kamar ini bertipe ${roomNode.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'}. Silakan pilih kamar tipe ${selectedType.value === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'} sesuai pilihan Anda di Langkah 1.`)
+    return
+  }
   selectedRoomId.value = roomNode.roomData.id
   currentStep.value = 3
 }
 
 const selectRoomDirect = (room: RoomData) => {
   if (room.status === 'occupied') return
+  if (selectedType.value && room.typeId !== selectedType.value) {
+    alert(`Kamar ini bertipe ${room.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'}. Silakan pilih kamar tipe ${selectedType.value === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'} sesuai pilihan Anda di Langkah 1.`)
+    return
+  }
   selectedRoomId.value = room.id
 }
 
 const goToStep = (step: number) => {
+  if (step >= 2 && !selectedType.value) {
+    alert('Silakan pilih Tipe Kamar terlebih dahulu.')
+    return
+  }
+  if (step === 3 && !selectedRoomId.value) {
+    alert('Silakan pilih Kamar yang tersedia terlebih dahulu.')
+    return
+  }
+
   currentStep.value = step
   window.scrollTo({ top: 180, behavior: 'smooth' })
 }
@@ -206,25 +254,7 @@ const formatRupiah = (val: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
 }
 
-const openBookingModal = () => {
-  isModalOpen.value = true
-  isSubmitted.value = false
-}
 
-const closeModal = () => {
-  isModalOpen.value = false
-}
-
-const submitBookingForm = () => {
-  if (!bookingForm.value.fullName || !bookingForm.value.phone) {
-    alert('Mohon isi nama lengkap dan nomor WhatsApp Anda.')
-    return
-  }
-  if (selectedRoom.value) {
-    bookRoom(selectedRoom.value.id)
-  }
-  isSubmitted.value = true
-}
 
 const applyRouteQuery = () => {
   const queryTipe = route.query.tipe as string
@@ -236,10 +266,6 @@ const applyRouteQuery = () => {
 
 onMounted(() => {
   applyRouteQuery()
-  // Auto select default room ID
-  if (availableRoomsInBuilding.value.length > 0) {
-    selectedRoomId.value = availableRoomsInBuilding.value[0]!.id
-  }
 })
 
 watch(() => route.query.tipe, () => {
@@ -296,7 +322,7 @@ watch(() => route.query.tipe, () => {
       <!-- SELECTION SUMMARY BAR -->
       <div class="selection-summary">
         <span class="summary-chip" @click="goToStep(1)">
-          <i class='bx bx-bed'></i> Tipe: {{ selectedType === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar' }}
+          <i class='bx bx-bed'></i> Tipe: {{ selectedType === 'km-dalam' ? 'Kamar Mandi Dalam' : selectedType === 'km-luar' ? 'Kamar Mandi Luar' : 'Belum Dipilih' }}
         </span>
         <span class="summary-separator">›</span>
         <span class="summary-chip" @click="goToStep(2)">
@@ -330,7 +356,7 @@ watch(() => route.query.tipe, () => {
             <ul class="type-features">
               <li><i class='bx bx-check-circle'></i> Ukuran 3 x 3 Meter</li>
               <li><i class='bx bx-check-circle'></i> Kasur, Bantal & Lemari Pakaian</li>
-              <li><i class='bx bx-check-circle'></i> Meja & Cermin Belajar</li>
+              <li><i class='bx bx-check-circle'></i> Meja & Cermin</li>
               <li><i class='bx bx-check-circle'></i> WiFi Cepat 24 Jam</li>
               <li><i class='bx bx-check-circle'></i> Access Dapur & Kulkas Bersama</li>
             </ul>
@@ -357,7 +383,7 @@ watch(() => route.query.tipe, () => {
             <p class="type-desc">Kamar lebih luas dengan kamar mandi pribadi di dalam kamar untuk kenyamanan & privasi ekstra.</p>
             <ul class="type-features">
               <li><i class='bx bx-check-circle'></i> Ukuran 3 x 4 Meter</li>
-              <li><i class='bx bx-check-circle'></i> Kamar Mandi Dalam (Shower & Closet)</li>
+              <li><i class='bx bx-check-circle'></i> Kamar Mandi Dalam (Ember & Closet)</li>
               <li><i class='bx bx-check-circle'></i> Kasur Springbed & Lemari 2 Pintu</li>
               <li><i class='bx bx-check-circle'></i> Meja, Cermin & Token Listrik</li>
               <li><i class='bx bx-check-circle'></i> WiFi Cepat 24 Jam</li>
@@ -460,7 +486,8 @@ watch(() => route.query.tipe, () => {
                 :class="[
                   node.status.toLowerCase().replace(/\s+/g, '-'),
                   node.typeId,
-                  { 'is-clickable': node.isRoom && node.status === 'Tersedia' },
+                  { 'is-clickable': node.isRoom && node.status === 'Tersedia' && node.typeId === selectedType },
+                  { 'is-disabled-type': node.isRoom && node.typeId !== selectedType },
                   { 'is-selected': selectedRoomId === node.id }
                 ]"
                 @click="selectRoomFromFloorPlan(node)"
@@ -475,13 +502,18 @@ watch(() => route.query.tipe, () => {
                 <div class="node-num">{{ node.title }}</div>
                 <div class="node-type">{{ node.type }}</div>
                 <span class="node-badge">{{ node.status }}</span>
-                <span v-if="node.isRoom && node.status === 'Tersedia'" class="node-click-hint">Pilih Kamar Ini</span>
+                <span v-if="node.isRoom && node.status === 'Tersedia' && node.typeId === selectedType" class="node-click-hint">Pilih Kamar Ini</span>
               </div>
             </div>
           </div>
 
           <div class="floor-plan-cta">
-            <button class="btn btn-primary" @click="goToStep(3)">
+            <button 
+              class="btn btn-primary" 
+              @click="goToStep(3)" 
+              :disabled="!selectedRoomId"
+              :title="!selectedRoomId ? 'Pilih kamar terlebih dahulu' : ''"
+            >
               Lanjutkan ke Detail & Pesan Kamar <i class='bx bx-right-arrow-alt'></i>
             </button>
           </div>
@@ -556,7 +588,7 @@ watch(() => route.query.tipe, () => {
                 <div class="spec-icon"><i class='bx bx-zap'></i></div>
                 <div class="spec-text">
                   <small>Listrik</small>
-                  <strong>Token (Meteran Mandiri)</strong>
+                  <strong>Token Bersama</strong>
                 </div>
               </div>
             </div>
@@ -574,9 +606,10 @@ watch(() => route.query.tipe, () => {
               class="room-number-pill"
               :class="[
                 rm.status === 'available' ? 'pill-available' : 'pill-occupied',
-                { selected: selectedRoomId === rm.id }
+                { selected: selectedRoomId === rm.id },
+                { 'pill-disabled': rm.typeId !== selectedType }
               ]"
-              :disabled="rm.status === 'occupied'"
+              :disabled="rm.status === 'occupied' || rm.typeId !== selectedType"
               @click="selectRoomDirect(rm)"
             >
               <i class='bx' :class="rm.status === 'available' ? 'bx-key' : 'bx-lock-alt'"></i>
@@ -603,16 +636,16 @@ watch(() => route.query.tipe, () => {
                 </label>
                 <input 
                   type="range" 
-                  min="1" 
-                  max="12" 
-                  v-model.number="calcDuration" 
+                  min="0" 
+                  max="3" 
+                  v-model.number="durationIndex" 
                   class="estimator-range"
                 />
-                <div class="range-marks">
+                <div class="range-marks" style="justify-content: space-between;">
                   <span>1 Bln</span>
-                  <span>3 Bln (Diskon 5%)</span>
+                  <span>3 Bln</span>
                   <span>6 Bln</span>
-                  <span>12 Bln (Diskon 10%)</span>
+                  <span>12 Bln</span>
                 </div>
               </div>
 
@@ -620,18 +653,18 @@ watch(() => route.query.tipe, () => {
               <div class="estimator-group">
                 <label class="estimator-label"><i class='bx bx-plus-circle'></i> Layanan Tambahan (Opsional)</label>
                 <div class="checkbox-group">
-                  <label class="checkbox-card" :class="{ checked: calcAddonParking }">
-                    <input type="checkbox" v-model="calcAddonParking" />
+                  <label class="checkbox-card" :class="{ checked: calcAddonExtraPerson }">
+                    <input type="checkbox" v-model="calcAddonExtraPerson" />
                     <div class="checkbox-text">
-                      <strong>Parkir Motor Dedicated</strong>
-                      <span>+ Rp 50.000 / bulan</span>
+                      <strong>Penghuni Lebih dari 1 Orang</strong>
+                      <span>+ Rp 250.000 (Flat/Tetap)</span>
                     </div>
                   </label>
-                  <label class="checkbox-card" :class="{ checked: calcAddonLaundry }">
-                    <input type="checkbox" v-model="calcAddonLaundry" />
+                  <label class="checkbox-card" :class="{ checked: calcAddonCarParking }">
+                    <input type="checkbox" v-model="calcAddonCarParking" />
                     <div class="checkbox-text">
-                      <strong>Jasa Laundry Berlangganan</strong>
-                      <span>+ Rp 75.000 / bulan</span>
+                      <strong>Parkir Mobil</strong>
+                      <span>+ Rp 50.000 / bulan</span>
                     </div>
                   </label>
                 </div>
@@ -642,40 +675,38 @@ watch(() => route.query.tipe, () => {
             <div class="estimator-summary-panel">
               <div class="summary-badge"><i class='bx bx-receipt'></i> Rincian Biaya</div>
               <div class="summary-row">
-                <span>Harga Kamar per Bulan:</span>
-                <strong>{{ formatRupiah(basePricePerMonth) }}</strong>
+                <span>Harga Kamar ({{ calcDuration }} Bulan):</span>
+                <strong>{{ formatRupiah(basePriceTotal) }}</strong>
               </div>
-              <div v-if="calcAddonParking" class="summary-row">
-                <span>Parkir Motor Dedicated:</span>
-                <strong>+ {{ formatRupiah(50000) }}</strong>
+              <div v-if="calcAddonExtraPerson" class="summary-row">
+                <span>Tambahan Penghuni:</span>
+                <strong>+ {{ formatRupiah(250000) }}</strong>
               </div>
-              <div v-if="calcAddonLaundry" class="summary-row">
-                <span>Jasa Laundry Berlangganan:</span>
-                <strong>+ {{ formatRupiah(75000) }}</strong>
+              <div v-if="calcAddonCarParking" class="summary-row">
+                <span>Parkir Mobil ({{ calcDuration }} Bln):</span>
+                <strong>+ {{ formatRupiah(50000 * calcDuration) }}</strong>
               </div>
               <div class="summary-divider"></div>
-              <div class="summary-row summary-total">
-                <span>Total per Bulan:</span>
-                <strong class="text-primary">{{ formatRupiah(totalPerMonthWithAddons) }}</strong>
-              </div>
               <div class="summary-row summary-grand">
-                <span>Estimasi Total ({{ calcDuration }} Bulan):</span>
+                <span>Estimasi Total Pembayaran:</span>
                 <strong class="grand-price">{{ formatRupiah(grandTotalEstimator) }}</strong>
               </div>
 
-              <!-- Booking CTA Buttons -->
-              <div class="booking-cta-group">
-                <a 
-                  :href="`https://wa.me/62895378020456?text=${calcWaMessage}`" 
-                  target="_blank" 
-                  rel="noopener"
-                  class="btn btn-primary btn-wa"
-                >
-                  <i class='bx bxl-whatsapp'></i> Pesan via WhatsApp
-                </a>
-                <button class="btn btn-secondary btn-form" @click="openBookingModal">
-                  <i class='bx bx-edit-alt'></i> Form Booking Online
-                </button>
+              <!-- Booking CTA -->
+              <a 
+                :href="`https://wa.me/62895378020456?text=${calcWaMessage}`" 
+                target="_blank" 
+                rel="noopener"
+                class="btn btn-primary btn-wa btn-wa-full"
+              >
+                <i class='bx bxl-whatsapp'></i> Pesan via WhatsApp
+              </a>
+
+              <!-- Info Box -->
+              <div class="wa-info-box"><i class='bx bx-info-circle'></i><strong> Cara Pemesanan</strong>
+                <div>
+                  <p>Klik tombol di atas, lalu kirim pesan ke admin. Tim kami akan membalas dalam waktu kurang dari 1 jam pada jam kerja (08.00–17.00 WIB).</p>
+                </div>
               </div>
             </div>
           </div>
@@ -689,57 +720,7 @@ watch(() => route.query.tipe, () => {
       </section>
     </main>
 
-    <!-- ONLINE BOOKING FORM MODAL -->
-    <div v-if="isModalOpen" class="modal-backdrop" @click.self="closeModal">
-      <div class="modal-box">
-        <button class="modal-close" @click="closeModal"><i class='bx bx-x'></i></button>
 
-        <div v-if="!isSubmitted">
-          <div class="modal-header">
-            <h2>Formulir Booking Kamar {{ selectedRoom?.number }}</h2>
-            <p>{{ currentBuilding.name }} — {{ selectedRoom?.typeName }}</p>
-          </div>
-
-          <form @submit.prevent="submitBookingForm" class="booking-form">
-            <div class="form-group">
-              <label>Nama Lengkap (Sesuai KTP)</label>
-              <input type="text" v-model="bookingForm.fullName" placeholder="Masukkan nama lengkap Anda" required />
-            </div>
-
-            <div class="form-group">
-              <label>Nomor WhatsApp / HP</label>
-              <input type="tel" v-model="bookingForm.phone" placeholder="Contoh: 081234567890" required />
-            </div>
-
-            <div class="form-group">
-              <label>Rencana Tanggal Masuk</label>
-              <input type="date" v-model="bookingForm.startDate" required />
-            </div>
-
-            <div class="form-group">
-              <label>Catatan / Pertanyaan Tambahan</label>
-              <textarea v-model="bookingForm.notes" rows="2" placeholder="Catatan atau pertanyaan untuk pengelola..."></textarea>
-            </div>
-
-            <div class="form-summary">
-              <span>Estimasi Total ({{ calcDuration }} Bulan):</span>
-              <strong>{{ formatRupiah(grandTotalEstimator) }}</strong>
-            </div>
-
-            <button type="submit" class="btn btn-primary submit-booking-btn">
-              <i class='bx bx-send'></i> Kirim Permohonan Pesan
-            </button>
-          </form>
-        </div>
-
-        <div v-else class="modal-success">
-          <div class="success-icon"><i class='bx bx-check-circle'></i></div>
-          <h2>Permohonan Terkirim!</h2>
-          <p>Terima kasih, <strong>{{ bookingForm.fullName }}</strong>. Permohonan booking Kamar {{ selectedRoom?.number }} telah kami terima. Pengelola Sekar Space akan menghubungi Anda via WhatsApp di <strong>{{ bookingForm.phone }}</strong> untuk konfirmasi.</p>
-          <button class="btn btn-primary" @click="closeModal">Tutup</button>
-        </div>
-      </div>
-    </div>
 
     <Footer />
   </div>
@@ -1386,6 +1367,12 @@ watch(() => route.query.tipe, () => {
   margin-top: 6px;
 }
 
+.floor-node-card.is-disabled-type {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(80%);
+}
+
 .floor-plan-cta {
   display: flex;
   justify-content: flex-end;
@@ -1647,6 +1634,15 @@ watch(() => route.query.tipe, () => {
   opacity: 0.5;
   cursor: not-allowed;
   background: #FEE2E2;
+}
+
+.room-number-pill.pill-disabled {
+  background: var(--light);
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+  filter: grayscale(100%);
 }
 
 .room-number-pill i {

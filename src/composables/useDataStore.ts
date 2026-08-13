@@ -64,7 +64,7 @@ export interface CmsSettings {
   heroImage3: string
 }
 
-const STORAGE_ROOMS = 'sekar_space_rooms_v4'
+const STORAGE_ROOMS = 'sekar_space_rooms_v5'
 const STORAGE_COMPLAINTS = 'sekar_space_complaints_v4'
 const STORAGE_PAYMENTS = 'sekar_space_payments_v4'
 const STORAGE_CMS = 'sekar_space_cms_v2'
