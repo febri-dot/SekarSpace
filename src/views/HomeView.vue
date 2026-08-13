@@ -265,37 +265,37 @@ const facilities = [
     icon: 'bx bx-wifi', 
     title: 'WiFi Cepat', 
     desc: 'Internet berkecepatan tinggi tersedia 24 jam untuk kebutuhan belajar dan bekerja.',
-    details: 'Masing-masing lantai dilengkapi router dedicated dengan kecepatan hingga 100Mbps. Sangat stabil untuk video call, streaming, hingga tugas kuliah.'
+    details: 'Internet berkecepatan tinggi tersedia selama 24 jam tanpa biaya tambahan. Koneksi ini mendukung berbagai kebutuhan, seperti mengerjakan tugas kuliah, mengikuti kelas online, hingga menyelesaikan pekerjaan dengan nyaman.'
   },
   { 
     icon: 'bx bx-shield-quarter', 
     title: 'Keamanan 24 Jam', 
     desc: 'Sistem keamanan terpadu dengan CCTV dan akses terbatas untuk kenyamanan Anda.',
-    details: 'Dilengkapi CCTV 24 jam di sudut strategis, pagar gerbang dengan akses kunci khusus, serta lingkungan yang kondusif & terpantau pengelola.'
+    details: 'CCTV beroperasi selama 24 jam untuk memantau area sekitar pintu utama. Sistem pengawasan ini membantu menjaga keamanan sekaligus memberikan rasa aman, privasi, dan kenyamanan bagi penghuni.'
   },
   { 
     icon: 'bx bxs-car-garage', 
     title: 'Parkir Luas', 
     desc: 'Area parkir yang memadai untuk motor dan sepeda, aman dan terlindung.',
-    details: 'Area parkir dalam ruangan (cover indoor) terlindung dari hujan dan panas matahari, dilengkapi sistem penataan tempat parkir pribadi.'
+    details: 'Area parkir indoor yang luas dan memadai untuk motor dan sepeda. Parkir terlindung dari panas dan hujan serta membantu menjaga kendaraan tetap aman selama ditinggalkan.'
   },
   { 
     icon: 'bx bx-fridge', 
     title: 'Dapur Bersama', 
     desc: 'Dapur lengkap dengan peralatan memasak yang bisa digunakan bersama.',
-    details: 'Tersedia kompor gas, kulkas bersama, dispenser air minum gratis, microwave, dan perlengkapan memasak lengkap yang selalu dibersihkan rutin.'
+    details: 'Dapur bersama dilengkapi kompor gas, kulkas, serta berbagai peralatan memasak yang dapat digunakan bersama. Cocok untuk kebutuhan memasak sehari-hari.'
   },
   { 
     icon: 'bx bxs-tv', 
     title: 'TV Bersama', 
     desc: 'Tersedia fasilitas televisi sebagai sarana hiburan untuk bersantai dan menikmati waktu bersama.',
-    details: 'Ruang santai dengan TV layar datar, meja sofa empuk, dan koneksi Smart TV untuk menonton tayangan favorit saat melepas penat.'
+    details: 'Tersedia ruang bersama yang dilengkapi TV, kursi, dan karpet untuk bersantai.  Dilengkapi koneksi Smart TV untuk menonton tayangan favorit dan menikmati waktu luang bersama.'
   },
   { 
     icon: 'bx bxs-group', 
     title: 'Ruang Tamu', 
     desc: 'Tersedia ruang tamu yang nyaman untuk menerima tamu, bersantai, dan berkumpul bersama.',
-    details: 'Area khusus untuk menerima kunjungan keluarga atau teman wanita dengan suasana yang sopan, rapi, dan menjaga privasi area kamar.'
+    details: 'Ruang tamu yang nyaman dan tertata, dilengkapi sofa dan meja untuk menerima tamu, bersantai, atau berkumpul bersama. Cocok untuk menciptakan suasana yang hangat dan nyaman.'
   }
 ]
 
@@ -366,7 +366,7 @@ const galleryRow1All = [
     categoryLabel: 'Fasilitas Umum',
     image: '/assets/images/gallery-livingroom.png',
     sizeClass: 'card-wide',
-    desc: 'Ruang tamu hangat dan nyaman untuk berkumpul, bersantai, atau menerima kunjungan keluarga.'
+    desc: 'Ruang tamu nyaman dengan sofa dan meja, cocok untuk menerima tamu dan bersantai bersama.'
   },
   {
     id: 102,
@@ -375,7 +375,7 @@ const galleryRow1All = [
     categoryLabel: 'Kamar Standard',
     image: '/assets/images/room-single.png',
     sizeClass: 'card-standard',
-    desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur empuk, lemari, cermin, dan meja belajar.'
+    desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur, bantal, guling, lemari, cermin, rak buku dan meja belajar.'
   },
   {
     id: 103,
@@ -384,7 +384,7 @@ const galleryRow1All = [
     categoryLabel: 'Fasilitas Umum',
     image: '/assets/images/gallery-kitchen.png',
     sizeClass: 'card-tall',
-    desc: 'Dapur lengkap dengan kompor, kulkas bersama, dan kabinet penyimpanan yang rapi dan selalu terawat.'
+    desc: 'Dapur lengkap dengan kompor, peralatan memasak, dan rak penyimpanan yang tertata rapi serta terawat.'
   },
   {
     id: 104,
@@ -393,7 +393,7 @@ const galleryRow1All = [
     categoryLabel: 'Kamar Premium',
     image: '/assets/images/room-deluxe.png',
     sizeClass: 'card-standard',
-    desc: 'Kamar mandi dalam eksklusif dengan pencahayaan alami, cermin, dan interior modern minimalis yang bersih.'
+    desc: 'Kamar mandi dalam untuk kamar premium, dilengkapi perlengkapan mandi dan interior modern minimalis yang bersih dan nyaman.'
   },
   {
     id: 105,
@@ -402,7 +402,7 @@ const galleryRow1All = [
     categoryLabel: 'Suasana Kost',
     image: '/assets/images/hero-bg.png',
     sizeClass: 'card-large',
-    desc: 'Lingkungan kost yang asri, tenang, dan aman khusus muslimah dengan pagar pengaman terpadu.'
+    desc: 'Lingkungan kost yang asri, tenang, dan aman, khusus muslimah dengan area tertutup untuk menjaga privasi.'
   },
   {
     id: 106,
@@ -411,7 +411,7 @@ const galleryRow1All = [
     categoryLabel: 'Kamar Kapasitas 2',
     image: '/assets/images/room-double.png',
     sizeClass: 'card-standard',
-    desc: 'Kamar luas untuk berdua dengan kasur berkualitas, lemari ganda, dan suasana belajar yang kondusif.'
+    desc: 'Kamar luas dengan kapasitas maksimal 2 orang, dilengkapi kasur, lemari, bantal, guling, dan rak buku yang dapat digunakan bersama.'
   }
 ]
 
@@ -423,7 +423,7 @@ const galleryRow2All = [
     categoryLabel: 'Kamar Premium',
     image: '/assets/images/room-deluxe.png',
     sizeClass: 'card-standard',
-    desc: 'Kamar mandi dalam eksklusif dengan pencahayaan alami, cermin, dan interior modern minimalis yang bersih.'
+    desc: 'Kamar mandi dalam untuk kamar premium, dilengkapi perlengkapan mandi dan interior modern minimalis yang bersih dan nyaman.'
   },
   {
     id: 202,
@@ -432,7 +432,7 @@ const galleryRow2All = [
     categoryLabel: 'Fasilitas Umum',
     image: '/assets/images/gallery-kitchen.png',
     sizeClass: 'card-large',
-    desc: 'Dapur lengkap dengan kompor, kulkas bersama, dan kabinet penyimpanan yang rapi dan selalu terawat.'
+    desc: 'Dapur lengkap dengan kompor, peralatan memasak, dan rak penyimpanan yang tertata rapi serta terawat.'
   },
   {
     id: 203,
@@ -441,7 +441,7 @@ const galleryRow2All = [
     categoryLabel: 'Kamar Kapasitas 2',
     image: '/assets/images/room-double.png',
     sizeClass: 'card-tall',
-    desc: 'Kamar luas untuk berdua dengan kasur berkualitas, lemari ganda, dan suasana belajar yang kondusif.'
+    desc: 'Kamar luas dengan kapasitas maksimal 2 orang, dilengkapi kasur, lemari, bantal, guling, dan rak buku yang dapat digunakan bersama.'
   },
   {
     id: 204,
@@ -450,7 +450,7 @@ const galleryRow2All = [
     categoryLabel: 'Fasilitas Umum',
     image: '/assets/images/gallery-livingroom.png',
     sizeClass: 'card-wide',
-    desc: 'Ruang tamu hangat dan nyaman untuk berkumpul, bersantai, atau menerima kunjungan keluarga.'
+    desc: 'Ruang tamu nyaman dengan sofa dan meja, cocok untuk menerima tamu dan bersantai bersama.'
   },
   {
     id: 205,
@@ -459,7 +459,7 @@ const galleryRow2All = [
     categoryLabel: 'Kamar Standard',
     image: '/assets/images/room-single.png',
     sizeClass: 'card-standard',
-    desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur empuk, lemari, cermin, dan meja belajar.'
+    desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur, bantal, guling, lemari, cermin, rak buku dan meja belajar.'
   },
   {
     id: 206,
@@ -468,7 +468,7 @@ const galleryRow2All = [
     categoryLabel: 'Suasana Kost',
     image: '/assets/images/hero-bg.png',
     sizeClass: 'card-large',
-    desc: 'Lingkungan kost yang asri, tenang, dan aman khusus muslimah dengan pagar pengaman terpadu.'
+    desc: 'Lingkungan kost yang asri, tenang, dan aman, khusus muslimah dengan area tertutup untuk menjaga privasi.'
   }
 ]
 
