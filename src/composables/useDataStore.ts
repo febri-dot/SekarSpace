@@ -83,9 +83,9 @@ const defaultCmsSettings: CmsSettings = {
   priceKmDalamMonthly: 950000,
   priceKmLuarYearly: 650000,
   priceKmDalamYearly: 880000,
-  heroImage1: '/assets/images/hero-bg.png',
-  heroImage2: '/assets/images/room-deluxe.png',
-  heroImage3: '/assets/images/room-single.png'
+  heroImage1: '/assets/images/hero-gedung-depan.png',
+  heroImage2: '/assets/images/hero-kamar.png',
+  heroImage3: '/assets/images/hero-dapur.png'
 }
 
 const loadStorage = <T>(key: string, defaultValue: T): T => {
@@ -105,6 +105,22 @@ const rooms = ref<RoomData[]>(loadStorage(STORAGE_ROOMS, defaultRooms as RoomDat
 const complaints = ref<ComplaintData[]>(loadStorage(STORAGE_COMPLAINTS, defaultComplaints as ComplaintData[]))
 const payments = ref<PaymentData[]>(loadStorage(STORAGE_PAYMENTS, defaultPayments as PaymentData[]))
 const cmsSettings = ref<CmsSettings>(loadStorage(STORAGE_CMS, defaultCmsSettings))
+let isCmsChanged = false
+if (!cmsSettings.value.heroImage1 || cmsSettings.value.heroImage1 === '/assets/images/hero-bg.png') {
+  cmsSettings.value.heroImage1 = '/assets/images/hero-gedung-depan.png'
+  isCmsChanged = true
+}
+if (!cmsSettings.value.heroImage2 || cmsSettings.value.heroImage2 === '/assets/images/room-deluxe.png') {
+  cmsSettings.value.heroImage2 = '/assets/images/hero-kamar.png'
+  isCmsChanged = true
+}
+if (!cmsSettings.value.heroImage3 || cmsSettings.value.heroImage3 === '/assets/images/room-single.png') {
+  cmsSettings.value.heroImage3 = '/assets/images/hero-dapur.png'
+  isCmsChanged = true
+}
+if (isCmsChanged) {
+  localStorage.setItem(STORAGE_CMS, JSON.stringify(cmsSettings.value))
+}
 
 // Helper to physically write to disk JSON file via Vite API
 const writeJsonDisk = async (filename: 'rooms' | 'complaints' | 'payments', data: any) => {
