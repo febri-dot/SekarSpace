@@ -205,6 +205,43 @@ const formatRupiah = (val: number) => {
             </tbody>
           </table>
         </div>
+
+        <!-- MOBILE CARD VIEW FOR ADMIN PAYMENTS -->
+        <div class="mobile-payment-admin-cards">
+          <div v-for="pay in filteredPayments" :key="'mob-' + pay.id" class="mobile-pay-admin-card">
+            <div class="card-head">
+              <div>
+                <strong class="tenant-name">{{ pay.tenantName }}</strong>
+                <span class="period-pill"><i class='bx bx-calendar'></i> {{ pay.period }}</span>
+              </div>
+              <span class="status-pill" :class="pay.status">
+                {{ pay.status === 'paid' ? 'Lunas' : pay.status === 'pending' ? 'Perlu Konfirmasi' : 'Ditolak' }}
+              </span>
+            </div>
+            <div class="card-details">
+              <div><span>Nominal:</span> <strong class="text-primary">{{ formatRupiah(pay.amount) }}</strong></div>
+              <div><span>Metode:</span> <span>{{ pay.method }}</span></div>
+              <div><span>Tanggal:</span> <span>{{ pay.date }}</span></div>
+            </div>
+            <div class="card-actions">
+              <div v-if="pay.status === 'pending'" class="action-buttons full-w">
+                <button class="btn-action btn-confirm flex-1" @click="handleConfirmPayment(pay)">
+                  <i class='bx bx-check'></i> Konfirmasi Lunas
+                </button>
+                <button class="btn-action btn-reject" @click="handleRejectPayment(pay)">
+                  <i class='bx bx-x'></i> Tolak
+                </button>
+              </div>
+              <div v-else-if="pay.status === 'paid'" class="text-muted text-xs">
+                <i class='bx bx-check-circle text-success'></i> Lunas Terverifikasi
+              </div>
+              <div v-else class="text-muted text-xs">
+                <i class='bx bx-info-circle text-danger'></i> Ditolak Admin
+              </div>
+            </div>
+          </div>
+          <div v-if="filteredPayments.length === 0" class="empty-cell">Tidak ada data transaksi pembayaran yang ditemukan.</div>
+        </div>
       </div>
     </main>
 
@@ -580,9 +617,85 @@ const formatRupiah = (val: number) => {
   margin-top: 10px;
 }
 
+.mobile-payment-admin-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-pay-admin-card {
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 0.85rem;
+}
+
+.card-details div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-details span {
+  color: var(--text-muted);
+}
+
+.full-w {
+  width: 100%;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
 @media (max-width: 992px) {
-  .admin-main { margin-left: 0; }
+  .admin-main { margin-left: 0; padding: 20px; }
   .filter-bar { flex-direction: column; align-items: stretch; }
   .search-box { width: 100%; }
+  .table-wrapper { display: none !important; }
+  .mobile-payment-admin-cards { display: flex; }
+}
+
+@media (max-width: 768px) {
+  .admin-main { padding: 16px; }
+  .admin-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+  .admin-header h1 { font-size: 1.4rem; }
+  .admin-header button { width: 100%; justify-content: center; }
+  .admin-card { padding: 16px; }
+  .filter-pills { width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .filter-pill { flex-shrink: 0; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .modal-box { max-width: 92vw; max-height: 90vh; overflow-y: auto; padding: 24px 16px; }
+  .modal-footer { flex-direction: column; }
+  .modal-footer button { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .admin-main { padding: 12px; }
+  .admin-header h1 { font-size: 1.2rem; }
+  .admin-header p { font-size: 0.78rem; }
+  .admin-card { padding: 12px; border-radius: var(--radius-md); }
+  .filter-pills { -webkit-overflow-scrolling: touch; }
+  .filter-pill { font-size: 0.75rem; padding: 6px 10px; }
+  .modal-box { max-width: 96vw; padding: 20px 12px; border-radius: var(--radius-lg); }
 }
 </style>
