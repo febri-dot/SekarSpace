@@ -196,4 +196,18 @@ textarea {
 @media (max-width: 992px) {
   .main-content { margin-left: 0; padding: 20px; }
 }
+
+@media (max-width: 768px) {
+  .main-content { padding: 16px; }
+  h1 { font-size: 1.4rem; }
+  .container { padding: 18px 14px; }
+  .btn-submit, .btn-back { width: 100%; text-align: center; }
+  .back-btn { width: 100%; display: block; }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 12px; }
+  h1 { font-size: 1.2rem; }
+  .container { padding: 14px 12px; border-radius: var(--radius-md); }
+}
 </style>

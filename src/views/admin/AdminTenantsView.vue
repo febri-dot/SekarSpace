@@ -179,6 +179,32 @@ const handleDelete = (t: User) => {
             </tbody>
           </table>
         </div>
+
+        <!-- MOBILE CARD VIEW FOR TENANTS -->
+        <div class="mobile-tenant-cards">
+          <div v-for="t in filteredTenants" :key="'mob-' + t.id" class="mobile-tenant-card">
+            <div class="tenant-card-top">
+              <div>
+                <strong class="tenant-name">{{ t.name }}</strong>
+                <span class="username-badge">@{{ t.username }}</span>
+              </div>
+              <div class="action-buttons">
+                <RouterLink :to="`/admin/tenants/${t.id}`" class="btn-action btn-detail">
+                  <i class='bx bx-show'></i> Detail
+                </RouterLink>
+                <button class="btn-action btn-delete" @click="handleDelete(t)">
+                  <i class='bx bx-trash'></i>
+                </button>
+              </div>
+            </div>
+            <div class="tenant-card-info">
+              <div class="info-row"><i class='bx bx-phone'></i> <span>No HP:</span> <strong>{{ t.phone || '-' }}</strong></div>
+              <div class="info-row"><i class='bx bx-id-card'></i> <span>NIK:</span> <span>{{ t.nik || '-' }}</span></div>
+              <div class="info-row"><i class='bx bx-map-pin'></i> <span>Alamat:</span> <span>{{ t.address || '-' }}</span></div>
+            </div>
+          </div>
+          <div v-if="filteredTenants.length === 0" class="empty-cell">Tidak ada data penyewa yang sesuai pencarian.</div>
+        </div>
       </div>
     </main>
 
@@ -511,7 +537,85 @@ const handleDelete = (t: User) => {
   margin-top: 10px;
 }
 
+.mobile-tenant-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-tenant-card {
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tenant-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tenant-name {
+  display: block;
+  font-size: 1rem;
+  color: var(--dark);
+}
+
+.tenant-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  font-size: 0.85rem;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+
+.info-row i {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.info-row span {
+  color: var(--text-muted);
+}
+
 @media (max-width: 992px) {
-  .admin-main { margin-left: 0; }
+  .admin-main { margin-left: 0; padding: 20px; }
+  .table-wrapper { display: none !important; }
+  .mobile-tenant-cards { display: flex; }
+}
+
+@media (max-width: 768px) {
+  .admin-main { padding: 16px; }
+  .admin-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+  .admin-header h1 { font-size: 1.4rem; }
+  .admin-header button { width: 100%; justify-content: center; }
+  .admin-card { padding: 16px; }
+  .admin-card-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .search-box { width: 100%; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .modal-box { max-width: 92vw; max-height: 90vh; overflow-y: auto; padding: 24px 16px; }
+  .modal-footer { flex-direction: column; }
+  .modal-footer button { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .admin-main { padding: 12px; }
+  .admin-header h1 { font-size: 1.2rem; }
+  .admin-header p { font-size: 0.78rem; }
+  .admin-card { padding: 12px; border-radius: var(--radius-md); }
+  .modal-box { max-width: 96vw; padding: 20px 12px; border-radius: var(--radius-lg); }
 }
 </style>

@@ -253,6 +253,28 @@ const formatRupiah = (val: number) => {
               </tbody>
             </table>
           </div>
+
+          <!-- MOBILE CARD VIEW FOR DASHBOARD COMPLAINTS -->
+          <div class="mobile-dash-complaint-cards">
+            <div v-for="comp in complaints.slice(0, 5)" :key="'mob-' + comp.id" class="mobile-dash-comp-card">
+              <div class="dash-comp-head">
+                <div>
+                  <strong>{{ comp.tenantName }}</strong>
+                  <span class="chip-room ml-2">{{ comp.roomNumber }}</span>
+                </div>
+                <span class="status-badge" :class="comp.status">
+                  {{ comp.status === 'pending' ? 'Perlu Respon' : comp.status === 'in-progress' ? 'Diproses' : 'Selesai' }}
+                </span>
+              </div>
+              <h4 class="dash-comp-title">{{ comp.title }}</h4>
+              <div class="dash-comp-foot">
+                <small class="text-muted"><i class='bx bx-calendar'></i> {{ comp.date }}</small>
+                <button class="btn btn-ghost btn-xs" @click="openReplyModal(comp)">
+                  <i class='bx bx-edit'></i> Respon
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Recent Payments Summary -->
@@ -896,6 +918,82 @@ const formatRupiah = (val: number) => {
 @media (max-width: 992px) {
   .admin-main {
     margin-left: 0;
+    padding: 20px;
+  }
+}
+
+.mobile-dash-complaint-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-dash-comp-card {
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-comp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dash-comp-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.dash-comp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+
+.ml-2 {
+  margin-left: 6px;
+}
+
+@media (max-width: 768px) {
+  .admin-main {
+    padding: 16px;
+  }
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .admin-title-area h1 {
+    font-size: 1.4rem;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .dashboard-card {
+    padding: 18px 14px;
+  }
+  .modal-box {
+    max-width: 92vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px 16px;
+  }
+  .modal-footer {
+    flex-direction: column;
+  }
+  .modal-footer button {
+    width: 100%;
   }
 }
 
@@ -906,5 +1004,15 @@ const formatRupiah = (val: number) => {
   .admin-room-grid {
     grid-template-columns: 1fr;
   }
+}
+
+@media (max-width: 480px) {
+  .admin-main { padding: 12px; }
+  .admin-title-area h1 { font-size: 1.2rem; }
+  .admin-title-area p { font-size: 0.78rem; }
+  .kpi-card { padding: 14px 12px; border-radius: var(--radius-md); }
+  .kpi-val { font-size: 1.4rem; }
+  .dashboard-card { padding: 14px 12px; border-radius: var(--radius-md); }
+  .modal-box { max-width: 96vw; padding: 20px 12px; border-radius: var(--radius-lg); }
 }
 </style>

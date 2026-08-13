@@ -627,10 +627,34 @@ const formatRupiah = (val: number) => {
 }
 
 @media (max-width: 992px) {
-  .admin-main { margin-left: 0; }
+  .admin-main { margin-left: 0; padding: 20px; }
+}
+
+@media (max-width: 768px) {
+  .admin-main { padding: 16px; }
+  .admin-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+  .admin-header h1 { font-size: 1.4rem; }
+  .admin-header button { width: 100%; justify-content: center; }
+  .admin-card { padding: 16px; }
+  .building-filter-btns { width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .filter-pill { flex-shrink: 0; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .modal-box { max-width: 92vw; max-height: 90vh; overflow-y: auto; padding: 24px 16px; }
+  .modal-footer { flex-direction: column; }
+  .modal-footer button { width: 100%; }
 }
 
 @media (max-width: 640px) {
   .rooms-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .admin-main { padding: 12px; }
+  .admin-header h1 { font-size: 1.2rem; }
+  .admin-header p { font-size: 0.78rem; }
+  .room-admin-card { padding: 14px 12px; border-radius: var(--radius-md); }
+  .building-filter-btns { -webkit-overflow-scrolling: touch; }
+  .filter-pill { font-size: 0.75rem; padding: 6px 10px; }
+  .modal-box { max-width: 96vw; padding: 20px 12px; border-radius: var(--radius-lg); }
 }
 </style>

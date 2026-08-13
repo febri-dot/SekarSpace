@@ -422,10 +422,26 @@ const formatRupiah = (val: number) => {
 }
 
 @media (max-width: 992px) {
-  .admin-main { margin-left: 0; }
+  .admin-main { margin-left: 0; padding: 20px; }
+}
+
+@media (max-width: 768px) {
+  .admin-main { padding: 16px; }
+  .admin-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+  .admin-header h1 { font-size: 1.4rem; }
+  .admin-header button { width: 100%; justify-content: center; }
+  .cms-card { padding: 18px 14px; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
 }
 
 @media (max-width: 600px) {
   .image-upload-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .admin-main { padding: 12px; }
+  .admin-header h1 { font-size: 1.2rem; }
+  .admin-header p { font-size: 0.78rem; }
+  .cms-card { padding: 14px 12px; border-radius: var(--radius-md); }
 }
 </style>
