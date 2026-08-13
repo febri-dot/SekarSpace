@@ -3516,15 +3516,62 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .hero {
-    padding: 100px 20px 60px;
+    padding: 90px 18px 50px;
+    min-height: 92vh;
+    min-height: 92svh;
+  }
+  .hero h1 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+  }
+  .hero-badge {
+    font-size: 0.78rem;
+    padding: 5px 12px;
+    margin-bottom: 12px;
+  }
+  .hero-desc {
+    font-size: 0.88rem;
+    margin-bottom: 18px;
   }
   .hero-actions {
     flex-direction: column;
     width: 100%;
+    gap: 10px;
   }
   .hero-actions .btn {
     width: 100%;
     justify-content: center;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
+  .hero-stats {
+    gap: 16px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+  }
+  .stat-number {
+    font-size: 1.35rem;
+  }
+  .stat-item span {
+    font-size: 0.72rem;
+  }
+  .stat-divider {
+    height: 30px;
+  }
+  .hero-slide-dots {
+    gap: 8px;
+  }
+  .hero::before {
+    width: 250px;
+    height: 250px;
+    top: -80px;
+    right: -80px;
+  }
+  .hero::after {
+    width: 200px;
+    height: 200px;
+    bottom: -40px;
+    left: -60px;
   }
   .room-comparison {
     flex-direction: column;
@@ -3558,8 +3605,15 @@ onUnmounted(() => {
   .facility-card {
     padding: 20px 14px;
   }
+  .facility-card h3 {
+    font-size: 0.92rem;
+  }
+  .facility-card p {
+    font-size: 0.82rem;
+  }
   .accessibility-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   .floor-grid {
     grid-template-columns: 1fr;
@@ -3570,18 +3624,87 @@ onUnmounted(() => {
   }
   .gallery-card.card-wide,
   .gallery-card.card-large {
-    width: 320px;
-    min-width: 320px;
+    width: 300px;
+    min-width: 300px;
+  }
+  .section-header {
+    margin: 0 auto 28px;
+  }
+  .section-header p {
+    font-size: 0.88rem;
+  }
+  .section-tag {
+    font-size: 0.72rem;
+    padding: 3px 12px;
+  }
+  .testimonial-card {
+    padding: 28px 20px;
+  }
+  .testi-quote {
+    font-size: 0.92rem;
+  }
+  .contact-item {
+    padding: 16px 14px;
+  }
+  .lightbox-content {
+    width: 95vw;
+    max-height: 90vh;
+  }
+  .lightbox-img {
+    height: 200px;
+  }
+  .pricing-period-selector,
+  .floor-switcher {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gallery-filter-tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    padding-bottom: 4px;
+  }
+  .gallery-filter-tabs button {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .facility-modal-content {
+    width: 92vw;
+    max-height: 85vh;
+    padding: 24px 18px;
+  }
+  .top-announcement-bar {
+    font-size: 0.82rem;
+    padding: 8px 14px;
   }
 }
 
 @media (max-width: 480px) {
+  .hero {
+    padding: 80px 14px 40px;
+    min-height: 88vh;
+    min-height: 88svh;
+  }
   .hero h1 {
-    font-size: 2rem;
+    font-size: 1.55rem;
+  }
+  .hero-desc {
+    font-size: 0.82rem;
+    line-height: 1.6;
   }
   .hero-stats {
     gap: 12px;
-    padding: 16px;
+    padding: 12px 14px;
+    flex-wrap: nowrap;
+  }
+  .stat-number {
+    font-size: 1.2rem;
+  }
+  .stat-item span {
+    font-size: 0.65rem;
+  }
+  .stat-divider {
+    height: 24px;
   }
   .facilities-grid {
     grid-template-columns: 1fr;
@@ -3596,6 +3719,71 @@ onUnmounted(() => {
   .floor-btn {
     width: 100%;
     justify-content: center;
+  }
+  .room-card-image {
+    height: 180px;
+  }
+  .gallery-card.card-standard {
+    width: 220px;
+    min-width: 220px;
+  }
+  .gallery-card.card-wide,
+  .gallery-card.card-large {
+    width: 260px;
+    min-width: 260px;
+  }
+  .section-header {
+    margin: 0 auto 22px;
+  }
+  .section-header h2 {
+    font-size: 1.4rem;
+  }
+  .section-header p {
+    font-size: 0.82rem;
+  }
+  .faq-item {
+    padding: 14px 16px;
+  }
+  .faq-question h3 {
+    font-size: 0.88rem;
+  }
+  .faq-number {
+    font-size: 1.2rem;
+  }
+  .contact-grid {
+    gap: 16px;
+  }
+  .contact-item h4 {
+    font-size: 0.92rem;
+  }
+  .contact-item p {
+    font-size: 0.82rem;
+  }
+  .contact-map {
+    min-height: 280px;
+  }
+  .testimonial-card {
+    padding: 22px 16px;
+  }
+  .testi-quote {
+    font-size: 0.85rem;
+  }
+  .testi-author h4 {
+    font-size: 0.9rem;
+  }
+  .testi-author p {
+    font-size: 0.78rem;
+  }
+  .lightbox-content {
+    width: 98vw;
+    border-radius: var(--radius-lg);
+  }
+  .lightbox-img {
+    height: 180px;
+  }
+  .top-announcement-bar {
+    font-size: 0.75rem;
+    padding: 6px 10px;
   }
 }
 </style>

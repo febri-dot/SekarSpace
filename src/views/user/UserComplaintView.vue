@@ -494,4 +494,26 @@ const getStatusBadge = (status: string) => {
   .main-content { margin-left: 0; padding: 20px; }
   .complaint-layout { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 768px) {
+  .main-content { padding: 16px; }
+  .top-header { margin-bottom: 20px; }
+  .top-header h1 { font-size: 1.4rem; }
+  .complaint-form-box, .complaint-list-box { padding: 18px 14px; }
+  .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .list-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .filter-tabs { width: 100%; justify-content: flex-start; overflow-x: auto; padding: 4px; }
+  .tab-btn { flex-shrink: 0; }
+  .modal-box { max-width: 92vw; max-height: 90vh; overflow-y: auto; padding: 24px 16px; }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 12px; }
+  .top-header h1 { font-size: 1.2rem; }
+  .top-header p { font-size: 0.78rem; }
+  .complaint-form-box, .complaint-list-box { padding: 14px 12px; border-radius: var(--radius-md); }
+  .tab-btn { font-size: 0.75rem; padding: 6px 10px; }
+  .complaint-card { padding: 12px; }
+  .modal-box { max-width: 96vw; padding: 20px 12px; border-radius: var(--radius-lg); }
+}
 </style>

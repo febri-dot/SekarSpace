@@ -31,13 +31,16 @@ const userInitials = computed(() => {
 
 <template>
   <div>
-    <!-- Mobile Toggle Header -->
-    <div class="mobile-dashboard-header">
-      <button class="mobile-toggle" @click="toggleSidebar" aria-label="Toggle Navigation">
-        <i class='bx bx-menu'></i>
-      </button>
-      <span class="mobile-brand">Sekar<strong>Space</strong></span>
-    </div>
+    <!-- Floating Arrow Button on Edge when closed on mobile -->
+    <button 
+      class="floating-sidebar-trigger" 
+      :class="{ 'hide': isMobileSidebarOpen }" 
+      @click="toggleSidebar" 
+      title="Buka Sidebar Navigasi"
+      aria-label="Buka Navigasi"
+    >
+      <i class='bx bx-right-arrow-alt'></i>
+    </button>
 
     <!-- Sidebar Aside -->
     <aside class="sidebar" :class="{ 'show': isMobileSidebarOpen }">
@@ -46,6 +49,9 @@ const userInitials = computed(() => {
           <i class='bx bxs-home-heart'></i>
           <span>Sekar<strong>Space</strong></span>
         </RouterLink>
+        <button class="mobile-sidebar-close" @click="closeSidebar" aria-label="Tutup Navigasi" title="Tutup Sidebar">
+          <i class='bx bx-left-arrow-alt'></i>
+        </button>
       </div>
 
       <nav class="sidebar-nav" aria-label="Menu Dashboard">
@@ -127,11 +133,60 @@ const userInitials = computed(() => {
 }
 
 .mobile-toggle {
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  color: var(--dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--tertiary-light);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobile-toggle i {
+  font-size: 1.4rem;
+  transition: transform var(--transition-fast);
+}
+
+.mobile-toggle:hover i {
+  transform: translateX(3px);
+}
+
+.floating-sidebar-trigger {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 890;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 0 10px 10px 0;
+  padding: 12px 10px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all var(--transition-smooth);
+}
+
+.floating-sidebar-trigger i {
+  animation: pulseArrow 1.5s infinite ease-in-out;
+}
+
+.floating-sidebar-trigger.hide {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(-100%);
+}
+
+@keyframes pulseArrow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
 }
 
 .mobile-brand {
@@ -158,6 +213,18 @@ const userInitials = computed(() => {
 .sidebar-header {
   padding: 24px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--text-muted);
+  cursor: pointer;
 }
 
 .sidebar-logo {
@@ -297,7 +364,8 @@ const userInitials = computed(() => {
 }
 
 @media (max-width: 992px) {
-  .mobile-dashboard-header { display: flex; }
+  .mobile-sidebar-close { display: block; }
+  .floating-sidebar-trigger { display: flex; align-items: center; justify-content: center; }
   .sidebar { transform: translateX(-100%); }
   .sidebar.show { transform: translateX(0); }
   .sidebar-overlay.show { display: block; }
