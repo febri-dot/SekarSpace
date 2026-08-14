@@ -3,8 +3,10 @@ import { ref, computed } from 'vue'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { RouterLink } from 'vue-router'
 import { useAuth, type User } from '../../composables/useAuth'
+import { useDataStore } from '../../composables/useDataStore'
 
 const { tenants, addMember, deleteMember } = useAuth()
+const { rooms, buildings } = useDataStore()
 
 const searchQuery = ref('')
 const isAddModalOpen = ref(false)
@@ -21,9 +23,7 @@ const formMember = ref<Omit<User, 'id' | 'role'>>({
   phone: '',
   birthDate: '',
   parentPhone: '',
-  roomNumber: 'Kamar 01',
-  roomType: 'Kamar Mandi Dalam',
-  building: 'Gedung Utama',
+  roomId: 'A-13',
   monthlyRent: 950000,
   startDate: new Date().toISOString().substring(0, 10),
   endDate: '2027-08-31',
@@ -76,9 +76,7 @@ const handleSaveMember = () => {
     phone: '',
     birthDate: '',
     parentPhone: '',
-    roomNumber: 'Kamar 01',
-    roomType: 'Kamar Mandi Dalam',
-    building: 'Gedung Utama',
+    roomId: 'A-13',
     monthlyRent: 950000,
     startDate: new Date().toISOString().substring(0, 10),
     endDate: '2027-08-31',
@@ -263,8 +261,12 @@ const handleDelete = (t: User) => {
               <input type="date" v-model="formMember.birthDate" />
             </div>
             <div class="form-group">
-              <label>Nomor Kamar</label>
-              <input type="text" v-model="formMember.roomNumber" placeholder="Contoh: Kamar 07" />
+              <label>Pilih Kamar (Room ID)</label>
+              <select v-model="formMember.roomId" class="form-control">
+                <option v-for="r in rooms" :key="r.id" :value="r.id">
+                  Kamar {{ r.number }} ({{ r.typeName }})
+                </option>
+              </select>
             </div>
           </div>
 

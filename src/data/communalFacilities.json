@@ -1,0 +1,40 @@
+{
+  "bld-a": {
+    "1": [
+      { "id": "u-f1-km1", "number": "F-01", "title": "Kamar Mandi Umum", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-bath", "isRoom": false },
+      { "id": "u-f1-dapur", "number": "F-02", "title": "Dapur Umum", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-fridge", "isRoom": false },
+      { "id": "u-f1-tamu", "number": "F-03", "title": "Ruang Tamu", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bxs-group", "isRoom": false }
+    ],
+    "2": [
+      { "id": "u-f2-km1", "number": "F-04", "title": "Kamar Mandi Umum 1", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-bath", "isRoom": false },
+      { "id": "u-f2-km2", "number": "F-05", "title": "Kamar Mandi Umum 2", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-bath", "isRoom": false },
+      { "id": "u-f2-jemuran", "number": "F-06", "title": "Area Jemuran", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-closet", "isRoom": false },
+      { "id": "u-f2-balkon", "number": "F-07", "title": "Balkon", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bxs-sun", "isRoom": false }
+    ]
+  },
+  "bld-b": {
+    "1": [
+      { "id": "t-f1-km1", "number": "F-01", "title": "Kamar Mandi Umum", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-bath", "isRoom": false }
+    ],
+    "2": [
+      { "id": "t-f2-km1", "number": "F-02", "title": "Kamar Mandi Umum 1", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-bath", "isRoom": false },
+      { "id": "t-f2-km2", "number": "F-03", "title": "Kamar Mandi Umum 2", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-bath", "isRoom": false },
+      { "id": "t-f2-dapur", "number": "F-04", "title": "Dapur Umum", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-fridge", "isRoom": false },
+      { "id": "t-f2-balkon", "number": "F-05", "title": "Balkon", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bxs-sun", "isRoom": false },
+      { "id": "t-f2-jemuran", "number": "F-06", "title": "Area Jemuran", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-closet", "isRoom": false }
+    ]
+  },
+  "bld-c": {
+    "1": [
+      { "id": "b-f1-km1", "number": "F-01", "title": "Kamar Mandi Umum", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-bath", "isRoom": false },
+      { "id": "b-f1-dapur", "number": "F-02", "title": "Dapur Umum", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-fridge", "isRoom": false },
+      { "id": "b-f1-tamu", "number": "F-03", "title": "Ruang Tamu", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bxs-group", "isRoom": false }
+    ],
+    "2": [
+      { "id": "b-f2-km1", "number": "F-04", "title": "Kamar Mandi Umum", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-bath", "isRoom": false },
+      { "id": "b-f2-dapur", "number": "F-05", "title": "Dapur Umum", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-fridge", "isRoom": false },
+      { "id": "b-f2-jemuran", "number": "F-06", "title": "Area Jemuran", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bx-closet", "isRoom": false },
+      { "id": "b-f2-balkon", "number": "F-07", "title": "Balkon", "type": "Fasilitas Umum", "typeId": "fasilitas", "status": "Fasilitas Umum", "icon": "bx bxs-sun", "isRoom": false }
+    ]
+  }
+}

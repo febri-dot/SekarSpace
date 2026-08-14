@@ -1,0 +1,86 @@
+{
+  "categories": [
+    {
+      "id": "all",
+      "label": "Semua Tempat"
+    },
+    {
+      "id": "campus",
+      "label": "Kampus & Pendidikan"
+    },
+    {
+      "id": "shopping",
+      "label": "Perbelanjaan & Publik"
+    },
+    {
+      "id": "health",
+      "label": "Fasilitas Kesehatan"
+    },
+    {
+      "id": "worship",
+      "label": "Tempat Ibadah"
+    }
+  ],
+  "places": [
+    {
+      "id": 1,
+      "name": "Universitas Gadjah Mada (UGM)",
+      "category": "campus",
+      "distance": "2.5 km",
+      "time": "5–7 menit (motor)",
+      "icon": "bx bxs-school",
+      "badge": "Kampus Utama",
+      "desc": "Akses cepat melalui Jl. Monjali / Jl. Ringroad Utara tanpa macet."
+    },
+    {
+      "id": 2,
+      "name": "Universitas Negeri Yogyakarta (UNY)",
+      "category": "campus",
+      "distance": "3.8 km",
+      "time": "10 menit (motor)",
+      "icon": "bx bxs-graduation",
+      "badge": "Kampus",
+      "desc": "Rute mudah & nyaman menuju area Colombo dan Gejayan."
+    },
+    {
+      "id": 3,
+      "name": "Sleman City Hall (SCH)",
+      "category": "shopping",
+      "distance": "3.0 km",
+      "time": "7 menit (motor)",
+      "icon": "bx bxs-shopping-bag",
+      "badge": "Pusat Perbelanjaan",
+      "desc": "Mall terbesar di Sleman dengan bioskop, supermarket, dan culinary hub."
+    },
+    {
+      "id": 4,
+      "name": "RSUP Dr. Sardjito",
+      "category": "health",
+      "distance": "2.8 km",
+      "time": "7 menit (motor)",
+      "icon": "bx bxs-first-aid",
+      "badge": "Rumah Sakit Rujukan",
+      "desc": "Fasilitas medis terdekat untuk kebutuhan kesehatan darurat maupun medis umum."
+    },
+    {
+      "id": 5,
+      "name": "Indomaret / Alfamart Trini",
+      "category": "shopping",
+      "distance": "300 meter",
+      "time": "3 menit (jalan kaki)",
+      "icon": "bx bxs-store-alt",
+      "badge": "Minimarket 24h",
+      "desc": "Sangat dekat untuk membeli kebutuhan harian, cemilan, dan saldo e-money."
+    },
+    {
+      "id": 6,
+      "name": "Masjid Al-Ikhlas Trini",
+      "category": "worship",
+      "distance": "150 meter",
+      "time": "2 menit (jalan kaki)",
+      "icon": "bx bxs-institution",
+      "badge": "Tempat Ibadah",
+      "desc": "Masjid warga yang bersih dan aktif dengan jamaah muslimah sekitar."
+    }
+  ]
+}

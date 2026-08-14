@@ -1,0 +1,29 @@
+[
+  {
+    "id": 1,
+    "name": "Anisa Rahmawati",
+    "role": "Mahasiswi UGM - Fak. Hukum",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "rating": 5,
+    "tag": "Penyewa 2 Tahun",
+    "comment": "Tinggal di Sekar Space bikin fokus belajar banget. Lingkungannya tenang khusus muslimah, akses kunci aman, dan kamarnya bersih banget pas pertama masuk. Pokoknya recommended!"
+  },
+  {
+    "id": 2,
+    "name": "Siti Nurhaliza",
+    "role": "Alumni UNY - Software Engineer",
+    "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+    "rating": 5,
+    "tag": "Penyewa 1.5 Tahun",
+    "comment": "Fasilitas dapur bersama dan WiFi-nya kenceng banget! Sangat membantu aku yang sering kerja WFH / remote job. Pengelolanya juga ramah dan responnya cepat kalau ada kendala."
+  },
+  {
+    "id": 3,
+    "name": "Dwi Kartika Sari",
+    "role": "Karyawan Swasta Sleman",
+    "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+    "rating": 5,
+    "tag": "Penyewa 1 Tahun",
+    "comment": "Suka banget sama lokasinya yang dekat UGM dan RS Sardjito. Parkirannya aman terlindung hujan dan ada CCTV 24 jam. Biaya sewanya juga sangat worth it!"
+  }
+]

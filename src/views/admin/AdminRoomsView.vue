@@ -3,22 +3,25 @@ import { ref, computed } from 'vue'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useDataStore, type RoomData } from '../../composables/useDataStore'
 
-const { rooms, addRoom, updateRoom, deleteRoom } = useDataStore()
+const { rooms, buildings, getBuildingName, addRoom, updateRoom, deleteRoom } = useDataStore()
 
 const selectedBuildingFilter = ref<string>('all')
 const isAddRoomModalOpen = ref(false)
 const editingRoom = ref<RoomData | null>(null)
 const noticeMessage = ref('')
 
-// Form Tambah / Edit Kamar
+// Form Tambah/Edit Kamar
 const formRoom = ref({
-  number: '',
-  buildingId: 'bld-utama',
-  buildingName: 'Gedung Utama',
+  number: 'A15',
+  buildingId: 'bld-a',
   floor: 1,
   typeId: 'km-dalam' as 'km-dalam' | 'km-luar',
   typeName: 'Kamar Mandi Dalam',
-  price: 950000,
+  price: 850000,
+  price1Month: 850000,
+  price3Months: 2000000,
+  price6Months: 4000000,
+  price12Months: 8000000,
   status: 'available' as 'available' | 'occupied',
   size: '3 x 4 meter'
 })
@@ -31,13 +34,16 @@ const filteredRooms = computed(() => {
 const openAddModal = () => {
   editingRoom.value = null
   formRoom.value = {
-    number: `0${rooms.value.length + 1}`,
-    buildingId: 'bld-utama',
-    buildingName: 'Gedung Utama',
+    number: `A${rooms.value.length + 1}`,
+    buildingId: 'bld-a',
     floor: 1,
     typeId: 'km-dalam',
     typeName: 'Kamar Mandi Dalam',
-    price: 950000,
+    price: 850000,
+    price1Month: 850000,
+    price3Months: 2000000,
+    price6Months: 4000000,
+    price12Months: 8000000,
     status: 'available',
     size: '3 x 4 meter'
   }
@@ -46,14 +52,18 @@ const openAddModal = () => {
 
 const openEditModal = (room: RoomData) => {
   editingRoom.value = room
+  const base1 = room.price1Month || room.price || 600000
   formRoom.value = {
     number: room.number,
     buildingId: room.buildingId,
-    buildingName: room.buildingName,
     floor: room.floor,
     typeId: room.typeId,
     typeName: room.typeName,
-    price: room.price,
+    price: base1,
+    price1Month: base1,
+    price3Months: room.price3Months || (base1 * 3),
+    price6Months: room.price6Months || (base1 * 6),
+    price12Months: room.price12Months || (base1 * 12),
     status: room.status,
     size: room.size
   }
@@ -66,34 +76,26 @@ const closeRoomModal = () => {
 }
 
 const handleSaveRoom = () => {
-  if (!formRoom.value.number || !formRoom.value.price) {
-    alert('Mohon lengkapi nomor kamar dan harga sewa.')
+  if (!formRoom.value.number || !formRoom.value.price1Month) {
+    alert('Mohon lengkapi nomor kamar dan tarif sewa.')
     return
   }
 
-  const buildingNames: Record<string, string> = {
-    'bld-utama': 'Gedung Utama',
-    'bld-timur': 'Gedung Timur',
-    'bld-barat': 'Gedung Barat'
-  }
-
-  const typeNames: Record<string, string> = {
-    'km-dalam': 'Kamar Mandi Dalam',
-    'km-luar': 'Kamar Mandi Luar'
-  }
-
-  const bldName = buildingNames[formRoom.value.buildingId] || 'Gedung Utama'
-  const tName = typeNames[formRoom.value.typeId] || 'Kamar Mandi Dalam'
+  const tName = formRoom.value.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'
+  const p1 = Number(formRoom.value.price1Month)
 
   if (editingRoom.value) {
     updateRoom(editingRoom.value.id, {
       number: formRoom.value.number,
       buildingId: formRoom.value.buildingId,
-      buildingName: bldName,
       floor: Number(formRoom.value.floor),
       typeId: formRoom.value.typeId,
       typeName: tName,
-      price: Number(formRoom.value.price),
+      price: p1,
+      price1Month: p1,
+      price3Months: Number(formRoom.value.price3Months),
+      price6Months: Number(formRoom.value.price6Months),
+      price12Months: Number(formRoom.value.price12Months),
       status: formRoom.value.status,
       size: formRoom.value.size
     })
@@ -102,11 +104,14 @@ const handleSaveRoom = () => {
     addRoom({
       number: formRoom.value.number,
       buildingId: formRoom.value.buildingId,
-      buildingName: bldName,
       floor: Number(formRoom.value.floor),
       typeId: formRoom.value.typeId,
       typeName: tName,
-      price: Number(formRoom.value.price),
+      price: p1,
+      price1Month: p1,
+      price3Months: Number(formRoom.value.price3Months),
+      price6Months: Number(formRoom.value.price6Months),
+      price12Months: Number(formRoom.value.price12Months),
       status: formRoom.value.status,
       size: formRoom.value.size,
       features: ['Kasur Springbed', 'Lemari Pakaian', 'Meja Belajar', 'WiFi 100Mbps']
@@ -176,25 +181,13 @@ const formatRupiah = (val: number) => {
             Semua Gedung ({{ rooms.length }})
           </button>
           <button 
+            v-for="bld in buildings"
+            :key="bld.id"
             class="filter-pill"
-            :class="{ active: selectedBuildingFilter === 'bld-utama' }"
-            @click="selectedBuildingFilter = 'bld-utama'"
+            :class="{ active: selectedBuildingFilter === bld.id }"
+            @click="selectedBuildingFilter = bld.id"
           >
-            Gedung Utama ({{ rooms.filter(r => r.buildingId === 'bld-utama').length }})
-          </button>
-          <button 
-            class="filter-pill"
-            :class="{ active: selectedBuildingFilter === 'bld-timur' }"
-            @click="selectedBuildingFilter = 'bld-timur'"
-          >
-            Gedung Timur ({{ rooms.filter(r => r.buildingId === 'bld-timur').length }})
-          </button>
-          <button 
-            class="filter-pill"
-            :class="{ active: selectedBuildingFilter === 'bld-barat' }"
-            @click="selectedBuildingFilter = 'bld-barat'"
-          >
-            Gedung Barat ({{ rooms.filter(r => r.buildingId === 'bld-barat').length }})
+            {{ bld.name }} ({{ rooms.filter(r => r.buildingId === bld.id).length }})
           </button>
         </div>
       </div>
@@ -215,7 +208,7 @@ const formatRupiah = (val: number) => {
           </div>
 
           <div class="room-details">
-            <p class="bld-name"><i class='bx bx-building-house'></i> {{ room.buildingName }} (Lantai {{ room.floor }})</p>
+            <p class="bld-name"><i class='bx bx-building-house'></i> {{ getBuildingName(room.buildingId) }} (Lantai {{ room.floor }})</p>
             <p class="type-name">
               <i :class="room.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open'"></i>
               {{ room.typeName }} · {{ room.size }}
@@ -260,7 +253,7 @@ const formatRupiah = (val: number) => {
           <div class="form-row">
             <div class="form-group">
               <label>Nomor Kamar</label>
-              <input type="text" v-model="formRoom.number" placeholder="Contoh: 01, 07" class="form-control" required />
+              <input type="text" v-model="formRoom.number" placeholder="Contoh: A11, A12, B11" class="form-control" required />
             </div>
 
             <div class="form-group">
@@ -276,9 +269,9 @@ const formatRupiah = (val: number) => {
             <div class="form-group">
               <label>Gedung Hunian</label>
               <select v-model="formRoom.buildingId" class="form-control" required>
-                <option value="bld-utama">Gedung Utama</option>
-                <option value="bld-timur">Gedung Timur</option>
-                <option value="bld-barat">Gedung Barat</option>
+                <option v-for="bld in buildings" :key="bld.id" :value="bld.id">
+                  {{ bld.name }}
+                </option>
               </select>
             </div>
 
@@ -293,22 +286,40 @@ const formatRupiah = (val: number) => {
 
           <div class="form-row">
             <div class="form-group">
-              <label>Harga Sewa per Bulan (Rp)</label>
-              <input type="number" v-model="formRoom.price" placeholder="950000" class="form-control" required />
-            </div>
-
-            <div class="form-group">
               <label>Ukuran Ruangan</label>
               <input type="text" v-model="formRoom.size" placeholder="3 x 4 meter" class="form-control" />
             </div>
+            <div class="form-group">
+              <label>Status Ketersediaan</label>
+              <select v-model="formRoom.status" class="form-control" required>
+                <option value="available">Tersedia (Kosong)</option>
+                <option value="occupied">Terisi (Penyewa Aktif)</option>
+              </select>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label>Status Ketersediaan</label>
-            <select v-model="formRoom.status" class="form-control" required>
-              <option value="available">Tersedia (Kosong)</option>
-              <option value="occupied">Terisi (Penyewa Aktif)</option>
-            </select>
+          <div class="pricing-matrix-box mb-3">
+            <label class="form-label font-bold text-dark mb-2">Matriks Tarif Sewa Kustom Kamar (Rp)</label>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tarif 1 Bulan (Rp)</label>
+                <input type="number" v-model="formRoom.price1Month" placeholder="600000" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>Tarif 3 Bulan (Rp)</label>
+                <input type="number" v-model="formRoom.price3Months" placeholder="1800000" class="form-control" required />
+              </div>
+            </div>
+            <div class="form-row mt-2">
+              <div class="form-group">
+                <label>Tarif 6 Bulan (Rp)</label>
+                <input type="number" v-model="formRoom.price6Months" placeholder="3500000" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>Tarif 12 Bulan / 1 Tahun (Rp)</label>
+                <input type="number" v-model="formRoom.price12Months" placeholder="7000000" class="form-control" required />
+              </div>
+            </div>
           </div>
 
           <div class="modal-footer">
@@ -613,6 +624,14 @@ const formatRupiah = (val: number) => {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   font-size: 0.9rem;
+}
+
+.pricing-matrix-box {
+  background: var(--off-white);
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  margin-top: 4px;
 }
 
 .modal-footer {
