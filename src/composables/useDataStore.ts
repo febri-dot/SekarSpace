@@ -2,16 +2,26 @@ import { ref } from 'vue'
 import defaultRooms from '../data/rooms.json'
 import defaultComplaints from '../data/complaints.json'
 import defaultPayments from '../data/payments.json'
+import defaultCms from '../data/cms.json'
+import defaultFacilities from '../data/facilities.json'
+import defaultNearbyPlaces from '../data/nearbyPlaces.json'
+import defaultTestimonials from '../data/testimonials.json'
+import defaultGallery from '../data/gallery.json'
+import defaultFaqs from '../data/faqs.json'
+import defaultBuildings from '../data/buildings.json'
 
 export interface RoomData {
   id: string
   number: string
   floor: number
   buildingId: string
-  buildingName: string
   typeId: 'km-luar' | 'km-dalam'
   typeName: string
   price: number
+  price1Month?: number
+  price3Months?: number
+  price6Months?: number
+  price12Months?: number
   status: 'available' | 'occupied'
   size: string
   features: string[]
@@ -19,10 +29,9 @@ export interface RoomData {
 
 export interface ComplaintData {
   id: string
-  tenantName: string
+  memberId: string
   title: string
   category: string
-  roomNumber: string
   date: string
   status: 'pending' | 'in-progress' | 'resolved'
   priority: 'low' | 'medium' | 'high'
@@ -32,7 +41,7 @@ export interface ComplaintData {
 
 export interface PaymentData {
   id: string
-  tenantName: string
+  memberId: string
   period: string
   amount: number
   method: string
@@ -41,6 +50,39 @@ export interface PaymentData {
   status: 'paid' | 'pending' | 'rejected'
   proofImage?: string
   notes?: string
+  durationMonths?: number
+}
+
+export const getRoomPriceByDuration = (room?: RoomData | null, duration: number = 1): number => {
+  if (!room) {
+    room = (defaultRooms as RoomData[])[0]
+  }
+  if (!room) return 600000 * duration
+
+  const def = (defaultRooms as RoomData[]).find(r => r.id === room?.id || r.typeId === room?.typeId)
+
+  const p1 = room.price1Month ?? def?.price1Month ?? room.price
+  const p3 = room.price3Months ?? def?.price3Months ?? (room.typeId === 'km-luar' ? 1800000 : 2000000)
+  const p6 = room.price6Months ?? def?.price6Months ?? (room.typeId === 'km-luar' ? 3500000 : 4000000)
+  const p12 = room.price12Months ?? def?.price12Months ?? (room.typeId === 'km-luar' ? 7000000 : 8000000)
+
+  if (duration === 1) return p1
+  if (duration === 3) return p3
+  if (duration === 6) return p6
+  if (duration === 12) return p12
+  return p1 * duration
+}
+
+export const calculateRoomPrice = (typeId: string, duration: number): number => {
+  const match = (defaultRooms as RoomData[]).find(r => r.typeId === typeId)
+  return getRoomPriceByDuration(match, duration)
+}
+
+export interface BankAccountData {
+  bank: string
+  number: string
+  holder: string
+  badgeClass: string
 }
 
 export interface CmsSettings {
@@ -53,40 +95,91 @@ export interface CmsSettings {
   contactAddress: string
   promoActive: boolean
   promoText: string
-  // Dynamic Pricing for Landing Page
   priceKmLuarMonthly: number
   priceKmDalamMonthly: number
   priceKmLuarYearly: number
   priceKmDalamYearly: number
-  // Hero Images for Banner
   heroImage1: string
   heroImage2: string
   heroImage3: string
+  bankAccounts?: BankAccountData[]
 }
 
-const STORAGE_ROOMS = 'sekar_space_rooms_v5'
-const STORAGE_COMPLAINTS = 'sekar_space_complaints_v4'
-const STORAGE_PAYMENTS = 'sekar_space_payments_v4'
-const STORAGE_CMS = 'sekar_space_cms_v2'
-
-const defaultCmsSettings: CmsSettings = {
-  announcementBarText: '✨ Promo Merdeka: Diskon Rp 100.000 untuk pembayaran 6 bulan pertama! Chat WhatsApp Admin sekarang.',
-  heroBadgeText: 'Hunian Khusus Muslimah di Jogja',
-  heroHeadline: 'Kost Muslimah Sekar Wangi',
-  heroDescription: 'Hunian eksklusif, aman, nyaman, dan strategis dekat Kampus UTY & MMTC Jogja dengan fasilitas lengkap.',
-  contactPhone: '+62 895-3780-20456',
-  contactEmail: 'info@sekarspace.com',
-  contactAddress: 'Kost Muslimah Sekar Wangi, Trini, Sinduadi, Kec. Mlati, Kabupaten Sleman, D.I. Yogyakarta 55284',
-  promoActive: true,
-  promoText: 'Diskon Rp 100.000 / bulan untuk sewa tahunan!',
-  priceKmLuarMonthly: 700000,
-  priceKmDalamMonthly: 950000,
-  priceKmLuarYearly: 650000,
-  priceKmDalamYearly: 880000,
-  heroImage1: '/assets/images/hero-gedung-depan.png',
-  heroImage2: '/assets/images/hero-kamar.png',
-  heroImage3: '/assets/images/hero-dapur.png'
+export interface FacilityData {
+  icon: string
+  title: string
+  desc: string
+  details: string
 }
+
+export interface NearbyPlaceCategory {
+  id: string
+  label: string
+}
+
+export interface NearbyPlaceData {
+  id: number
+  name: string
+  category: string
+  distance: string
+  time: string
+  icon: string
+  badge: string
+  desc: string
+}
+
+export interface TestimonialData {
+  id: number
+  name: string
+  role: string
+  avatar: string
+  rating: number
+  tag: string
+  comment: string
+}
+
+export interface GalleryCategory {
+  id: string
+  label: string
+}
+
+export interface GalleryItemData {
+  id: number
+  title: string
+  category: string
+  categoryLabel: string
+  image: string
+  sizeClass: string
+  desc: string
+}
+
+export interface FaqData {
+  number: string
+  question: string
+  isList?: boolean
+  list?: { label: string; text: string }[]
+  answer?: string
+  text?: string
+}
+
+export interface BuildingData {
+  id: string
+  name: string
+  desc: string
+  badge: string
+  facilities: string[]
+}
+
+const STORAGE_ROOMS = 'sekar_space_rooms_v10'
+const STORAGE_COMPLAINTS = 'sekar_space_complaints_v6'
+const STORAGE_PAYMENTS = 'sekar_space_payments_v6'
+const STORAGE_CMS = 'sekar_space_cms_v3'
+const STORAGE_FACILITIES = 'sekar_space_facilities_v1'
+const STORAGE_NEARBY = 'sekar_space_nearby_v1'
+const STORAGE_TESTIMONIALS = 'sekar_space_testimonials_v1'
+const STORAGE_GALLERY = 'sekar_space_gallery_v1'
+const STORAGE_FAQS = 'sekar_space_faqs_v1'
+const STORAGE_BUILDINGS = 'sekar_space_buildings_v2'
 
 const loadStorage = <T>(key: string, defaultValue: T): T => {
   const saved = localStorage.getItem(key)
@@ -101,29 +194,48 @@ const loadStorage = <T>(key: string, defaultValue: T): T => {
   return defaultValue
 }
 
-const rooms = ref<RoomData[]>(loadStorage(STORAGE_ROOMS, defaultRooms as RoomData[]))
-const complaints = ref<ComplaintData[]>(loadStorage(STORAGE_COMPLAINTS, defaultComplaints as ComplaintData[]))
-const payments = ref<PaymentData[]>(loadStorage(STORAGE_PAYMENTS, defaultPayments as PaymentData[]))
-const cmsSettings = ref<CmsSettings>(loadStorage(STORAGE_CMS, defaultCmsSettings))
-let isCmsChanged = false
-if (!cmsSettings.value.heroImage1 || cmsSettings.value.heroImage1 === '/assets/images/hero-bg.png') {
-  cmsSettings.value.heroImage1 = '/assets/images/hero-gedung-depan.png'
-  isCmsChanged = true
-}
-if (!cmsSettings.value.heroImage2 || cmsSettings.value.heroImage2 === '/assets/images/room-deluxe.png') {
-  cmsSettings.value.heroImage2 = '/assets/images/hero-kamar.png'
-  isCmsChanged = true
-}
-if (!cmsSettings.value.heroImage3 || cmsSettings.value.heroImage3 === '/assets/images/room-single.png') {
-  cmsSettings.value.heroImage3 = '/assets/images/hero-dapur.png'
-  isCmsChanged = true
-}
-if (isCmsChanged) {
-  localStorage.setItem(STORAGE_CMS, JSON.stringify(cmsSettings.value))
+const loadRoomsStorage = (): RoomData[] => {
+  const saved = localStorage.getItem(STORAGE_ROOMS)
+  let loadedRooms = defaultRooms as RoomData[]
+  if (saved) {
+    try {
+      loadedRooms = JSON.parse(saved)
+    } catch (e) {
+      console.error('Failed parsing rooms from localStorage', e)
+    }
+  }
+  const merged = loadedRooms.map(r => {
+    const def = (defaultRooms as RoomData[]).find(d => d.id === r.id || d.typeId === r.typeId)
+    return {
+      ...def,
+      ...r,
+      price1Month: r.price1Month ?? def?.price1Month ?? r.price,
+      price3Months: r.price3Months ?? def?.price3Months ?? (r.typeId === 'km-luar' ? 1800000 : 2000000),
+      price6Months: r.price6Months ?? def?.price6Months ?? (r.typeId === 'km-luar' ? 3500000 : 4000000),
+      price12Months: r.price12Months ?? def?.price12Months ?? (r.typeId === 'km-luar' ? 7000000 : 8000000)
+    }
+  })
+  localStorage.setItem(STORAGE_ROOMS, JSON.stringify(merged))
+  return merged
 }
 
+const rooms = ref<RoomData[]>(loadRoomsStorage())
+const complaints = ref<ComplaintData[]>(loadStorage(STORAGE_COMPLAINTS, defaultComplaints as ComplaintData[]))
+const payments = ref<PaymentData[]>(loadStorage(STORAGE_PAYMENTS, defaultPayments as PaymentData[]))
+const cmsSettings = ref<CmsSettings>(loadStorage(STORAGE_CMS, defaultCms as CmsSettings))
+const facilities = ref<FacilityData[]>(loadStorage(STORAGE_FACILITIES, defaultFacilities as FacilityData[]))
+const nearbyPlacesData = ref<{ categories: NearbyPlaceCategory[]; places: NearbyPlaceData[] }>(
+  loadStorage(STORAGE_NEARBY, defaultNearbyPlaces as any)
+)
+const testimonials = ref<TestimonialData[]>(loadStorage(STORAGE_TESTIMONIALS, defaultTestimonials as TestimonialData[]))
+const galleryData = ref<{ categories: GalleryCategory[]; row1: GalleryItemData[]; row2: GalleryItemData[] }>(
+  loadStorage(STORAGE_GALLERY, defaultGallery as any)
+)
+const faqs = ref<FaqData[]>(loadStorage(STORAGE_FAQS, defaultFaqs as FaqData[]))
+const buildings = ref<BuildingData[]>(loadStorage(STORAGE_BUILDINGS, defaultBuildings as BuildingData[]))
+
 // Helper to physically write to disk JSON file via Vite API
-const writeJsonDisk = async (filename: 'rooms' | 'complaints' | 'payments', data: any) => {
+const writeJsonDisk = async (filename: string, data: any) => {
   try {
     await fetch('/api/save-json', {
       method: 'POST',
@@ -140,13 +252,39 @@ const saveAll = () => {
   localStorage.setItem(STORAGE_COMPLAINTS, JSON.stringify(complaints.value))
   localStorage.setItem(STORAGE_PAYMENTS, JSON.stringify(payments.value))
   localStorage.setItem(STORAGE_CMS, JSON.stringify(cmsSettings.value))
+  localStorage.setItem(STORAGE_FACILITIES, JSON.stringify(facilities.value))
+  localStorage.setItem(STORAGE_NEARBY, JSON.stringify(nearbyPlacesData.value))
+  localStorage.setItem(STORAGE_TESTIMONIALS, JSON.stringify(testimonials.value))
+  localStorage.setItem(STORAGE_GALLERY, JSON.stringify(galleryData.value))
+  localStorage.setItem(STORAGE_FAQS, JSON.stringify(faqs.value))
+  localStorage.setItem(STORAGE_BUILDINGS, JSON.stringify(buildings.value))
 
   writeJsonDisk('rooms', rooms.value)
   writeJsonDisk('complaints', complaints.value)
   writeJsonDisk('payments', payments.value)
+  writeJsonDisk('cms', cmsSettings.value)
+  writeJsonDisk('facilities', facilities.value)
+  writeJsonDisk('nearbyPlaces', nearbyPlacesData.value)
+  writeJsonDisk('testimonials', testimonials.value)
+  writeJsonDisk('gallery', galleryData.value)
+  writeJsonDisk('faqs', faqs.value)
+  writeJsonDisk('buildings', buildings.value)
 }
 
 export function useDataStore() {
+  const getBuildingById = (buildingId: string): BuildingData | undefined => {
+    return buildings.value.find(b => b.id === buildingId)
+  }
+
+  const getBuildingName = (buildingId: string): string => {
+    const bld = getBuildingById(buildingId)
+    return bld ? bld.name : (buildingId === 'bld-a' ? 'Gedung A' : buildingId === 'bld-b' ? 'Gedung B' : 'Gedung C')
+  }
+
+  const getRoomById = (roomId: string): RoomData | undefined => {
+    return rooms.value.find(r => r.id === roomId || r.number === roomId)
+  }
+
   const addComplaint = (newComp: Omit<ComplaintData, 'id'>) => {
     const created: ComplaintData = {
       ...newComp,
@@ -226,7 +364,13 @@ export function useDataStore() {
     rooms.value = defaultRooms as RoomData[]
     complaints.value = defaultComplaints as ComplaintData[]
     payments.value = defaultPayments as PaymentData[]
-    cmsSettings.value = defaultCmsSettings
+    cmsSettings.value = defaultCms as CmsSettings
+    facilities.value = defaultFacilities as FacilityData[]
+    nearbyPlacesData.value = defaultNearbyPlaces as any
+    testimonials.value = defaultTestimonials as TestimonialData[]
+    galleryData.value = defaultGallery as any
+    faqs.value = defaultFaqs as FaqData[]
+    buildings.value = defaultBuildings as BuildingData[]
     saveAll()
   }
 
@@ -235,6 +379,15 @@ export function useDataStore() {
     complaints,
     payments,
     cmsSettings,
+    facilities,
+    nearbyPlacesData,
+    testimonials,
+    galleryData,
+    faqs,
+    buildings,
+    getBuildingById,
+    getBuildingName,
+    getRoomById,
     addComplaint,
     updateComplaintResponse,
     addPayment,

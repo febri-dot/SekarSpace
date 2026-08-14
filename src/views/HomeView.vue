@@ -5,11 +5,11 @@ import Footer from '../components/layout/Footer.vue'
 import { RouterLink } from 'vue-router'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useDataStore } from '../composables/useDataStore'
+import { useDataStore, getRoomPriceByDuration } from '../composables/useDataStore'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const { cmsSettings } = useDataStore()
+const { cmsSettings, facilities, nearbyPlacesData, testimonials, galleryData, faqs, rooms } = useDataStore()
 
 // Interactive State
 const activeFaq = ref<number | null>(null)
@@ -18,7 +18,7 @@ const activeLightboxItem = ref<any | null>(null)
 const selectedFacilityModal = ref<any | null>(null)
 const scrollProgress = ref(0)
 const showBackToTop = ref(false)
-const roomPricingPeriod = ref<'monthly' | 'quarterly' | 'yearly'>('monthly')
+const roomPricingPeriod = ref<'monthly' | 'quarterly' | 'semi-annual' | 'yearly'>('monthly')
 
 // Hero Background Slideshow State
 const activeHeroSlide = ref(0)
@@ -93,13 +93,9 @@ const calcAddonParking = ref<boolean>(false)
 const calcAddonLaundry = ref<boolean>(false)
 
 const calcBasePrice = computed(() => {
-  const isKmDalam = calcRoomType.value === 'km-dalam'
-  if (calcDuration.value >= 12) {
-    return isKmDalam ? 880000 : 650000
-  } else if (calcDuration.value >= 3) {
-    return isKmDalam ? 910000 : 675000
-  }
-  return isKmDalam ? 950000 : 700000
+  const sampleRoom = rooms.value.find(r => r.typeId === calcRoomType.value)
+  const total = getRoomPriceByDuration(sampleRoom, calcDuration.value)
+  return Math.round(total / (calcDuration.value || 1))
 })
 
 const calcTotalPerMonth = computed(() => {
@@ -133,190 +129,36 @@ Apakah kamar ini masih tersedia? Terima kasih.`
 // 2. ACCESSIBILITY / NEARBY PLACES STATE
 const activePlaceCategory = ref('all')
 
-const placeCategories = [
-  { id: 'all', label: 'Semua Tempat' },
-  { id: 'campus', label: 'Kampus & Pendidikan' },
-  { id: 'shopping', label: 'Perbelanjaan & Publik' },
-  { id: 'health', label: 'Fasilitas Kesehatan' },
-  { id: 'worship', label: 'Tempat Ibadah' }
-]
-
-const nearbyPlaces = [
-  {
-    id: 1,
-    name: 'Universitas Gadjah Mada (UGM)',
-    category: 'campus',
-    distance: '2.5 km',
-    time: '5–7 menit (motor)',
-    icon: 'bx bxs-school',
-    badge: 'Kampus Utama',
-    desc: 'Akses cepat melalui Jl. Monjali / Jl. Ringroad Utara tanpa macet.'
-  },
-  {
-    id: 2,
-    name: 'Universitas Negeri Yogyakarta (UNY)',
-    category: 'campus',
-    distance: '3.8 km',
-    time: '10 menit (motor)',
-    icon: 'bx bxs-graduation',
-    badge: 'Kampus',
-    desc: 'Rute mudah & nyaman menuju area Colombo dan Gejayan.'
-  },
-  {
-    id: 3,
-    name: 'Sleman City Hall (SCH)',
-    category: 'shopping',
-    distance: '3.0 km',
-    time: '7 menit (motor)',
-    icon: 'bx bxs-shopping-bag',
-    badge: 'Pusat Perbelanjaan',
-    desc: 'Mall terbesar di Sleman dengan bioskop, supermarket, dan culinary hub.'
-  },
-  {
-    id: 4,
-    name: 'RSUP Dr. Sardjito',
-    category: 'health',
-    distance: '2.8 km',
-    time: '7 menit (motor)',
-    icon: 'bx bxs-first-aid',
-    badge: 'Rumah Sakit Rujukan',
-    desc: 'Fasilitas medis terdekat untuk kebutuhan kesehatan darurat maupun medis umum.'
-  },
-  {
-    id: 5,
-    name: 'Indomaret / Alfamart Trini',
-    category: 'shopping',
-    distance: '300 meter',
-    time: '3 menit (jalan kaki)',
-    icon: 'bx bxs-store-alt',
-    badge: 'Minimarket 24h',
-    desc: 'Sangat dekat untuk membeli kebutuhan harian, cemilan, dan saldo e-money.'
-  },
-  {
-    id: 6,
-    name: 'Masjid Al-Ikhlas Trini',
-    category: 'worship',
-    distance: '150 meter',
-    time: '2 menit (jalan kaki)',
-    icon: 'bx bxs-institution',
-    badge: 'Tempat Ibadah',
-    desc: 'Masjid warga yang bersih dan aktif dengan jamaah muslimah sekitar.'
-  }
-]
+const placeCategories = computed(() => nearbyPlacesData.value.categories)
+const nearbyPlaces = computed(() => nearbyPlacesData.value.places)
 
 const filteredPlaces = computed(() => {
-  if (activePlaceCategory.value === 'all') return nearbyPlaces
-  return nearbyPlaces.filter(p => p.category === activePlaceCategory.value)
+  if (activePlaceCategory.value === 'all') return nearbyPlaces.value
+  return nearbyPlaces.value.filter(p => p.category === activePlaceCategory.value)
 })
 
 // 3. TESTIMONIAL CAROUSEL STATE
 const activeTestimonial = ref(0)
 
-const testimonials = [
-  {
+const currentTestimonial = computed(() => {
+  return testimonials.value[activeTestimonial.value] || testimonials.value[0] || {
     id: 1,
     name: 'Anisa Rahmawati',
-    role: 'Mahasiswi UGM - Fak. Hukum',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    role: 'Mahasiswi UGM',
+    avatar: '',
     rating: 5,
-    tag: 'Penyewa 2 Tahun',
-    comment: 'Tinggal di Sekar Space bikin fokus belajar banget. Lingkungannya tenang khusus muslimah, akses kunci aman, dan kamarnya bersih banget pas pertama masuk. Pokoknya recommended!'
-  },
-  {
-    id: 2,
-    name: 'Siti Nurhaliza',
-    role: 'Alumni UNY - Software Engineer',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    rating: 5,
-    tag: 'Penyewa 1.5 Tahun',
-    comment: 'Fasilitas dapur bersama dan WiFi-nya kenceng banget! Sangat membantu aku yang sering kerja WFH / remote job. Pengelolanya juga ramah dan responnya cepat kalau ada kendala.'
-  },
-  {
-    id: 3,
-    name: 'Dwi Kartika Sari',
-    role: 'Karyawan Swasta Sleman',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    rating: 5,
-    tag: 'Penyewa 1 Tahun',
-    comment: 'Suka banget sama lokasinya yang dekat UGM dan RS Sardjito. Parkirannya aman terlindung hujan dan ada CCTV 24 jam. Biaya sewanya juga sangat worth it!'
+    tag: 'Penyewa',
+    comment: ''
   }
-]
-
-const currentTestimonial = computed<{
-  id: number
-  name: string
-  role: string
-  avatar: string
-  rating: number
-  tag: string
-  comment: string
-}>(() => testimonials[activeTestimonial.value] ?? testimonials[0]!)
+})
 
 const nextTestimonial = () => {
-  activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.length
+  activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.value.length
 }
 
 const prevTestimonial = () => {
-  activeTestimonial.value = (activeTestimonial.value - 1 + testimonials.length) % testimonials.length
+  activeTestimonial.value = (activeTestimonial.value - 1 + testimonials.value.length) % testimonials.value.length
 }
-
-const facilities = [
-  { 
-    icon: 'bx bx-wifi', 
-    title: 'WiFi Cepat', 
-    desc: 'Internet berkecepatan tinggi tersedia 24 jam untuk kebutuhan belajar dan bekerja.',
-    details: 'Internet berkecepatan tinggi tersedia selama 24 jam tanpa biaya tambahan. Koneksi ini mendukung berbagai kebutuhan, seperti mengerjakan tugas kuliah, mengikuti kelas online, hingga menyelesaikan pekerjaan dengan nyaman.'
-  },
-  { 
-    icon: 'bx bx-shield-quarter', 
-    title: 'Keamanan 24 Jam', 
-    desc: 'Sistem keamanan terpadu dengan CCTV dan akses terbatas untuk kenyamanan Anda.',
-    details: 'CCTV beroperasi selama 24 jam untuk memantau area sekitar pintu utama. Sistem pengawasan ini membantu menjaga keamanan sekaligus memberikan rasa aman, privasi, dan kenyamanan bagi penghuni.'
-  },
-  { 
-    icon: 'bx bxs-car-garage', 
-    title: 'Parkir Luas', 
-    desc: 'Area parkir yang memadai untuk motor dan sepeda, aman dan terlindung.',
-    details: 'Area parkir indoor yang luas dan memadai untuk motor dan sepeda. Parkir terlindung dari panas dan hujan serta membantu menjaga kendaraan tetap aman selama ditinggalkan.'
-  },
-  { 
-    icon: 'bx bx-fridge', 
-    title: 'Dapur Bersama', 
-    desc: 'Dapur lengkap dengan peralatan memasak yang bisa digunakan bersama.',
-    details: 'Dapur bersama dilengkapi kompor gas, kulkas, serta berbagai peralatan memasak yang dapat digunakan bersama. Cocok untuk kebutuhan memasak sehari-hari.'
-  },
-  { 
-    icon: 'bx bxs-tv', 
-    title: 'TV Bersama', 
-    desc: 'Tersedia fasilitas televisi sebagai sarana hiburan untuk bersantai dan menikmati waktu bersama.',
-    details: 'Tersedia ruang bersama yang dilengkapi TV, kursi, dan karpet untuk bersantai.  Dilengkapi koneksi Smart TV untuk menonton tayangan favorit dan menikmati waktu luang bersama.'
-  },
-  { 
-    icon: 'bx bxs-group', 
-    title: 'Ruang Tamu', 
-    desc: 'Tersedia ruang tamu yang nyaman untuk menerima tamu, bersantai, dan berkumpul bersama.',
-    details: 'Ruang tamu yang nyaman dan tertata, dilengkapi sofa dan meja untuk menerima tamu, bersantai, atau berkumpul bersama. Cocok untuk menciptakan suasana yang hangat dan nyaman.'
-  }
-]
-
-// 4. FLOOR PLAN STATE
-const activeFloor = ref<'floor1' | 'floor2'>('floor1')
-
-const floor1Rooms = [
-  { id: '101', type: 'Kamar Mandi Dalam', status: 'Terisi', icon: 'bx bx-bed' },
-  { id: '102', type: 'Kamar Mandi Luar', status: 'Tersedia', icon: 'bx bx-door-open' },
-  { id: '103', type: 'Kamar Mandi Dalam', status: 'Terisi', icon: 'bx bx-bath' },
-  { id: '104', type: 'Ruang Tamu Utama', status: 'Fasilitas Umum', icon: 'bx bxs-group' },
-  { id: '105', type: 'Dapur Bersama', status: 'Fasilitas Umum', icon: 'bx bx-fridge' }
-]
-
-const floor2Rooms = [
-  { id: '201', type: 'Kamar Mandi Dalam', status: 'Tersedia', icon: 'bx bxs-star' },
-  { id: '202', type: 'Kamar Mandi Luar', status: 'Tersedia', icon: 'bx bx-bed' },
-  { id: '203', type: 'Kamar Mandi Luar', status: 'Terisi', icon: 'bx bx-door-open' },
-  { id: '204', type: 'Balkon & Area Santai', status: 'Fasilitas Umum', icon: 'bx bxs-sun' },
-  { id: '205', type: 'Area Jemuran', status: 'Fasilitas Umum', icon: 'bx bx-closet' }
-]
 
 const toggleFaq = (index: number) => {
   if (activeFaq.value === index) {
@@ -351,293 +193,45 @@ const scrollToTop = () => {
 }
 
 // Data Collections
-const galleryCategories = [
-  { id: 'all', label: 'Semuanya' },
-  { id: 'rooms', label: 'Kamar' },
-  { id: 'facilities', label: 'Fasilitas' },
-  { id: 'environment', label: 'Suasana' }
-]
-
-const galleryRow1All = [
-  {
-    id: 101,
-    title: 'Ruang Tamu & Bersantai',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-sofa.png',
-    sizeClass: 'card-wide',
-    desc: 'Ruang tamu nyaman dengan sofa dan meja, cocok untuk menerima tamu dan bersantai bersama.'
-  },
-  {
-    id: 102,
-    title: 'Kamar Mandi Umum',
-    category: 'rooms',
-    categoryLabel: 'Kamar Standard',
-    image: '/assets/images/fasilitas-km-luar.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur, bantal, guling, lemari, cermin, rak buku dan meja belajar.'
-  },
-  {
-    id: 103,
-    title: 'Dapur Bersama',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-dapur.png',
-    sizeClass: 'card-tall',
-    desc: 'Dapur lengkap dengan kompor, peralatan memasak, dan rak penyimpanan yang tertata rapi serta terawat.'
-  },
-  {
-    id: 104,
-    title: 'Kamar Mandi Dalam',
-    category: 'rooms',
-    categoryLabel: 'Kamar Premium',
-    image: '/assets/images/foto-km-dalam.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar mandi dalam untuk kamar premium, dilengkapi perlengkapan mandi dan interior modern minimalis yang bersih dan nyaman.'
-  },
-  {
-    id: 105,
-    title: 'Tampak Depan Gedung',
-    category: 'environment',
-    categoryLabel: 'Suasana Kost',
-    image: '/assets/images/foto-gedung.png',
-    sizeClass: 'card-large',
-    desc: 'Lingkungan kost yang asri, tenang, dan aman, khusus muslimah dengan area tertutup untuk menjaga privasi.'
-  },
-  {
-    id: 106,
-    title: 'Kamar',
-    category: 'rooms',
-    categoryLabel: 'Kapasitas 2 Orang',
-    image: '/assets/images/fasilitas-luas-kamar.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar luas untuk berdua dengan kasur berkualitas, lemari ganda, dan suasana belajar yang kondusif.'
-  },
-  {
-    id: 107,
-    title: 'Parkir Indoor',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-parkir.png',
-    sizeClass: 'card-wide',
-    desc: 'Area parkir indoor yang luas untuk motor dan sepeda, terlindung dari panas dan hujan sehingga kendaraan tetap aman.'
-  },
-  {
-    id: 108,
-    title: 'Kulkas Bersama',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-kulkas.png',
-    sizeClass: 'card-standard',
-    desc: 'Kulkas bersama tersedia untuk menyimpan bahan makanan dengan aman dan praktis tanpa biaya tambahan.'
-  },  {
-    id: 109,
-    title: 'Mesin Cuci',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/mesin-cuci.png',
-    sizeClass: 'card-tall',
-    desc: 'Mesin cuci bersama tersedia untuk memudahkan kebutuhan mencuci pakaian sehari-hari.'
-  },
-  {
-    id: 110,
-    title: 'TV Bersama',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-tv.png',
-    sizeClass: 'card-standard',
-    desc: 'Ruang bersama dengan TV, kursi, karpet, dan koneksi Smart TV untuk bersantai dan menikmati tayangan favorit.'
-  },
-  {
-    id: 111,
-    title: 'Area Jemuran',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-jemuran.png',
-    sizeClass: 'card-wide',
-    desc: 'Area jemuran yang luas dan bersih, dengan ruang yang cukup untuk menjemur pakaian dengan nyaman dan rapi.'
-  }
-]
-
-const galleryRow2All = [
-  {
-    id: 201,
-    title: 'Kamar Mandi Dalam',
-    category: 'rooms',
-    categoryLabel: 'Kamar Premium',
-    image: '/assets/images/foto-km-dalam.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar mandi dalam untuk kamar premium, dilengkapi perlengkapan mandi dan interior modern minimalis yang bersih dan nyaman.'
-  },
-  {
-    id: 202,
-    title: 'Dapur Bersama',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-dapur.png',
-    sizeClass: 'card-large',
-    desc: 'Dapur lengkap dengan kompor, peralatan memasak, dan rak penyimpanan yang tertata rapi serta terawat.'
-  },
-  {
-    id: 203,
-    title: 'Kamar',
-    category: 'rooms',
-    categoryLabel: 'Kapasitas 2 Orang',
-    image: '/assets/images/fasilitas-luas-kamar.png',
-    sizeClass: 'card-tall',
-    desc: 'Kamar luas dengan kapasitas maksimal 2 orang, dilengkapi kasur, lemari, bantal, guling, dan rak buku yang dapat digunakan bersama.'
-  },
-  {
-    id: 204,
-    title: 'Ruang Tamu & Bersantai',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-sofa.png',
-    sizeClass: 'card-wide',
-    desc: 'Ruang tamu nyaman dengan sofa dan meja, cocok untuk menerima tamu dan bersantai bersama.'
-  },
-  {
-    id: 205,
-    title: 'Kamar Mandi Umum',
-    category: 'rooms',
-    categoryLabel: 'Kamar Standard',
-    image: '/assets/images/fasilitas-km-luar.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur, bantal, guling, lemari, cermin, rak buku dan meja belajar.'
-  },
-  {
-    id: 206,
-    title: 'Tampak Depan Gedung',
-    category: 'environment',
-    categoryLabel: 'Suasana Kost',
-    image: '/assets/images/foto-gedung.png',
-    sizeClass: 'card-large',
-    desc: 'Lingkungan kost yang asri, tenang, dan aman khusus muslimah dengan pagar pengaman terpadu.'
-  },
-  {
-    id: 207,
-    title: 'Mesin Cuci',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/mesin-cuci.png',
-    sizeClass: 'card-tall',
-    desc: 'Mesin cuci bersama tersedia untuk memudahkan kebutuhan mencuci pakaian sehari-hari.'
-  },
-  {
-    id: 208,
-    title: 'Kulkas Bersama',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-kulkas.png',
-    sizeClass: 'card-standard',
-    desc: 'Kulkas bersama tersedia untuk menyimpan bahan makanan dengan aman dan praktis tanpa biaya tambahan.'
-  },
-  {
-    id: 209,
-    title: 'Parkir Indoor',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-parkir.png',
-    sizeClass: 'card-wide',
-    desc: 'Area parkir indoor yang luas untuk motor dan sepeda, terlindung dari panas dan hujan sehingga kendaraan tetap aman.'
-  },
-  {
-    id: 210,
-    title: 'Area Jemuran',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-jemuran.png',
-    sizeClass: 'card-wide',
-    desc: 'Area jemuran yang luas dan bersih, dengan ruang yang cukup untuk menjemur pakaian dengan nyaman dan rapi.'
-  },
-  {
-    id: 211,
-    title: 'TV Bersama',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/fasilitas-tv.png',
-    sizeClass: 'card-standard',
-    desc: ' Ruang bersama dengan TV, kursi, karpet, dan koneksi Smart TV untuk bersantai dan menikmati tayangan favorit.'
-  }
-]
+const galleryCategories = computed(() => galleryData.value.categories)
+const galleryRow1All = computed(() => galleryData.value.row1)
+const galleryRow2All = computed(() => galleryData.value.row2)
 
 const filteredRow1 = computed(() => {
-  if (selectedCategory.value === 'all') return galleryRow1All
-  return galleryRow1All.filter(item => item.category === selectedCategory.value)
+  if (selectedCategory.value === 'all') return galleryRow1All.value
+  return galleryRow1All.value.filter(item => item.category === selectedCategory.value)
 })
 
 const filteredRow2 = computed(() => {
-  if (selectedCategory.value === 'all') return galleryRow2All
-  return galleryRow2All.filter(item => item.category === selectedCategory.value)
+  if (selectedCategory.value === 'all') return galleryRow2All.value
+  return galleryRow2All.value.filter(item => item.category === selectedCategory.value)
 })
 
 const selectGalleryCategory = (catId: string) => {
   selectedCategory.value = catId
 }
 
-const faqs = [
-  {
-    number: '01',
-    question: 'Apa saja peraturan utama di Kost Muslimah Sekar Wangi?',
-    isList: true,
-    list: [
-      { label: 'Identitas:', text: 'Penyewa wajib seorang muslimah.' },
-      { label: 'Jam Malam:', text: 'Aktivitas yang menimbulkan keramaian atau mengganggu waktu istirahat diperbolehkan hingga pukul 22.00. Setelah waktu tersebut, pintu kost akan dikunci demi keamanan dan kenyamanan bersama.' },
-      { label: 'Tamu:', text: 'Tidak diperkenankan membawa lawan jenis ke dalam kamar; tamu lawan jenis hanya diperbolehkan di area ruang tamu.' },
-      { label: 'Menginap:', text: 'Tamu (sesama wanita) yang menginap lebih dari 2 hari akan dikenakan biaya tambahan Rp 50.000/hari.' },
-      { label: 'Kebersihan:', text: 'Wajib menjaga kebersihan fasilitas umum seperti dapur dan kamar mandi bersama.' },
-      { label: 'Hewan Peliharaan:', text: 'Dilarang membawa hewan peliharaan jenis apapun.' },
-      { label: 'Perizinan:', text: 'Wajib melapor kepada pengelola kost jika meninggalkan kost untuk pulang kampung atau pergi dalam waktu lama.' },
-      { label: 'Ketertiban:', text: 'Dilarang keras merokok dan mengonsumsi minuman keras di seluruh area kost, termasuk di dalam kamar.' }
-    ]
-  },
-  {
-    number: '02',
-    question: 'Apakah biaya sewa sudah termasuk listrik, gas, air, dan fasilitas lainnya?',
-    isList: true,
-    list: [
-      { label: 'Fasilitas Termasuk:', text: 'Biaya sewa bulanan sudah mencakup pemakaian air bersih dan jaringan Wi-Fi.' },
-      { label: 'Listrik & Gas:', text: 'Biaya listrik dan gas di luar (tidak termasuk) biaya sewa kamar. Penyewa mengurus dan membayar sendiri biaya listrik dan gas tersebut.' },
-      { label: 'Kapasitas 2 Orang:', text: 'Jika 1 kamar disewa oleh 2 orang, maka akan dikenakan biaya tambahan sebesar Rp 250.000 per bulan.' }
-    ]
-  },
-  {
-    number: '03',
-    question: 'Bagaimana sistem pembayaran sewa kamar kost?',
-    isList: false,
-    text: 'Pembayaran sewa dapat dilakukan secara bulanan, per 3 bulan, atau tahunan melalui transfer bank ke rekening pengelola. Pembayaran wajib diselesaikan paling lambat pada tanggal jatuh tempo setiap bulannya sesuai kesepakatan awal.'
-  },
-  {
-    number: '04',
-    question: 'Apakah ada jam malam untuk tamu yang berkunjung?',
-    isList: false,
-    text: 'Tamu hanya diperbolehkan berkunjung di area ruang tamu luar hingga pukul 21.00 WIB. Demi kenyamanan dan privasi penghuni lain, tamu (termasuk keluarga perempuan) tidak diizinkan memasuki area kamar tanpa izin khusus.'
-  },
-  {
-    number: '05',
-    question: 'Bagaimana dengan fasilitas dapur dan laundry?',
-    isList: false,
-    text: 'Kami menyediakan dapur bersama yang lengkap dengan kompor, kulkas, dan peralatan dasar. Penghuni wajib membersihkan perlengkapan setelah dipakai. Untuk laundry, tersedia mesin cuci yang bisa digunakan bersama atau Anda dapat menggunakan jasa laundry berlangganan di sekitar area kost.'
-  }
-]
-
 const formatRupiah = (val: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
 }
+const sampleKmLuarRoom = computed(() => rooms.value.find(r => r.typeId === 'km-luar'))
+const sampleKmDalamRoom = computed(() => rooms.value.find(r => r.typeId === 'km-dalam'))
 
-// Dynamic Pricing Calculator using CMS settings
+const getDurationFromPeriod = (period: string): number => {
+  if (period === 'quarterly') return 3
+  if (period === 'semi-annual') return 6
+  if (period === 'yearly') return 12
+  return 1
+}
+
 const getPriceKmLuar = computed(() => {
-  const base = cmsSettings.value.priceKmLuarMonthly || 700000
-  if (roomPricingPeriod.value === 'quarterly') return formatRupiah(Math.round(base * 0.95))
-  if (roomPricingPeriod.value === 'yearly') return formatRupiah(cmsSettings.value.priceKmLuarYearly || 650000)
-  return formatRupiah(base)
+  const duration = getDurationFromPeriod(roomPricingPeriod.value)
+  return formatRupiah(getRoomPriceByDuration(sampleKmLuarRoom.value, duration))
 })
 
 const getPriceKmDalam = computed(() => {
-  const base = cmsSettings.value.priceKmDalamMonthly || 950000
-  if (roomPricingPeriod.value === 'quarterly') return formatRupiah(Math.round(base * 0.95))
-  if (roomPricingPeriod.value === 'yearly') return formatRupiah(cmsSettings.value.priceKmDalamYearly || 880000)
-  return formatRupiah(base)
+  const duration = getDurationFromPeriod(roomPricingPeriod.value)
+  return formatRupiah(getRoomPriceByDuration(sampleKmDalamRoom.value, duration))
 })
 
 // Scroll Progress
@@ -940,21 +534,28 @@ onUnmounted(() => {
                 :class="{ active: roomPricingPeriod === 'monthly' }"
                 @click="roomPricingPeriod = 'monthly'"
               >
-                Bulanan
+                1 Bulan
               </button>
               <button 
                 class="period-btn" 
                 :class="{ active: roomPricingPeriod === 'quarterly' }"
                 @click="roomPricingPeriod = 'quarterly'"
               >
-                3 Bulan <span class="discount-badge">Diskon 5%</span>
+                3 Bulan <span class="discount-badge">Paket 3 Bln</span>
+              </button>
+              <button 
+                class="period-btn" 
+                :class="{ active: roomPricingPeriod === 'semi-annual' }"
+                @click="roomPricingPeriod = 'semi-annual'"
+              >
+                6 Bulan <span class="discount-badge">Paket 6 Bln</span>
               </button>
               <button 
                 class="period-btn" 
                 :class="{ active: roomPricingPeriod === 'yearly' }"
                 @click="roomPricingPeriod = 'yearly'"
               >
-                Tahunan <span class="discount-badge badge-best">Hemat S/d 1 Juta!</span>
+                12 Bulan <span class="discount-badge badge-best">Paket 1 Thn</span>
               </button>
             </div>
           </header>
@@ -981,9 +582,9 @@ onUnmounted(() => {
                 </ul>
                 <div class="room-type-price">
                   <span class="price-from">
-                    {{ roomPricingPeriod === 'monthly' ? 'Mulai dari' : roomPricingPeriod === 'quarterly' ? 'Harga Per Bulan (Sewa 3 Bln)' : 'Harga Per Bulan (Sewa 1 Thn)' }}
+                    {{ roomPricingPeriod === 'monthly' ? 'Tarif 1 Bulan' : roomPricingPeriod === 'quarterly' ? 'Total Sewa 3 Bulan' : roomPricingPeriod === 'semi-annual' ? 'Total Sewa 6 Bulan' : 'Total Sewa 12 Bulan' }}
                   </span>
-                  <strong>{{ getPriceKmLuar }}<span>/bulan</span></strong>
+                  <strong>{{ getPriceKmLuar }}</strong>
                 </div>
                 <div class="room-type-cta">
                   <span>Lihat Kamar Tersedia</span>
@@ -1021,9 +622,9 @@ onUnmounted(() => {
                 </ul>
                 <div class="room-type-price">
                   <span class="price-from">
-                    {{ roomPricingPeriod === 'monthly' ? 'Mulai dari' : roomPricingPeriod === 'quarterly' ? 'Harga Per Bulan (Sewa 3 Bln)' : 'Harga Per Bulan (Sewa 1 Thn)' }}
+                    {{ roomPricingPeriod === 'monthly' ? 'Tarif 1 Bulan' : roomPricingPeriod === 'quarterly' ? 'Total Sewa 3 Bulan' : roomPricingPeriod === 'semi-annual' ? 'Total Sewa 6 Bulan' : 'Total Sewa 12 Bulan' }}
                   </span>
-                  <strong>{{ getPriceKmDalam }}<span>/bulan</span></strong>
+                  <strong>{{ getPriceKmDalam }}</strong>
                 </div>
                 <div class="room-type-cta">
                   <span>Lihat Kamar Tersedia</span>

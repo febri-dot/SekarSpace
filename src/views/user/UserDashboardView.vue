@@ -2,9 +2,25 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import UserSidebar from '../../components/layout/UserSidebar.vue'
 import { RouterLink } from 'vue-router'
+import { useAuth } from '../../composables/useAuth'
+import { useDataStore } from '../../composables/useDataStore'
+
+const { currentUser } = useAuth()
+const { cmsSettings, complaints, payments, getRoomById, getBuildingName } = useDataStore()
+
+const currentRoom = computed(() => {
+  const roomId = currentUser.value?.roomId || 'A-13'
+  return getRoomById(roomId)
+})
+
+const userName = computed(() => currentUser.value?.name || 'Keyla Asyfa Zahra')
+const roomNumber = computed(() => currentRoom.value ? `Kamar ${currentRoom.value.number}` : 'Kamar A13')
+const roomType = computed(() => currentRoom.value?.typeName || 'Kamar Mandi Dalam')
+const building = computed(() => currentRoom.value ? getBuildingName(currentRoom.value.buildingId) : 'Gedung A')
+const monthlyRent = computed(() => currentUser.value?.monthlyRent || currentRoom.value?.price || 950000)
 
 // Countdown Timer Logic
-const targetDate = new Date('2026-09-01T23:59:59').getTime()
+const targetDateStr = computed(() => currentUser.value?.endDate || '2027-08-31')
 const daysLeft = ref(0)
 const hoursLeft = ref(0)
 const minutesLeft = ref(0)
@@ -12,8 +28,9 @@ const secondsLeft = ref(0)
 let timer: any = null
 
 const updateCountdown = () => {
+  const target = new Date(`${targetDateStr.value}T23:59:59`).getTime()
   const now = new Date().getTime()
-  const distance = targetDate - now
+  const distance = target - now
 
   if (distance < 0) {
     daysLeft.value = 0
@@ -34,6 +51,34 @@ const currentDateFormatted = computed(() => {
   return now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 })
 
+// User Complaints & Payments
+const myComplaints = computed(() => {
+  const memberId = currentUser.value?.id || 'MBR-01'
+  return complaints.value.filter(c => c.memberId === memberId)
+})
+
+const activeComplaintsCount = computed(() => {
+  return myComplaints.value.filter(c => c.status !== 'resolved').length
+})
+
+const myPayments = computed(() => {
+  const memberId = currentUser.value?.id || 'MBR-01'
+  return payments.value.filter(p => p.memberId === memberId)
+})
+
+const isHMinus1Month = computed(() => {
+  return daysLeft.value <= 30 || currentUser.value?.status === 'hampir-habis'
+})
+
+const formatRupiah = (val: number) => {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
+}
+
+const waLink = computed(() => {
+  const phone = cmsSettings.value.contactPhone ? cmsSettings.value.contactPhone.replace(/[^0-9]/g, '') : '62895378020456'
+  return `https://wa.me/${phone}`
+})
+
 onMounted(() => {
   updateCountdown()
   timer = setInterval(updateCountdown, 1000)
@@ -52,7 +97,7 @@ onUnmounted(() => {
       <!-- HEADER -->
       <header class="top-header">
         <div class="header-greeting">
-          <h1>Selamat Datang, Keyla! 👋</h1>
+          <h1>Selamat Datang, {{ userName }}! 👋</h1>
           <p>Berikut ringkasan status hunian & tagihan kost Anda</p>
         </div>
         <div class="header-date">
@@ -63,12 +108,24 @@ onUnmounted(() => {
 
       <!-- PAGE CONTENT -->
       <div class="page-body container-fluid">
+        <!-- H-1 MONTH PAYMENT URGENCY ALERT BANNER -->
+        <div v-if="isHMinus1Month" class="bill-urgency-banner">
+          <div class="urgency-icon"><i class='bx bxs-bell-ring bx-tada'></i></div>
+          <div class="urgency-content">
+            <h3>⚠️ PERINGATAN: Masa Sewa Berakhir dalam {{ daysLeft }} Hari (H-1 Bulan)!</h3>
+            <p>Masa sewa {{ roomNumber }} Anda jatuh tempo pada <strong>{{ targetDateStr }}</strong>. Silakan segera lakukan pembayaran tagihan perpanjangan sewa seharga <strong>{{ formatRupiah(monthlyRent) }}</strong> agar kamar Anda tidak terisi oleh penghuni lain.</p>
+          </div>
+          <RouterLink to="/user/payments" class="btn-pay-now">
+            <i class='bx bxs-wallet'></i> Bayar Tagihan Sekarang
+          </RouterLink>
+        </div>
+
         <!-- COUNTDOWN BANNER -->
         <section class="countdown-card">
           <div class="countdown-header">
             <div>
               <h2><i class='bx bx-time-five'></i> Masa Sewa Kamar Anda</h2>
-              <p>Sisa waktu sewa Kamar 07 (Deluxe) sebelum perpanjangan</p>
+              <p>Sisa waktu sewa {{ roomNumber }} ({{ roomType }}) sebelum perpanjangan (s.d. {{ targetDateStr }})</p>
             </div>
             <span class="status-badge badge-active"><i class='bx bx-check-circle'></i> Aktif</span>
           </div>
@@ -101,9 +158,9 @@ onUnmounted(() => {
           <div class="metric-card">
             <div class="metric-icon icon-primary"><i class='bx bxs-wallet'></i></div>
             <div class="metric-info">
-              <span>Tagihan Bulan Ini</span>
-              <h3>Rp 950.000</h3>
-              <span class="metric-sub sub-warning">Jatuh Tempo: 1 Sep 2026</span>
+              <span>Tagihan Sewa Bulanan</span>
+              <h3>{{ formatRupiah(monthlyRent) }}</h3>
+              <span class="metric-sub sub-warning">Batas Bayar: Tanggal 05</span>
             </div>
             <RouterLink to="/user/payments" class="metric-action btn btn-ghost">Bayar Sekarang</RouterLink>
           </div>
@@ -112,8 +169,8 @@ onUnmounted(() => {
             <div class="metric-icon icon-warning"><i class='bx bxs-message-square-error'></i></div>
             <div class="metric-info">
               <span>Keluhan Aktif</span>
-              <h3>2 Pengaduan</h3>
-              <span class="metric-sub sub-info">1 Dalam Proses, 1 Selesai</span>
+              <h3>{{ activeComplaintsCount }} Pengaduan</h3>
+              <span class="metric-sub sub-info">Total {{ myComplaints.length }} Pengaduan diajukan</span>
             </div>
             <RouterLink to="/user/complaints" class="metric-action btn btn-ghost">Lihat Status</RouterLink>
           </div>
@@ -122,8 +179,8 @@ onUnmounted(() => {
             <div class="metric-icon icon-success"><i class='bx bxs-home-heart'></i></div>
             <div class="metric-info">
               <span>Informasi Kamar</span>
-              <h3>Kamar 07</h3>
-              <span class="metric-sub">Gedung Utama · Lt. 2</span>
+              <h3>{{ roomNumber }}</h3>
+              <span class="metric-sub">{{ building }} · {{ roomType }}</span>
             </div>
             <RouterLink to="/rooms" class="metric-action btn btn-ghost">Pindah Kamar</RouterLink>
           </div>
@@ -138,14 +195,9 @@ onUnmounted(() => {
             </div>
             <div class="announcement-list">
               <div class="announcement-item">
-                <div class="announcement-date">10 Ags 2026</div>
-                <h4>Pembersihan AC Berkala</h4>
-                <p>Jadwal pembersihan AC untuk lantai 2 akan dilaksanakan pada Sabtu, 15 Agustus 2026 pukul 09.00 WIB.</p>
-              </div>
-              <div class="announcement-item">
-                <div class="announcement-date">01 Ags 2026</div>
-                <h4>Ketertiban Jam Malam</h4>
-                <p>Gerbang utama akan dikunci pada pukul 22.00 WIB. Mohon gunakan akses kunci card jika pulang melebihi jam tersebut.</p>
+                <div class="announcement-date">Pengumuman Terkini</div>
+                <h4>{{ cmsSettings.heroBadgeText || 'Pengumuman Kost Muslimah Sekar Wangi' }}</h4>
+                <p>{{ cmsSettings.announcementBarText || 'Mohon selalu menjaga kebersihan dan ketertiban bersama.' }}</p>
               </div>
             </div>
           </div>
@@ -159,12 +211,12 @@ onUnmounted(() => {
               <div class="manager-info">
                 <div class="manager-avatar">BU</div>
                 <div>
-                  <h4>Ibu Hj. Sekar Wangi</h4>
-                  <span>Pengelola Kost Sekar Space</span>
+                  <h4>Pengelola Kost Sekar Space</h4>
+                  <span>{{ cmsSettings.contactPhone || '+62 895-3780-20456' }}</span>
                 </div>
               </div>
               <p class="manager-desc">Memiliki pertanyaan seputar kamar, perpanjangan sewa, atau keadaan darurat?</p>
-              <a href="https://wa.me/6281234567890" target="_blank" rel="noopener" class="btn btn-primary wa-btn">
+              <a :href="waLink" target="_blank" rel="noopener" class="btn btn-primary wa-btn">
                 <i class='bx bxl-whatsapp'></i> Chat WhatsApp Pengelola
               </a>
             </div>
@@ -194,6 +246,59 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 32px;
+}
+
+.bill-urgency-banner {
+  background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+  border: 2px solid #F59E0B;
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.15);
+}
+
+.urgency-icon {
+  font-size: 2.5rem;
+  color: #D97706;
+}
+
+.urgency-content {
+  flex: 1;
+}
+
+.urgency-content h3 {
+  font-size: 1.1rem;
+  color: #92400E;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+.urgency-content p {
+  font-size: 0.9rem;
+  color: #78350F;
+}
+
+.btn-pay-now {
+  background: #D97706;
+  color: #fff;
+  font-weight: 700;
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-pay-now:hover {
+  background: #B45309;
+  color: #fff;
+  transform: translateY(-2px);
 }
 
 .header-greeting h1 {

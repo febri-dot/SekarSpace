@@ -2,10 +2,12 @@
 import { ref, computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
+import { useDataStore } from '../../composables/useDataStore'
 
 const route = useRoute()
 const router = useRouter()
 const { currentUser, logout } = useAuth()
+const { getRoomById } = useDataStore()
 const isMobileSidebarOpen = ref(false)
 
 const toggleSidebar = () => {
@@ -27,11 +29,17 @@ const userInitials = computed(() => {
   const name = currentUser.value?.name || 'Keyla Asyfa'
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 })
+
+const userRoomText = computed(() => {
+  const rId = currentUser.value?.roomId || 'A-13'
+  const rm = getRoomById(rId)
+  return rm ? `Kamar ${rm.number} · ${rm.typeName}` : 'Kamar A13'
+})
 </script>
 
 <template>
   <div>
-    <!-- Floating Arrow Button on Edge when closed on mobile -->
+    <!-- Floating Trigger Button for Mobile -->
     <button 
       class="floating-sidebar-trigger" 
       :class="{ 'hide': isMobileSidebarOpen }" 
@@ -43,8 +51,8 @@ const userInitials = computed(() => {
     </button>
 
     <!-- Sidebar Aside -->
-    <aside class="sidebar" :class="{ 'show': isMobileSidebarOpen }">
-      <div class="sidebar-header">
+    <aside class="sidebar user-sidebar" :class="{ 'show': isMobileSidebarOpen, 'is-open': isMobileSidebarOpen }">
+      <div class="sidebar-header sidebar-brand">
         <RouterLink to="/" class="sidebar-logo">
           <i class='bx bxs-home-heart'></i>
           <span>Sekar<strong>Space</strong></span>
@@ -54,12 +62,12 @@ const userInitials = computed(() => {
         </button>
       </div>
 
-      <nav class="sidebar-nav" aria-label="Menu Dashboard">
+      <nav class="sidebar-nav">
         <span class="nav-section-title">Menu Utama</span>
         <RouterLink 
           to="/user" 
           class="sidebar-link" 
-          :class="{ active: route.path === '/user' }"
+          :class="{ active: route.path === '/user' || route.path === '/user/dashboard' }"
           @click="closeSidebar"
         >
           <i class='bx bxs-dashboard'></i>
@@ -73,8 +81,7 @@ const userInitials = computed(() => {
           @click="closeSidebar"
         >
           <i class='bx bxs-message-square-error'></i>
-          <span>Keluhan</span>
-          <span class="badge-count">2</span>
+          <span>Keluhan Saya</span>
         </RouterLink>
 
         <RouterLink 
@@ -84,7 +91,7 @@ const userInitials = computed(() => {
           @click="closeSidebar"
         >
           <i class='bx bxs-wallet'></i>
-          <span>Pembayaran</span>
+          <span>Tagihan & Bayar</span>
         </RouterLink>
 
         <span class="nav-section-title">Portal Lain</span>
@@ -102,7 +109,7 @@ const userInitials = computed(() => {
         <div class="profile-avatar">{{ userInitials }}</div>
         <div class="profile-info">
           <h4>{{ currentUser?.name || 'Keyla Asyfa' }}</h4>
-          <span>{{ currentUser?.roomNumber || 'Kamar 07' }} · Deluxe</span>
+          <span>{{ userRoomText }}</span>
         </div>
         <button class="logout-btn" title="Keluar" @click="handleLogout">
           <i class='bx bx-log-out'></i>

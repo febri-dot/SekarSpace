@@ -9,9 +9,14 @@ const { currentUser } = useAuth()
 
 const activeFilter = ref<'all' | 'pending' | 'in-progress' | 'resolved'>('all')
 
+const userComplaints = computed(() => {
+  const memberId = currentUser.value?.id || 'MBR-01'
+  return complaints.value.filter(c => c.memberId === memberId)
+})
+
 const filteredComplaints = computed(() => {
-  if (activeFilter.value === 'all') return complaints.value
-  return complaints.value.filter(c => c.status === activeFilter.value)
+  if (activeFilter.value === 'all') return userComplaints.value
+  return userComplaints.value.filter(c => c.status === activeFilter.value)
 })
 
 // Form State
@@ -32,11 +37,10 @@ const handleAddComplaint = () => {
   }
 
   addComplaint({
-    tenantName: currentUser.value?.name || 'Keyla Asyfa Zahra',
+    memberId: currentUser.value?.id || 'MBR-01',
     title: newTitle.value,
     category: newCategory.value,
-    roomNumber: currentUser.value?.roomNumber || 'Kamar 07',
-    date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+    date: new Date().toISOString().substring(0, 10),
     status: 'pending',
     priority: newPriority.value,
     description: newDescription.value

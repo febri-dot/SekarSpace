@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useAuth } from '../../composables/useAuth'
+import { useDataStore } from '../../composables/useDataStore'
 
 const route = useRoute()
-const { getTenantById } = useAuth()
+const { getTenantById, updateMember } = useAuth()
+const { rooms, getRoomById, getBuildingName, updateRoom, cmsSettings } = useDataStore()
 
 const tenantId = String(route.params.id)
 
@@ -19,14 +21,95 @@ const tenant = computed(() => {
     phone: '081234567890',
     birthDate: '12 Mei 2004',
     parentPhone: '081298765432',
-    roomNumber: 'Kamar 07 (A01)',
-    roomType: 'Kamar Mandi Dalam (Deluxe)',
-    building: 'Gedung Utama (Gedung A)',
+    roomId: 'A-13',
     monthlyRent: 950000,
-    startDate: '01 September 2025',
-    endDate: '01 September 2026',
+    startDate: '2025-09-01',
+    endDate: '2026-09-01',
     status: 'aktif'
   }
+})
+
+const room = computed(() => {
+  const rId = tenant.value?.roomId || 'A-13'
+  return getRoomById(rId)
+})
+
+const roomNumber = computed(() => room.value ? `Kamar ${room.value.number}` : 'Kamar A13')
+const roomType = computed(() => room.value?.typeName || 'Kamar Mandi Dalam')
+const buildingName = computed(() => room.value ? getBuildingName(room.value.buildingId) : 'Gedung A')
+
+// Edit Modal State
+const isEditModalOpen = ref(false)
+const noticeMessage = ref('')
+
+const editForm = ref({
+  roomId: 'A-13',
+  monthlyRent: 950000,
+  startDate: '2025-09-01',
+  endDate: '2026-09-01',
+  status: 'aktif' as 'aktif' | 'hampir-habis' | 'non-aktif'
+})
+
+const openEditModal = () => {
+  editForm.value = {
+    roomId: tenant.value.roomId || 'A-13',
+    monthlyRent: tenant.value.monthlyRent || 950000,
+    startDate: tenant.value.startDate || '2025-09-01',
+    endDate: tenant.value.endDate || '2026-09-01',
+    status: (tenant.value.status || 'aktif') as 'aktif' | 'hampir-habis' | 'non-aktif'
+  }
+  isEditModalOpen.value = true
+}
+
+const closeEditModal = () => {
+  isEditModalOpen.value = false
+}
+
+const handleSaveTenantRoom = () => {
+  const oldRoomId = tenant.value.roomId
+  const newRoomId = editForm.value.roomId
+
+  // Update room occupancy status if room changed
+  if (oldRoomId && oldRoomId !== newRoomId) {
+    updateRoom(oldRoomId, { status: 'available' })
+    updateRoom(newRoomId, { status: 'occupied' })
+  }
+
+  // Update tenant record
+  updateMember(tenant.value.id, {
+    roomId: editForm.value.roomId,
+    monthlyRent: Number(editForm.value.monthlyRent),
+    startDate: editForm.value.startDate,
+    endDate: editForm.value.endDate,
+    status: editForm.value.status
+  })
+
+  noticeMessage.value = 'Data kamar & sewa penyewa berhasil diperbarui!'
+  closeEditModal()
+  setTimeout(() => {
+    noticeMessage.value = ''
+  }, 4000)
+}
+
+// Generate WhatsApp Bill Link
+const waBillUrl = computed(() => {
+  const phone = (tenant.value.phone || '').replace(/[^0-9]/g, '')
+  const formattedRent = formatRupiah(tenant.value.monthlyRent || 950000)
+  
+  const text = `Halo Kak ${tenant.value.name}, 👋
+
+Berikut adalah rincian tagihan sewa Kost Sekar Space Anda:
+📌 Kamar: ${roomNumber.value} (${buildingName.value})
+📌 Nominal Sewa: ${formattedRent} / bulan
+📌 Periode Jatuh Tempo: s.d. ${tenant.value.endDate || '01 Sep 2026'}
+
+Mohon lakukan pembayaran melalui rekening resmi Sekar Space:
+• BCA: 1234 5678 90 (a.n. Sekar Space Kost)
+• Mandiri: 9876 5432 10 (a.n. Sekar Space Kost)
+
+Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Portal Penyewa. Terima kasih! 🙏`
+
+  return `https://wa.me/${phone || '6281234567890'}?text=${encodeURIComponent(text)}`
 })
 
 const getInitials = (name: string) => {
@@ -54,12 +137,21 @@ const formatRupiah = (val?: number) => {
       </header>
 
       <div class="page-body">
+        <div v-if="noticeMessage" class="alert-notice">
+          <i class='bx bx-check-circle'></i> {{ noticeMessage }}
+        </div>
+
         <div class="detail-card">
           <div class="profile-banner">
             <div class="avatar-circle">{{ getInitials(tenant.name) }}</div>
             <div>
               <h2>{{ tenant.name }}</h2>
               <span class="status-badge"><i class='bx bx-check-circle'></i> Status: {{ tenant.status === 'aktif' ? 'Aktif (Terisi)' : 'Hampir Habis' }}</span>
+            </div>
+            <div class="banner-actions">
+              <a :href="waBillUrl" target="_blank" rel="noopener" class="btn btn-whatsapp-bill">
+                <i class='bx bxl-whatsapp'></i> Kirim Tagihan via WA
+              </a>
             </div>
           </div>
 
@@ -84,12 +176,17 @@ const formatRupiah = (val?: number) => {
 
           <!-- Section 2: Informasi Kamar -->
           <div class="section-box">
-            <h2>Informasi Kamar</h2>
+            <div class="section-header-row">
+              <h2>Informasi Kamar & Gedung</h2>
+              <button class="btn btn-outline-primary btn-sm" @click="openEditModal">
+                <i class='bx bx-edit'></i> Edit Data Kamar & Sewa
+              </button>
+            </div>
             <div class="info-list">
-              <p class="info"><span class="label">Nomor Kamar:</span> {{ tenant.roomNumber || 'Kamar 07' }}</p>
-              <p class="info"><span class="label">Tipe Kamar:</span> {{ tenant.roomType || 'Kamar Mandi Dalam' }}</p>
-              <p class="info"><span class="label">Gedung:</span> {{ tenant.building || 'Gedung Utama' }}</p>
-              <p class="info"><span class="label">Status:</span> {{ tenant.status === 'aktif' ? 'Terisi' : 'Hampir Habis' }}</p>
+              <p class="info"><span class="label">Nomor Kamar:</span> {{ roomNumber }}</p>
+              <p class="info"><span class="label">Tipe Kamar:</span> {{ roomType }}</p>
+              <p class="info"><span class="label">Gedung:</span> {{ buildingName }}</p>
+              <p class="info"><span class="label">Status Sewa:</span> {{ tenant.status === 'aktif' ? 'Aktif' : 'Hampir Habis' }}</p>
             </div>
           </div>
 
@@ -118,6 +215,60 @@ const formatRupiah = (val?: number) => {
         </div>
       </div>
     </main>
+
+    <!-- MODAL EDIT KAMAR & SEWA PENYEWA -->
+    <div v-if="isEditModalOpen" class="modal-backdrop" @click.self="closeEditModal">
+      <div class="modal-box">
+        <button class="modal-close" @click="closeEditModal"><i class='bx bx-x'></i></button>
+
+        <div class="modal-header">
+          <h2><i class='bx bx-edit-alt'></i> Edit Kamar & Status Sewa</h2>
+          <p>Ubah penempatan kamar dan periode sewa untuk penyewa <strong>{{ tenant.name }}</strong></p>
+        </div>
+
+        <form @submit.prevent="handleSaveTenantRoom" class="edit-tenant-form">
+          <div class="form-group mb-3">
+            <label>Pilih Kamar Terbuka</label>
+            <select v-model="editForm.roomId" class="form-control" required>
+              <option v-for="r in rooms" :key="r.id" :value="r.id">
+                Kamar {{ r.number }} ({{ getBuildingName(r.buildingId) }} - {{ r.typeName }}) {{ r.status === 'occupied' && r.id !== tenant.roomId ? '· Terisi' : '· Tersedia' }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mulai Sewa</label>
+              <input type="date" v-model="editForm.startDate" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label>Selesai Sewa</label>
+              <input type="date" v-model="editForm.endDate" class="form-control" required />
+            </div>
+          </div>
+
+          <div class="form-row mt-3">
+            <div class="form-group">
+              <label>Harga Sewa Bulanan (Rp)</label>
+              <input type="number" v-model="editForm.monthlyRent" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label>Status Masa Sewa</label>
+              <select v-model="editForm.status" class="form-control">
+                <option value="aktif">Aktif</option>
+                <option value="hampir-habis">Hampir Habis (H-30 Hari)</option>
+                <option value="non-aktif">Non-Aktif / Selesai</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer mt-4">
+            <button type="button" class="btn btn-ghost" @click="closeEditModal">Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -166,6 +317,50 @@ const formatRupiah = (val?: number) => {
   padding-bottom: 20px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 24px;
+}
+
+.banner-actions {
+  margin-left: auto;
+}
+
+.btn-whatsapp-bill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #25D366;
+  color: #fff;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-whatsapp-bill:hover {
+  background: #1EBE5D;
+  transform: translateY(-2px);
+  color: #fff;
+}
+
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.alert-notice {
+  background: #DCFCE7;
+  color: #15803D;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
 }
 
 .avatar-circle {

@@ -1,0 +1,38 @@
+[
+  {
+    "icon": "bx bx-wifi",
+    "title": "WiFi Cepat",
+    "desc": "Internet berkecepatan tinggi tersedia 24 jam untuk kebutuhan belajar dan bekerja.",
+    "details": "Internet berkecepatan tinggi tersedia selama 24 jam tanpa biaya tambahan. Koneksi ini mendukung berbagai kebutuhan, seperti mengerjakan tugas kuliah, mengikuti kelas online, hingga menyelesaikan pekerjaan dengan nyaman."
+  },
+  {
+    "icon": "bx bx-shield-quarter",
+    "title": "Keamanan 24 Jam",
+    "desc": "Sistem keamanan terpadu dengan CCTV dan akses terbatas untuk kenyamanan Anda.",
+    "details": "CCTV beroperasi selama 24 jam untuk memantau area sekitar pintu utama. Sistem pengawasan ini membantu menjaga keamanan sekaligus memberikan rasa aman, privasi, dan kenyamanan bagi penghuni."
+  },
+  {
+    "icon": "bx bxs-car-garage",
+    "title": "Parkir Luas",
+    "desc": "Area parkir yang memadai untuk motor dan sepeda, aman dan terlindung.",
+    "details": "Area parkir indoor yang luas dan memadai untuk motor dan sepeda. Parkir terlindung dari panas dan hujan serta membantu menjaga kendaraan tetap aman selama ditinggalkan."
+  },
+  {
+    "icon": "bx bx-fridge",
+    "title": "Dapur Bersama",
+    "desc": "Dapur lengkap dengan peralatan memasak yang bisa digunakan bersama.",
+    "details": "Dapur bersama dilengkapi kompor gas, kulkas, serta berbagai peralatan memasak yang dapat digunakan bersama. Cocok untuk kebutuhan memasak sehari-hari."
+  },
+  {
+    "icon": "bx bxs-tv",
+    "title": "TV Bersama",
+    "desc": "Tersedia fasilitas televisi sebagai sarana hiburan untuk bersantai dan menikmati waktu bersama.",
+    "details": "Tersedia ruang bersama yang dilengkapi TV, kursi, dan karpet untuk bersantai. Dilengkapi koneksi Smart TV untuk menonton tayangan favorit dan menikmati waktu luang bersama."
+  },
+  {
+    "icon": "bx bxs-group",
+    "title": "Ruang Tamu",
+    "desc": "Tersedia ruang tamu yang nyaman untuk menerima tamu, bersantai, dan berkumpul bersama.",
+    "details": "Ruang tamu yang nyaman dan tertata, dilengkapi sofa dan meja untuk menerima tamu, bersantai, atau berkumpul bersama. Cocok untuk menciptakan suasana yang hangat dan nyaman."
+  }
+]

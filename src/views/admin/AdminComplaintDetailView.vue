@@ -3,9 +3,11 @@ import { ref, computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useDataStore } from '../../composables/useDataStore'
+import { useAuth } from '../../composables/useAuth'
 
 const route = useRoute()
 const { complaints, updateComplaintResponse } = useDataStore()
+const { getTenantById } = useAuth()
 
 const complaintId = String(route.params.id)
 const replyText = ref('')
@@ -14,12 +16,19 @@ const isSent = ref(false)
 const complaintDetail = computed(() => {
   return complaints.value.find(c => c.id === complaintId) || {
     id: complaintId,
-    tenantName: 'Keyla Asyfa Zahra',
+    memberId: 'MBR-01',
     title: 'AC Kamar Kurang Dingin',
     description: 'AC kamar sudah tidak dingin sejak kemarin malam dan membuat kamar terasa panas.',
     response: 'Teknisi AC telah dijadwalkan untuk melakukan servis freon pada jam 14.00 WIB.',
     status: 'in-progress' as const
   }
+})
+
+const tenantName = computed(() => {
+  const mId = complaintDetail.value?.memberId
+  if (!mId) return 'Keyla Asyfa Zahra'
+  const t = getTenantById(mId)
+  return t ? t.name : 'Penyewa'
 })
 
 const sendReply = () => {
@@ -49,7 +58,7 @@ const sendReply = () => {
 
         <section class="section">
           <h2>Informasi Keluhan</h2>
-          <p><strong>Nama Penyewa:</strong> {{ complaintDetail.tenantName }}</p>
+          <p><strong>Nama Penyewa:</strong> {{ tenantName }}</p>
           <p>
             <strong>Keluhan:</strong><br>
             {{ complaintDetail.description }}

@@ -3,12 +3,34 @@ import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useDataStore, type RoomData, type ComplaintData } from '../../composables/useDataStore'
-import defaultUsers from '../../data/users.json'
+import { useAuth } from '../../composables/useAuth'
 
-const { rooms, complaints, payments, bookRoom, updateComplaintResponse } = useDataStore()
+const { rooms, complaints, payments, bookRoom, updateComplaintResponse, getBuildingName, getRoomById } = useDataStore()
+const { tenants: memberTenants, getTenantById } = useAuth()
 
-// State
-const memberTenants = ref(defaultUsers.filter(u => u.role === 'member'))
+const getTenantName = (memberId: string) => {
+  const t = getTenantById(memberId)
+  return t ? t.name : 'Penyewa'
+}
+
+const getTenantRoomNumber = (tenant: any) => {
+  const rm = getRoomById(tenant.roomId || '')
+  return rm ? `Kamar ${rm.number}` : 'Kamar A13'
+}
+
+const getTenantBuildingName = (tenant: any) => {
+  const rm = getRoomById(tenant.roomId || '')
+  return rm ? getBuildingName(rm.buildingId) : 'Gedung A'
+}
+
+const getComplaintRoomNumber = (c: ComplaintData) => {
+  const t = getTenantById(c.memberId)
+  if (t && t.roomId) {
+    const rm = getRoomById(t.roomId)
+    if (rm) return `Kamar ${rm.number}`
+  }
+  return 'Kamar A13'
+}
 
 // KPI Calculations
 const totalTenantsCount = computed(() => memberTenants.value.length)
@@ -62,7 +84,7 @@ const formatRupiah = (val: number) => {
 </script>
 
 <template>
-  <div class="admin-layout">
+  <div class="admin-page">
     <AdminSidebar />
 
     <main class="admin-main">
@@ -134,16 +156,16 @@ const formatRupiah = (val: number) => {
         </div>
       </section>
 
-      <!-- 2. QUICK ACTIONS & ROOM OCCUPANCY VISUAL GRID -->
-      <div class="dashboard-content-grid">
-        <!-- Room Occupancy Layout Grid -->
-        <div class="dashboard-card room-status-panel">
+      <!-- 2. ROOM OCCUPANCY MONITOR & RECENT TENANTS -->
+      <div class="dashboard-columns">
+        <!-- Room Occupancy Monitor Widget -->
+        <div class="dashboard-card room-monitor-widget">
           <div class="card-header">
             <div>
-              <h3><i class='bx bxs-grid-alt'></i> Status Hunian Kamar Kost</h3>
-              <p>Klik tombol status pada kamar untuk mengubah status ketersediaan (*Tersedia* / *Terisi*).</p>
+              <h3><i class='bx bxs-building-house'></i> Status Ketersediaan Kamar</h3>
+              <p>Klik tombol untuk mengubah status ketersediaan secara cepat.</p>
             </div>
-            <span class="badge-count">{{ rooms.length }} Kamar Total</span>
+            <RouterLink to="/admin/rooms" class="btn btn-ghost btn-sm">Kelola Master Kamar</RouterLink>
           </div>
 
           <div class="admin-room-grid">
@@ -155,7 +177,7 @@ const formatRupiah = (val: number) => {
             >
               <div class="node-top">
                 <span class="room-num">No. {{ room.number }}</span>
-                <span class="bld-tag">{{ room.buildingName }}</span>
+                <span class="bld-tag">{{ getBuildingName(room.buildingId) }}</span>
               </div>
               <div class="node-type-info">
                 <i :class="room.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open'"></i>
@@ -195,7 +217,7 @@ const formatRupiah = (val: number) => {
               </div>
               <div class="tenant-widget-info">
                 <h4>{{ tenant.name }}</h4>
-                <p>{{ tenant.roomNumber }} · {{ tenant.building }}</p>
+                <p>{{ getTenantRoomNumber(tenant) }} · {{ getTenantBuildingName(tenant) }}</p>
                 <small class="tenant-phone"><i class='bx bxl-whatsapp'></i> {{ tenant.phone }}</small>
               </div>
               <span class="tenant-status-pill" :class="tenant.status">
@@ -232,8 +254,8 @@ const formatRupiah = (val: number) => {
               </thead>
               <tbody>
                 <tr v-for="comp in complaints.slice(0, 5)" :key="comp.id">
-                  <td><strong>{{ comp.tenantName }}</strong></td>
-                  <td><span class="chip-room">{{ comp.roomNumber }}</span></td>
+                  <td><strong>{{ getTenantName(comp.memberId) }}</strong></td>
+                  <td><span class="chip-room">{{ getComplaintRoomNumber(comp) }}</span></td>
                   <td>{{ comp.title }}</td>
                   <td>{{ comp.date }}</td>
                   <td>
@@ -259,8 +281,8 @@ const formatRupiah = (val: number) => {
             <div v-for="comp in complaints.slice(0, 5)" :key="'mob-' + comp.id" class="mobile-dash-comp-card">
               <div class="dash-comp-head">
                 <div>
-                  <strong>{{ comp.tenantName }}</strong>
-                  <span class="chip-room ml-2">{{ comp.roomNumber }}</span>
+                  <strong>{{ getTenantName(comp.memberId) }}</strong>
+                  <span class="chip-room ml-2">{{ getComplaintRoomNumber(comp) }}</span>
                 </div>
                 <span class="status-badge" :class="comp.status">
                   {{ comp.status === 'pending' ? 'Perlu Respon' : comp.status === 'in-progress' ? 'Diproses' : 'Selesai' }}
@@ -288,7 +310,7 @@ const formatRupiah = (val: number) => {
             <div v-for="pay in payments.slice(0, 4)" :key="pay.id" class="payment-widget-item">
               <div class="pay-icon"><i class='bx bx-receipt'></i></div>
               <div class="pay-info">
-                <h4>{{ pay.tenantName }}</h4>
+                <h4>{{ getTenantName(pay.memberId) }}</h4>
                 <p>Periode: {{ pay.period }} ({{ pay.method }})</p>
                 <small>{{ pay.date }}</small>
               </div>
@@ -308,8 +330,8 @@ const formatRupiah = (val: number) => {
         <button class="modal-close" @click="closeReplyModal"><i class='bx bx-x'></i></button>
 
         <div class="modal-header">
-          <h2>Tanggapi Keluhan — {{ selectedComplaint.roomNumber }}</h2>
-          <p>Penyewa: <strong>{{ selectedComplaint.tenantName }}</strong> · {{ selectedComplaint.title }}</p>
+          <h2>Tanggapi Keluhan — {{ getComplaintRoomNumber(selectedComplaint) }}</h2>
+          <p>Penyewa: <strong>{{ getTenantName(selectedComplaint.memberId) }}</strong> · {{ selectedComplaint.title }}</p>
         </div>
 
         <div class="complaint-detail-box mb-4">
@@ -346,7 +368,7 @@ const formatRupiah = (val: number) => {
 </template>
 
 <style scoped>
-.admin-layout {
+.admin-page, .admin-layout {
   display: flex;
   min-height: 100vh;
   background: var(--off-white);
@@ -477,10 +499,11 @@ const formatRupiah = (val: number) => {
 }
 
 /* 2. DASHBOARD CONTENT GRID */
-.dashboard-content-grid {
+.dashboard-columns, .dashboard-content-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 24px;
+  margin-bottom: 24px;
 }
 
 .dashboard-card {

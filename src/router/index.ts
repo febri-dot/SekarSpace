@@ -21,6 +21,7 @@ const router = createRouter({
     },
     {
       path: '/user',
+      alias: '/user/dashboard',
       name: 'user-dashboard',
       component: () => import('../views/user/UserDashboardView.vue')
     },

@@ -1,29 +1,51 @@
 [
   {
+    "memberId": "MBR-01",
+    "period": "September 2026",
+    "amount": 950000,
+    "method": "Transfer Bank BCA / Mandiri",
+    "date": "2026-08-14",
+    "dueDate": "05 September 2026",
+    "status": "paid",
+    "notes": "Pembayaran telah diverifikasi & dikonfirmasi LUNAS oleh admin.",
+    "id": "PAY-2026-05"
+  },
+  {
+    "memberId": "MBR-01",
+    "period": "September 2026",
+    "amount": 950000,
+    "method": "Transfer Bank BCA / Mandiri",
+    "date": "2026-08-14",
+    "dueDate": "05 September 2026",
+    "status": "rejected",
+    "notes": "Bukti transfer tidak terbaca / nominal belum masuk.",
+    "id": "PAY-2026-04"
+  },
+  {
     "id": "PAY-2026-08",
-    "tenantName": "Keyla Asyfa Zahra",
+    "memberId": "MBR-01",
     "period": "Agustus 2026",
     "amount": 950000,
     "method": "Transfer BCA",
-    "date": "01 Ags 2026",
+    "date": "2026-08-01",
     "status": "paid"
   },
   {
     "id": "PAY-2026-07",
-    "tenantName": "Keyla Asyfa Zahra",
+    "memberId": "MBR-01",
     "period": "Juli 2026",
     "amount": 950000,
     "method": "Transfer BCA",
-    "date": "01 Jul 2026",
+    "date": "2026-07-01",
     "status": "paid"
   },
   {
     "id": "PAY-2026-06",
-    "tenantName": "Keyla Asyfa Zahra",
+    "memberId": "MBR-01",
     "period": "Juni 2026",
     "amount": 950000,
     "method": "Transfer Mandiri",
-    "date": "02 Jun 2026",
+    "date": "2026-06-02",
     "status": "paid"
   }
 ]

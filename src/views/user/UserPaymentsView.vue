@@ -1,28 +1,43 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import UserSidebar from '../../components/layout/UserSidebar.vue'
-import { useDataStore, type PaymentData } from '../../composables/useDataStore'
+import { useDataStore, getRoomPriceByDuration, type PaymentData } from '../../composables/useDataStore'
 import { useAuth } from '../../composables/useAuth'
 
-const { payments, addPayment } = useDataStore()
+const { payments, addPayment, cmsSettings, getRoomById } = useDataStore()
 const { currentUser } = useAuth()
 
 const copySuccessMsg = ref('')
 
-const bankAccounts = [
+const currentRoom = computed(() => {
+  const rId = currentUser.value?.roomId || 'A-13'
+  return getRoomById(rId)
+})
+
+const bankAccounts = computed(() => cmsSettings.value.bankAccounts || [
   { bank: 'BCA', number: '1234 5678 90', holder: 'a.n. Sekar Space Kost', badgeClass: 'bank-bca' },
   { bank: 'Mandiri', number: '9876 5432 10', holder: 'a.n. Sekar Space Kost', badgeClass: 'bank-mandiri' },
   { bank: 'QRIS', number: 'SEKAR SPACE QRIS', holder: 'Scan via All E-Wallet', badgeClass: 'bank-qris' }
-]
+])
 
-const paymentHistory = payments
+const userPayments = computed(() => {
+  const memberId = currentUser.value?.id || 'MBR-01'
+  return payments.value.filter(p => p.memberId === memberId)
+})
+
+const paymentHistory = userPayments
 
 // Form Konfirmasi State
 const formBank = ref('BCA')
-const formAmount = ref(950000)
+const formDurationMonths = ref(1)
 const formDate = ref(new Date().toISOString().substring(0, 10))
 const formNotes = ref('')
 const isSubmitted = ref(false)
+
+const calculatedAmount = computed(() => {
+  const duration = Number(formDurationMonths.value) || 1
+  return getRoomPriceByDuration(currentRoom.value, duration)
+})
 
 // Modal Invoice State
 const selectedInvoice = ref<PaymentData | null>(null)
@@ -37,16 +52,18 @@ const copyToClipboard = (text: string) => {
 }
 
 const submitPayment = () => {
-  const d = new Date(formDate.value)
-  const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-  const periodStr = `${monthNames[d.getMonth()]} ${d.getFullYear()}`
+  const duration = Number(formDurationMonths.value) || 1
+  const periodStr = `Perpanjangan Sewa ${duration} Bulan`
+
   addPayment({
-    tenantName: currentUser.value?.name || 'Keyla Asyfa Zahra',
+    memberId: currentUser.value?.id || 'MBR-01',
     period: periodStr,
-    amount: formAmount.value,
+    amount: calculatedAmount.value,
+    durationMonths: duration,
     method: `Transfer ${formBank.value}`,
     date: formDate.value,
-    status: 'pending'
+    status: 'pending',
+    notes: formNotes.value
   })
   isSubmitted.value = true
 }
@@ -121,18 +138,29 @@ const printReceipt = () => {
 
                 <div class="form-row">
                   <div class="form-group">
-                    <label>Jumlah Transfer (Rp)</label>
-                    <input type="number" v-model="formAmount" required />
+                    <label>Durasi Perpanjangan Sewa</label>
+                    <select v-model="formDurationMonths" required>
+                      <option :value="1">1 Bulan</option>
+                      <option :value="3">3 Bulan</option>
+                      <option :value="6">6 Bulan</option>
+                      <option :value="12">12 Bulan (1 Tahun)</option>
+                    </select>
                   </div>
+                  <div class="form-group">
+                    <label>Total Nominal Tagihan (Otomatis)</label>
+                    <input type="text" :value="formatRupiah(calculatedAmount)" readonly class="readonly-price-input" />
+                  </div>
+                </div>
+
+                <div class="form-row">
                   <div class="form-group">
                     <label>Tanggal Transfer</label>
                     <input type="date" v-model="formDate" required />
                   </div>
-                </div>
-
-                <div class="form-group">
-                  <label>Unggah Bukti Transfer (Gambar / PDF)</label>
-                  <input type="file" accept="image/*,.pdf" />
+                  <div class="form-group">
+                    <label>Unggah Bukti Transfer (Gambar / PDF)</label>
+                    <input type="file" accept="image/*,.pdf" />
+                  </div>
                 </div>
 
                 <div class="form-group">
@@ -430,9 +458,19 @@ const printReceipt = () => {
 }
 
 .form-group input, .form-group select, .form-group textarea {
+  width: 100%;
   padding: 10px 14px;
-  border: 1px solid var(--border);
   border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.form-group input.readonly-price-input {
+  background: var(--off-white);
+  font-weight: 700;
+  color: var(--primary);
+  border-color: var(--tertiary-dark, var(--border));
+  cursor: default;
 }
 
 .form-row {

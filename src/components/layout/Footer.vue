@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { RouterLink } from 'vue-router'
+import { useDataStore } from '../../composables/useDataStore'
+
+const { cmsSettings } = useDataStore()
 </script>
 
 <template>
@@ -15,7 +18,7 @@ import { RouterLink } from 'vue-router'
           <div class="footer-socials">
             <a href="#" aria-label="Instagram Sekar Space" id="socialInstagram"><i class='bx bxl-instagram'></i></a>
             <a href="#" aria-label="Facebook Sekar Space" id="socialFacebook"><i class='bx bxl-facebook'></i></a>
-            <a href="https://wa.me/6281234567890" aria-label="WhatsApp Sekar Space" id="socialWhatsapp" target="_blank" rel="noopener"><i class='bx bxl-whatsapp'></i></a>
+            <a :href="'https://wa.me/' + (cmsSettings.contactPhone ? cmsSettings.contactPhone.replace(/[^0-9]/g, '') : '62895378020456')" aria-label="WhatsApp Sekar Space" id="socialWhatsapp" target="_blank" rel="noopener"><i class='bx bxl-whatsapp'></i></a>
             <a href="#" aria-label="TikTok Sekar Space" id="socialTiktok"><i class='bx bxl-tiktok'></i></a>
           </div>
         </div>
@@ -43,9 +46,9 @@ import { RouterLink } from 'vue-router'
         <div class="footer-contact">
           <h3>Kontak Kami</h3>
           <address>
-            <p><i class='bx bxs-map'></i> Kost Muslimah Sekar Wangi, Trini, Sinduadi, Kec. Mlati, Kabupaten Sleman, D.I. Yogyakarta 55284</p>
-            <p><i class='bx bxs-phone'></i> <a href="tel:+62895378020456">+62 895-3780-20456</a></p>
-            <p><i class='bx bxs-envelope'></i> <a href="mailto:info@sekarspace.com">info@sekarspace.com</a></p>
+            <p><i class='bx bxs-map'></i> {{ cmsSettings.contactAddress || 'Kost Muslimah Sekar Wangi, Trini, Sinduadi, Kec. Mlati, Kabupaten Sleman, D.I. Yogyakarta 55284' }}</p>
+            <p><i class='bx bxs-phone'></i> <a :href="'tel:' + (cmsSettings.contactPhone || '+62 895-3780-20456')">{{ cmsSettings.contactPhone || '+62 895-3780-20456' }}</a></p>
+            <p><i class='bx bxs-envelope'></i> <a :href="'mailto:' + (cmsSettings.contactEmail || 'info@sekarspace.com')">{{ cmsSettings.contactEmail || 'info@sekarspace.com' }}</a></p>
           </address>
         </div>
       </div>

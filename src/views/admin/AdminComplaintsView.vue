@@ -2,8 +2,15 @@
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { RouterLink } from 'vue-router'
 import { useDataStore } from '../../composables/useDataStore'
+import { useAuth } from '../../composables/useAuth'
 
 const { complaints } = useDataStore()
+const { getTenantById } = useAuth()
+
+const getTenantName = (memberId: string) => {
+  const tenant = getTenantById(memberId)
+  return tenant ? tenant.name : 'Penyewa'
+}
 </script>
 
 <template>
@@ -31,7 +38,7 @@ const { complaints } = useDataStore()
               </thead>
               <tbody>
                 <tr v-for="c in complaints" :key="c.id">
-                  <td><strong>{{ c.tenantName }}</strong></td>
+                  <td><strong>{{ getTenantName(c.memberId) }}</strong></td>
                   <td class="desc-cell">{{ c.description }}</td>
                   <td>
                     <RouterLink :to="`/admin/complaints/${c.id}`">
@@ -50,7 +57,7 @@ const { complaints } = useDataStore()
           <div class="mobile-complaint-admin-cards">
             <div v-for="c in complaints" :key="'mob-' + c.id" class="mobile-complaint-card">
               <div class="c-card-top">
-                <strong class="c-tenant-name">{{ c.tenantName }}</strong>
+                <strong class="c-tenant-name">{{ getTenantName(c.memberId) }}</strong>
                 <RouterLink :to="`/admin/complaints/${c.id}`">
                   <button class="btn-detail">Detail</button>
                 </RouterLink>

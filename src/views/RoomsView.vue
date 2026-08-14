@@ -3,9 +3,10 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import Navbar from '../components/layout/Navbar.vue'
 import Footer from '../components/layout/Footer.vue'
-import { useDataStore, type RoomData } from '../composables/useDataStore'
+import { useDataStore, getRoomPriceByDuration, type RoomData } from '../composables/useDataStore'
+import communalFacilitiesData from '../data/communalFacilities.json'
 
-const { rooms, bookRoom } = useDataStore()
+const { rooms, bookRoom, buildings } = useDataStore()
 const route = useRoute()
 
 // Step Management
@@ -18,11 +19,11 @@ const activeFloor = ref<'floor1' | 'floor2'>('floor1')
 // Gallery State for Step 3
 const activeImageIndex = ref<number>(0)
 const galleryImages = [
-  { url: '/assets/images/room-single.png', title: 'Kamar Standard' },
-  { url: '/assets/images/room-deluxe.png', title: 'Kamar Mandi Dalam' },
-  { url: '/assets/images/room-double.png', title: 'Kamar Double / Shared' },
-  { url: '/assets/images/gallery-kitchen.png', title: 'Dapur Bersama' },
-  { url: '/assets/images/gallery-livingroom.png', title: 'Ruang Tamu & Santai' }
+  { url: '/assets/images/foto-km-dalam.png', title: 'Kamar Mandi Dalam' },
+  { url: '/assets/images/fasilitas-km-luar.png', title: 'Kamar Mandi Luar' },
+  { url: '/assets/images/fasilitas-luas-kamar.png', title: 'Interior Kamar' },
+  { url: '/assets/images/fasilitas-dapur.png', title: 'Dapur Bersama' },
+  { url: '/assets/images/fasilitas-sofa.png', title: 'Ruang Tamu & Santai' }
 ]
 
 // Calculator & Estimator State for Step 3
@@ -33,41 +34,17 @@ const calcDuration = computed(() => durationOptions[durationIndex.value] || 1)
 const calcAddonExtraPerson = ref<boolean>(false)
 const calcAddonCarParking = ref<boolean>(false)
 
-
-
-// Building Data Definition
-const buildingList = [
-  {
-    id: 'utama',
-    name: 'Gedung A',
-    desc: 'Memiliki 10 kamar yang terbagi dalam 2 lantai.',
-    badge: 'Favorit',
-    facilities: ['Garasi Motor', 'Wi-Fi & CCTV 24 Jam', 'Dapur Umum Lt.1', 'Ruang Tamu', 'Area Jemur Atas', 'Mesin Cuci', 'Kulkas & TV', 'Token Listrik Bersama']
-  },
-  {
-    id: 'timur',
-    name: 'Gedung B',
-    desc: 'Memiliki 6 kamar yang terbagi dalam 2 lantai.',
-    badge: 'Tenang',
-    facilities: ['Garasi Motor', 'Wi-Fi & CCTV 24 Jam', 'Dapur Umum Lt.2', 'Area Jemur Atas', 'Kulkas & TV', 'Token Listrik Bersama']
-  },
-  {
-    id: 'barat',
-    name: 'Gedung C',
-    desc: 'Memiliki 8 kamar yang terbagi dalam 2 lantai.',
-    badge: 'View Asri',
-    facilities: ['Garasi Motor', 'Wi-Fi & CCTV 24 Jam', 'Dapur Umum Tiap Lantai', 'Ruang Tamu', 'Area Jemur Atas', 'Kulkas & TV', 'Token Listrik Bersama']
-  }
-]
+// Building Data Definition (Loaded from JSON via useDataStore)
+const buildingList = computed(() => buildings.value)
 
 // Selected Building Object
 const currentBuilding = computed(() => {
-  return buildingList.find(b => b.id === selectedBuildingId.value) || buildingList[0]!
+  return buildingList.value.find(b => b.id === selectedBuildingId.value) || buildingList.value[0]!
 })
 
 // Rooms filtered by Building & Type
 const roomsInSelectedBuilding = computed(() => {
-  return rooms.value.filter(r => r.buildingId === selectedBuildingId.value)
+  return rooms.value.filter(r => r.buildingId === selectedBuildingId.value || (selectedBuildingId.value === 'utama' && r.buildingId === 'bld-a') || (selectedBuildingId.value === 'timur' && r.buildingId === 'bld-b') || (selectedBuildingId.value === 'barat' && r.buildingId === 'bld-c'))
 })
 
 const availableRoomsInBuilding = computed(() => {
@@ -83,7 +60,15 @@ const selectedRoom = computed<RoomData | null>(() => {
   return null
 })
 
-// Floor Plan Nodes for Selected Building
+// Helper to map building identifier to standard key
+const getBuildingKey = (bId: string): 'bld-a' | 'bld-b' | 'bld-c' => {
+  if (bId === 'utama' || bId === 'bld-a') return 'bld-a'
+  if (bId === 'timur' || bId === 'bld-b') return 'bld-b'
+  if (bId === 'barat' || bId === 'bld-c') return 'bld-c'
+  return 'bld-a'
+}
+
+// Floor Plan Nodes for Selected Building (Clean JSON lookup, no repetitive if/else)
 const buildingFloorPlanNodes = computed(() => {
   const floorNum = activeFloor.value === 'floor1' ? 1 : 2
   const roomNodes = roomsInSelectedBuilding.value
@@ -100,78 +85,17 @@ const buildingFloorPlanNodes = computed(() => {
       roomData: r
     }))
 
-  let communalNodes: any[] = []
-  const bId = selectedBuildingId.value
-
-  if (bId === 'utama') {
-    if (floorNum === 1) {
-      communalNodes = [
-        { id: 'u-f1-km1', number: 'F-01', title: 'Kamar Mandi Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
-        { id: 'u-f1-dapur', number: 'F-02', title: 'Dapur Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
-        { id: 'u-f1-tamu', number: 'F-03', title: 'Ruang Tamu', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-group', isRoom: false }
-      ]
-    } else {
-      communalNodes = [
-        { id: 'u-f2-km1', number: 'F-04', title: 'Kamar Mandi Umum 1', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
-        { id: 'u-f2-km2', number: 'F-05', title: 'Kamar Mandi Umum 2', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
-        { id: 'u-f2-jemuran', number: 'F-06', title: 'Area Jemuran', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-closet', isRoom: false },
-        { id: 'u-f2-balkon', number: 'F-07', title: 'Balkon', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-sun', isRoom: false }
-      ]
-    }
-  } else if (bId === 'timur') {
-    if (floorNum === 1) {
-      communalNodes = [
-        { id: 't-f1-km1', number: 'F-01', title: 'Kamar Mandi Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false }
-      ]
-    } else {
-      communalNodes = [
-        { id: 't-f2-km1', number: 'F-02', title: 'Kamar Mandi Umum 1', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
-        { id: 't-f2-km2', number: 'F-03', title: 'Kamar Mandi Umum 2', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
-        { id: 't-f2-dapur', number: 'F-04', title: 'Dapur Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
-        { id: 't-f2-balkon', number: 'F-05', title: 'Balkon', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-sun', isRoom: false },
-        { id: 't-f2-jemuran', number: 'F-06', title: 'Area Jemuran', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-closet', isRoom: false }
-      ]
-    }
-  } else if (bId === 'barat') {
-    if (floorNum === 1) {
-      communalNodes = [
-        { id: 'b-f1-km1', number: 'F-01', title: 'Kamar Mandi Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
-        { id: 'b-f1-dapur', number: 'F-02', title: 'Dapur Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
-        { id: 'b-f1-tamu', number: 'F-03', title: 'Ruang Tamu', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-group', isRoom: false }
-      ]
-    } else {
-      communalNodes = [
-        { id: 'b-f2-km1', number: 'F-04', title: 'Kamar Mandi Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-bath', isRoom: false },
-        { id: 'b-f2-dapur', number: 'F-05', title: 'Dapur Umum', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
-        { id: 'b-f2-jemuran', number: 'F-06', title: 'Area Jemuran', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-closet', isRoom: false },
-        { id: 'b-f2-balkon', number: 'F-07', title: 'Balkon', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-sun', isRoom: false }
-      ]
-    }
-  }
+  const key = getBuildingKey(selectedBuildingId.value)
+  const communalMap = communalFacilitiesData[key] || communalFacilitiesData['bld-a']
+  const communalNodes = (communalMap as any)[String(floorNum)] || []
 
   return [...roomNodes, ...communalNodes]
 })
 
-// Calculator Calculations
+// Calculator Calculations (Direct JSON Data Lookup)
 const basePriceTotal = computed(() => {
   if (!selectedRoom.value) return 0
-  
-  const typeId = selectedRoom.value.typeId
-  const duration = calcDuration.value
-  
-  if (typeId === 'km-luar') {
-    if (duration === 1) return 600000
-    if (duration === 3) return 1800000
-    if (duration === 6) return 3500000
-    if (duration === 12) return 7000000
-  } else if (typeId === 'km-dalam') {
-    if (duration === 1) return 850000
-    if (duration === 3) return 2000000
-    if (duration === 6) return 4000000
-    if (duration === 12) return 8000000
-  }
-  
-  return selectedRoom.value.price * duration
+  return getRoomPriceByDuration(selectedRoom.value, calcDuration.value)
 })
 
 const totalAddonsTotal = computed(() => {
