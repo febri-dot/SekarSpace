@@ -1,0 +1,47 @@
+[
+  {
+    "typeId": "km-luar",
+    "typeName": "Kamar Mandi Luar",
+    "tag": "Standard",
+    "badge": "Ekonomis & Bersih",
+    "desc": "Kamar bersih & ekonomis dengan fasilitas kamar mandi luar terawat bersama.",
+    "size": "3 × 3 Meter",
+    "price": 600000,
+    "price1Month": 600000,
+    "price3Months": 1800000,
+    "price6Months": 3500000,
+    "price12Months": 7000000,
+    "icon": "bx bx-door-open",
+    "image": "/assets/images/fasilitas-luas-kamar.png",
+    "features": [
+      "Ukuran 3 × 3 Meter",
+      "Kasur, Bantal & Lemari Pakaian",
+      "Meja & Cermin",
+      "WiFi Cepat 24 Jam",
+      "Akses Dapur & Kulkas Bersama"
+    ]
+  },
+  {
+    "typeId": "km-dalam",
+    "typeName": "Kamar Mandi Dalam",
+    "tag": "Premium",
+    "badge": "Populer & Favorit",
+    "desc": "Kamar lebih luas dengan kamar mandi pribadi di dalam kamar untuk kenyamanan & privasi ekstra.",
+    "size": "3 × 4 Meter",
+    "price": 850000,
+    "price1Month": 850000,
+    "price3Months": 2000000,
+    "price6Months": 4000000,
+    "price12Months": 8000000,
+    "icon": "bx bx-bath",
+    "image": "/assets/images/kamar-km-dalam-1.png",
+    "features": [
+      "Ukuran 3 × 4 Meter",
+      "Kasur, Bantal & Lemari Pakaian",
+      "Meja & Cermin",
+      "WiFi Cepat 24 Jam",
+      "Akses Dapur & Kulkas Bersama",
+      "Kamar Mandi Dalam (Ember & Closet)"
+    ]
+  }
+]

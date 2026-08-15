@@ -1,10 +1,34 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import { RouterLink, useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
 
 const route = useRoute()
+const router = useRouter()
 const { isLoggedIn, currentUser, isAdmin } = useAuth()
+
+const portalTarget = computed(() => {
+  if (!currentUser.value) {
+    return {
+      path: '/login',
+      label: 'Login',
+      icon: 'bx bx-log-in'
+    }
+  }
+  if (currentUser.value.role === 'admin') {
+    return {
+      path: '/admin/dashboard',
+      label: 'Portal Admin',
+      icon: 'bx bxs-dashboard'
+    }
+  }
+  return {
+    path: '/user/dashboard',
+    label: 'Portal Penyewa',
+    icon: 'bx bxs-user-circle'
+  }
+})
+
 const isMobileNavOpen = ref(false)
 const isScrolled = ref(false)
 const activeSection = ref('hero')
@@ -51,14 +75,41 @@ const closeMobileNav = () => {
   document.body.style.overflow = ''
 }
 
+const handleNavClick = (e: MouseEvent, target: string) => {
+  closeMobileNav()
+  
+  if (target === '/') {
+    if (route.path === '/') {
+      e.preventDefault()
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    return
+  }
+
+  if (target.startsWith('/#')) {
+    const hash = target.replace('/', '')
+    if (route.path === '/') {
+      e.preventDefault()
+      const element = document.querySelector(hash)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+        history.pushState(null, '', hash)
+      }
+    } else {
+      e.preventDefault()
+      router.push({ path: '/', hash })
+    }
+  }
+}
+
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 50
 
   if (route.path === '/') {
     const sections = [
       { id: 'contact', name: 'contact' },
-      { id: 'gallery', name: 'gallery' },
       { id: 'faq', name: 'faq' },
+      { id: 'gallery', name: 'gallery' },
       { id: 'rooms', name: 'rooms' },
       { id: 'facilities', name: 'facilities' },
       { id: 'hero', name: 'hero' }
@@ -115,51 +166,79 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('resize', updateIndicator)
+  document.body.style.overflow = ''
 })
 </script>
 
 <template>
   <header id="header" class="header" :class="{ 'scrolled': isScrolled }">
     <nav class="navbar" aria-label="Navigasi Utama">
-      <RouterLink to="/" class="nav-logo" aria-label="Sekar Space - Beranda" @click="closeMobileNav">
+      <RouterLink to="/" class="nav-logo" aria-label="Sekar Space - Beranda" @click="handleNavClick($event, '/')">
         <i class='bx bxs-home-heart'></i>
         <span>Sekar<strong>Space</strong></span>
       </RouterLink>
 
       <ul class="nav-menu" ref="navMenuRef" :class="{ 'show': isMobileNavOpen }" role="menubar">
+        <!-- Mobile Drawer Header -->
+        <li role="none" class="mobile-nav-header">
+          <div class="mobile-logo">
+            <i class='bx bxs-home-heart'></i>
+            <span>Sekar<strong>Space</strong></span>
+          </div>
+          <button class="mobile-close-btn" @click="closeMobileNav" aria-label="Tutup menu">
+            <i class='bx bx-x'></i>
+          </button>
+        </li>
+
         <li role="none">
-          <RouterLink to="/" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'hero' }" role="menuitem" @click="closeMobileNav">
-            Beranda
+          <RouterLink to="/" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'hero' }" role="menuitem" @click="handleNavClick($event, '/')">
+            <i class='bx bx-home-alt mobile-nav-icon'></i>
+            <span>Beranda</span>
           </RouterLink>
         </li>
         <li role="none">
-          <a href="/#facilities" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'facilities' }" role="menuitem" @click="closeMobileNav">Fasilitas</a>
+          <a href="/#facilities" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'facilities' }" role="menuitem" @click="handleNavClick($event, '/#facilities')">
+            <i class='bx bx-check-shield mobile-nav-icon'></i>
+            <span>Fasilitas</span>
+          </a>
         </li>
         <li role="none">
           <RouterLink to="/rooms" class="nav-link" :class="{ active: route.path === '/rooms' || (route.path === '/' && activeSection === 'rooms') }" role="menuitem" @click="closeMobileNav">
-            Kamar
+            <i class='bx bx-door-open mobile-nav-icon'></i>
+            <span>Kamar</span>
           </RouterLink>
         </li>
         <li role="none">
-          <a href="/#faq" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'faq' }" role="menuitem" @click="closeMobileNav">FAQ</a>
+          <a href="/#gallery" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'gallery' }" role="menuitem" @click="handleNavClick($event, '/#gallery')">
+            <i class='bx bx-images mobile-nav-icon'></i>
+            <span>Galeri</span>
+          </a>
         </li>
         <li role="none">
-          <a href="/#gallery" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'gallery' }" role="menuitem" @click="closeMobileNav">Galeri</a>
+          <a href="/#faq" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'faq' }" role="menuitem" @click="handleNavClick($event, '/#faq')">
+            <i class='bx bx-help-circle mobile-nav-icon'></i>
+            <span>FAQ</span>
+          </a>
         </li>
         <li role="none">
-          <a href="/#contact" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'contact' }" role="menuitem" @click="closeMobileNav">Kontak</a>
+          <a href="/#contact" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'contact' }" role="menuitem" @click="handleNavClick($event, '/#contact')">
+            <i class='bx bx-map-pin mobile-nav-icon'></i>
+            <span>Kontak</span>
+          </a>
         </li>
+
         <li role="none" class="portal-nav-item">
-          <RouterLink to="/login" class="nav-link" @click="closeMobileNav">
-            <i class='bx bx-log-in'></i> Login
+          <RouterLink :to="portalTarget.path" class="portal-mobile-btn" @click="closeMobileNav">
+            <i :class="portalTarget.icon"></i>
+            <span>{{ portalTarget.label }}</span>
           </RouterLink>
         </li>
         <div class="nav-indicator" :style="indicatorStyle"></div>
       </ul>
 
       <div class="nav-actions">
-        <RouterLink to="/login" class="btn btn-primary nav-btn">
-          <i class='bx bx-log-in'></i> Login
+        <RouterLink :to="portalTarget.path" class="btn btn-primary nav-btn" id="navAuthBtn">
+          <i :class="portalTarget.icon"></i> {{ portalTarget.label }}
         </RouterLink>
 
         <button 
@@ -313,6 +392,14 @@ onUnmounted(() => {
   display: none;
 }
 
+.mobile-nav-header {
+  display: none;
+}
+
+.mobile-nav-icon {
+  display: none;
+}
+
 .nav-overlay {
   position: fixed;
   inset: 0;
@@ -333,31 +420,87 @@ onUnmounted(() => {
   .nav-btn {
     display: none;
   }
-  
-  .portal-nav-item {
-    display: block;
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-  }
 
   .nav-toggle {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+  }
+
+  .mobile-nav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 12px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .mobile-logo i {
+    font-size: 1.45rem;
+  }
+
+  .mobile-logo span strong {
+    color: var(--dark);
+  }
+
+  .mobile-close-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-close-btn:hover {
+    background: var(--primary);
+    color: var(--white);
+  }
+
+  .mobile-nav-icon {
+    display: inline-flex;
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    transition: color var(--transition-fast);
   }
 
   .nav-menu {
     position: fixed;
     top: 0;
     right: -100%;
-    width: 280px;
+    width: min(320px, 85vw);
     height: 100vh;
+    height: 100dvh;
     background: var(--white);
     flex-direction: column;
-    align-items: flex-start;
-    padding: 80px 32px 32px;
-    gap: 20px;
-    box-shadow: var(--shadow-xl);
-    z-index: 999;
+    align-items: stretch;
+    padding: 24px 20px;
+    gap: 8px;
+    box-shadow: -10px 0 35px rgba(44, 24, 16, 0.18);
+    z-index: 1001;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     transition: right var(--transition-smooth);
   }
 
@@ -365,14 +508,82 @@ onUnmounted(() => {
     right: 0;
   }
 
+  .nav-menu li {
+    width: 100%;
+  }
+
+  .nav-link {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: var(--radius-md);
+    font-size: 0.98rem;
+    color: var(--text);
+    transition: all var(--transition-fast);
+  }
+
+  .nav-link:hover {
+    background: var(--bg-light);
+    color: var(--primary);
+  }
+
+  .nav-link:hover .mobile-nav-icon {
+    color: var(--primary);
+  }
+
+  .nav-link.active {
+    background: var(--tertiary-light);
+    color: var(--primary);
+    font-weight: 700;
+    border-left: 3px solid var(--primary);
+  }
+
+  .nav-link.active .mobile-nav-icon {
+    color: var(--primary);
+  }
+
+  .nav-link.active::after {
+    display: none;
+  }
+
   .nav-indicator {
     display: none;
   }
 
-  .nav-link.active::after {
+  .portal-nav-item {
     display: block;
-    transform: scaleX(1);
-    opacity: 1;
+    width: 100%;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .portal-mobile-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: var(--white);
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 14px rgba(84, 26, 26, 0.22);
+    transition: all var(--transition-fast);
+  }
+
+  .portal-mobile-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    color: var(--white);
+  }
+
+  .portal-mobile-btn i {
+    font-size: 1.3rem;
   }
 }
 </style>

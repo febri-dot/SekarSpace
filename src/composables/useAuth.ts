@@ -21,7 +21,7 @@ export interface User {
   password?: string
 }
 
-const STORAGE_USERS_KEY = 'sekar_space_users_v6'
+const STORAGE_USERS_KEY = 'sekar_space_users_v7'
 const STORAGE_CURRENT_USER_KEY = 'sekar_space_current_user_v6'
 
 // Load users from localStorage or JSON file data

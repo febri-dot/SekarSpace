@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import defaultRooms from '../data/rooms.json'
+import defaultRoomTypes from '../data/roomTypes.json'
 import defaultComplaints from '../data/complaints.json'
 import defaultPayments from '../data/payments.json'
 import defaultCms from '../data/cms.json'
@@ -9,6 +10,18 @@ import defaultTestimonials from '../data/testimonials.json'
 import defaultGallery from '../data/gallery.json'
 import defaultFaqs from '../data/faqs.json'
 import defaultBuildings from '../data/buildings.json'
+
+export interface RoomTypeData {
+  typeId: 'km-luar' | 'km-dalam'
+  typeName: string
+  tag?: string
+  badge: string
+  desc: string
+  size: string
+  icon: string
+  image?: string
+  features: string[]
+}
 
 export interface RoomData {
   id: string
@@ -55,16 +68,16 @@ export interface PaymentData {
 
 export const getRoomPriceByDuration = (room?: RoomData | null, duration: number = 1): number => {
   if (!room) {
-    room = (defaultRooms as RoomData[])[0]
+    room = (defaultRooms as any[])[0]
   }
   if (!room) return 600000 * duration
 
-  const def = (defaultRooms as RoomData[]).find(r => r.id === room?.id || r.typeId === room?.typeId)
+  const typeMeta = (defaultRoomTypes as RoomTypeData[]).find(t => t.typeId === room?.typeId)
 
-  const p1 = room.price1Month ?? def?.price1Month ?? room.price
-  const p3 = room.price3Months ?? def?.price3Months ?? (room.typeId === 'km-luar' ? 1800000 : 2000000)
-  const p6 = room.price6Months ?? def?.price6Months ?? (room.typeId === 'km-luar' ? 3500000 : 4000000)
-  const p12 = room.price12Months ?? def?.price12Months ?? (room.typeId === 'km-luar' ? 7000000 : 8000000)
+  const p1 = room.price1Month ?? room.price ?? (typeMeta as any)?.price1Month ?? (typeMeta as any)?.price ?? (room.typeId === 'km-dalam' ? 850000 : 600000)
+  const p3 = room.price3Months ?? (typeMeta as any)?.price3Months ?? (room.typeId === 'km-dalam' ? 2000000 : 1800000)
+  const p6 = room.price6Months ?? (typeMeta as any)?.price6Months ?? (room.typeId === 'km-dalam' ? 4000000 : 3500000)
+  const p12 = room.price12Months ?? (typeMeta as any)?.price12Months ?? (room.typeId === 'km-dalam' ? 8000000 : 7000000)
 
   if (duration === 1) return p1
   if (duration === 3) return p3
@@ -74,8 +87,8 @@ export const getRoomPriceByDuration = (room?: RoomData | null, duration: number 
 }
 
 export const calculateRoomPrice = (typeId: string, duration: number): number => {
-  const match = (defaultRooms as RoomData[]).find(r => r.typeId === typeId)
-  return getRoomPriceByDuration(match, duration)
+  const match = (defaultRooms as any[]).find(r => r.typeId === typeId) || { typeId }
+  return getRoomPriceByDuration(match as RoomData, duration)
 }
 
 export interface BankAccountData {
@@ -170,9 +183,10 @@ export interface BuildingData {
 }
 
 const STORAGE_ROOMS = 'sekar_space_rooms_v10'
+const STORAGE_ROOM_TYPES = 'sekar_space_room_types_v1'
 const STORAGE_COMPLAINTS = 'sekar_space_complaints_v6'
 const STORAGE_PAYMENTS = 'sekar_space_payments_v6'
-const STORAGE_CMS = 'sekar_space_cms_v4'
+const STORAGE_CMS = 'sekar_space_cms_v5'
 const STORAGE_FACILITIES = 'sekar_space_facilities_v1'
 const STORAGE_NEARBY = 'sekar_space_nearby_v4'
 const STORAGE_TESTIMONIALS = 'sekar_space_testimonials_v3'
@@ -193,9 +207,11 @@ const loadStorage = <T>(key: string, defaultValue: T): T => {
   return defaultValue
 }
 
+const roomTypes = ref<RoomTypeData[]>(loadStorage(STORAGE_ROOM_TYPES, defaultRoomTypes as RoomTypeData[]))
+
 const loadRoomsStorage = (): RoomData[] => {
   const saved = localStorage.getItem(STORAGE_ROOMS)
-  let loadedRooms = defaultRooms as RoomData[]
+  let loadedRooms = defaultRooms as any[]
   if (saved) {
     try {
       loadedRooms = JSON.parse(saved)
@@ -204,15 +220,23 @@ const loadRoomsStorage = (): RoomData[] => {
     }
   }
   const merged = loadedRooms.map(r => {
-    const def = (defaultRooms as RoomData[]).find(d => d.id === r.id || d.typeId === r.typeId)
+    const typeMeta = (roomTypes.value || defaultRoomTypes).find(t => t.typeId === r.typeId)
     return {
-      ...def,
-      ...r,
-      price1Month: r.price1Month ?? def?.price1Month ?? r.price,
-      price3Months: r.price3Months ?? def?.price3Months ?? (r.typeId === 'km-luar' ? 1800000 : 2000000),
-      price6Months: r.price6Months ?? def?.price6Months ?? (r.typeId === 'km-luar' ? 3500000 : 4000000),
-      price12Months: r.price12Months ?? def?.price12Months ?? (r.typeId === 'km-luar' ? 7000000 : 8000000)
-    }
+      id: r.id,
+      number: r.number,
+      floor: r.floor,
+      buildingId: r.buildingId,
+      typeId: r.typeId,
+      status: r.status,
+      typeName: r.typeName || typeMeta?.typeName || (r.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'),
+      price: r.price ?? (typeMeta as any)?.price ?? (r.typeId === 'km-dalam' ? 850000 : 600000),
+      price1Month: r.price1Month ?? (typeMeta as any)?.price1Month ?? (typeMeta as any)?.price ?? (r.typeId === 'km-dalam' ? 850000 : 600000),
+      price3Months: r.price3Months ?? (typeMeta as any)?.price3Months ?? (r.typeId === 'km-dalam' ? 2000000 : 1800000),
+      price6Months: r.price6Months ?? (typeMeta as any)?.price6Months ?? (r.typeId === 'km-dalam' ? 4000000 : 3500000),
+      price12Months: r.price12Months ?? (typeMeta as any)?.price12Months ?? (r.typeId === 'km-dalam' ? 8000000 : 7000000),
+      size: r.size || typeMeta?.size || (r.typeId === 'km-dalam' ? '3 × 4 Meter' : '3 × 3 Meter'),
+      features: (r.features && r.features.length > 0) ? r.features : (typeMeta?.features || ['Kasur & Bantal', 'Lemari Pakaian', 'Meja & Cermin'])
+    } as RoomData
   })
   localStorage.setItem(STORAGE_ROOMS, JSON.stringify(merged))
   return merged
@@ -248,6 +272,7 @@ const writeJsonDisk = async (filename: string, data: any) => {
 
 const saveAll = () => {
   localStorage.setItem(STORAGE_ROOMS, JSON.stringify(rooms.value))
+  localStorage.setItem(STORAGE_ROOM_TYPES, JSON.stringify(roomTypes.value))
   localStorage.setItem(STORAGE_COMPLAINTS, JSON.stringify(complaints.value))
   localStorage.setItem(STORAGE_PAYMENTS, JSON.stringify(payments.value))
   localStorage.setItem(STORAGE_CMS, JSON.stringify(cmsSettings.value))
@@ -258,7 +283,16 @@ const saveAll = () => {
   localStorage.setItem(STORAGE_FAQS, JSON.stringify(faqs.value))
   localStorage.setItem(STORAGE_BUILDINGS, JSON.stringify(buildings.value))
 
-  writeJsonDisk('rooms', rooms.value)
+  const normalizedRooms = rooms.value.map(r => ({
+    id: r.id,
+    number: r.number,
+    floor: r.floor,
+    buildingId: r.buildingId,
+    typeId: r.typeId,
+    status: r.status
+  }))
+  writeJsonDisk('rooms', normalizedRooms)
+  writeJsonDisk('roomTypes', roomTypes.value)
   writeJsonDisk('complaints', complaints.value)
   writeJsonDisk('payments', payments.value)
   writeJsonDisk('cms', cmsSettings.value)
@@ -361,6 +395,7 @@ export function useDataStore() {
 
   const resetDataToJSON = () => {
     rooms.value = defaultRooms as RoomData[]
+    roomTypes.value = defaultRoomTypes as RoomTypeData[]
     complaints.value = defaultComplaints as ComplaintData[]
     payments.value = defaultPayments as PaymentData[]
     cmsSettings.value = defaultCms as CmsSettings
@@ -375,6 +410,7 @@ export function useDataStore() {
 
   return {
     rooms,
+    roomTypes,
     complaints,
     payments,
     cmsSettings,
