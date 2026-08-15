@@ -45,5 +45,31 @@
     "phone": "083456789012",
     "birthDate": "2004-07-10",
     "parentPhone": "081276543210"
+  },
+  {
+    "name": "Febriyanti Putri",
+    "username": "febri",
+    "password": "123",
+    "email": "febri@sekarspace.com",
+    "nik": "1234567890342345",
+    "address": "Manisrejo, Sembego RT 17 RW 39 Maguwoharjo Depok",
+    "phone": "0895378020456",
+    "birthDate": "2008-08-16",
+    "parentPhone": "0895378020456",
+    "id": "MBR-04",
+    "role": "member"
+  },
+  {
+    "name": "anon",
+    "username": "anon",
+    "password": "123",
+    "email": "anon@sekarspace.com",
+    "nik": "1234567890234567",
+    "address": "dfghjkl;",
+    "phone": "2345678900987",
+    "birthDate": "2008-04-16",
+    "parentPhone": "1234567890876",
+    "id": "MBR-05",
+    "role": "member"
   }
 ]

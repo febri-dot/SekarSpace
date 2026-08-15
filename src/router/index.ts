@@ -76,6 +76,11 @@ const router = createRouter({
       component: () => import('../views/admin/AdminComplaintDetailView.vue')
     },
     {
+      path: '/admin/room-transfers',
+      name: 'admin-room-transfers',
+      component: () => import('../views/admin/AdminRoomTransfersView.vue')
+    },
+    {
       path: '/admin/cms',
       name: 'admin-cms',
       component: () => import('../views/admin/AdminCmsView.vue')

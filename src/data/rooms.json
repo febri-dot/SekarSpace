@@ -60,7 +60,7 @@
     "number": "A24",
     "floor": 2,
     "buildingId": "bld-a",
-    "typeId": "km-luar",
+    "typeId": "km-dalam",
     "status": "available"
   },
   {
@@ -93,7 +93,7 @@
     "floor": 1,
     "buildingId": "bld-b",
     "typeId": "km-luar",
-    "status": "available"
+    "status": "occupied"
   },
   {
     "id": "B-21",

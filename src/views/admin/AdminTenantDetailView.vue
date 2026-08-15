@@ -7,7 +7,7 @@ import { useDataStore, getRoomPriceByDuration } from '../../composables/useDataS
 
 const route = useRoute()
 const { getTenantById } = useAuth()
-const { rooms, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, updateRental, getRentalsByMemberId } = useDataStore()
+const { rooms, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, updateRental, getRentalsByMemberId, getRentalContractStatus } = useDataStore()
 
 const tenantId = String(route.params.id)
 
@@ -397,6 +397,74 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
           </div>
 
         </div>
+
+        <!-- TABEL RIWAYAT KONTRAK SEWA LENGKAP -->
+        <div class="card-detail-section rental-history-section">
+          <div class="card-section-header">
+            <i class='bx bx-history'></i>
+            <h3>Riwayat Kontrak & Perpanjangan Sewa (Total: {{ memberRentals.length }} Kontrak)</h3>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-history-table">
+              <thead>
+                <tr>
+                  <th>No. Kontrak</th>
+                  <th>Kamar Kost</th>
+                  <th>Periode Kontrak</th>
+                  <th>Durasi</th>
+                  <th>Total Biaya</th>
+                  <th>Status Kontrak</th>
+                  <th>Rencana Perpanjangan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(r, idx) in memberRentals" :key="r.id">
+                  <td>
+                    <strong>{{ r.id }}</strong>
+                    <div class="sub-text">{{ idx === 0 && r.status === 'active' ? 'Kontrak Aktif' : 'Kontrak Sewa' }}</div>
+                  </td>
+                  <td>
+                    <strong>Kamar {{ getRoomById(r.roomId)?.number || r.roomId }}</strong>
+                    <div class="sub-text">{{ getBuildingName(getRoomById(r.roomId)?.buildingId || '') }} · {{ getRoomById(r.roomId)?.typeName }}</div>
+                  </td>
+                  <td>
+                    <strong>{{ formatDateIndo(r.startDate) }} s.d. {{ formatDateIndo(r.endDate) }}</strong>
+                  </td>
+                  <td>{{ r.durationMonths }} Bulan</td>
+                  <td><strong class="price-text">{{ formatRupiah(r.totalAmount || r.basePrice) }}</strong></td>
+                  <td>
+                    <span 
+                      class="status-pill" 
+                      :class="{
+                        'pill-active': getRentalContractStatus(r) === 'active',
+                        'pill-upcoming-contract': getRentalContractStatus(r) === 'upcoming',
+                        'pill-completed': getRentalContractStatus(r) === 'completed'
+                      }"
+                    >
+                      {{ getRentalContractStatus(r) === 'active' ? 'Aktif Berjalan' : getRentalContractStatus(r) === 'upcoming' ? 'Perpanjangan Terdaftar' : 'Selesai' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span v-if="r.extensionIntent === 'extend'" class="intent-pill intent-extend">
+                      <i class='bx bx-check'></i> Ingin Perpanjang
+                    </span>
+                    <span v-else-if="r.extensionIntent === 'not_extend'" class="intent-pill intent-not-extend">
+                      <i class='bx bx-log-out'></i> Tidak Perpanjang
+                    </span>
+                    <span v-else class="intent-pill intent-pending">
+                      Belum Memilih
+                    </span>
+                  </td>
+                </tr>
+                <tr v-if="memberRentals.length === 0">
+                  <td colspan="7" class="empty-cell">Belum ada riwayat kontrak sewa untuk penyewa ini.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </main>
 
@@ -682,6 +750,101 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 24px;
+  margin-bottom: 28px;
+}
+
+.rental-history-section {
+  margin-top: 24px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.admin-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  text-align: left;
+}
+
+.admin-history-table th {
+  background: #FAFAFA;
+  padding: 12px 16px;
+  font-weight: 700;
+  color: var(--dark);
+  border-bottom: 1.5px solid var(--border);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-history-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.admin-history-table tbody tr:hover {
+  background: #FFFDF9;
+}
+
+.sub-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.price-text {
+  color: #541A1A;
+  font-weight: 700;
+}
+
+.pill-completed {
+  background: #F3F4F6;
+  color: #4B5563;
+  border: 1px solid #E5E7EB;
+}
+
+.pill-upcoming-contract {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.intent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.intent-extend {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+}
+
+.intent-not-extend {
+  background: #FFF7ED;
+  color: #C2410C;
+  border: 1px solid #FED7AA;
+}
+
+.intent-pending {
+  background: #F3F4F6;
+  color: #6B7280;
+  border: 1px solid #E5E7EB;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .card-detail-section {

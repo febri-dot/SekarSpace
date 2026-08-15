@@ -6,7 +6,7 @@ import { useAuth, type User } from '../../composables/useAuth'
 import { useDataStore, getRoomPriceByDuration } from '../../composables/useDataStore'
 
 const { tenants, addMember, deleteMember } = useAuth()
-const { rooms, getRoomById, getBuildingName, updateRoom, addPayment, addRental, getActiveRentalByMemberId } = useDataStore()
+const { rooms, rentals, getRoomById, getBuildingName, updateRoom, addPayment, addRental, getActiveRentalByMemberId, isRoomAvailableForDates } = useDataStore()
 
 const searchQuery = ref('')
 const isAddModalOpen = ref(false)
@@ -68,9 +68,36 @@ const todayStr = new Date().toISOString().substring(0, 10)
 const addonExtraPerson = ref<boolean>(false)
 const addonCarParking = ref<boolean>(false)
 
-// List hanya kamar yang statusnya 'available' (Tersedia)
+const formatDateIndo = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return dateStr
+  const monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
+  const day = parseInt(dayStr, 10)
+  const monthIdx = parseInt(monthStr, 10) - 1
+  return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
+}
+
+// List kamar yang tersedia di tanggal mulai sewa yang dipilih
 const availableRooms = computed(() => {
-  return rooms.value.filter(r => r.status === 'available')
+  const startDate = formMember.value.startDate || todayStr
+  const endDate = formMember.value.endDate || ''
+
+  return rooms.value.filter(r => {
+    return isRoomAvailableForDates(r.id, startDate, endDate)
+  }).map(r => {
+    const rent = rentals.value.find(rent => rent.roomId === r.id && rent.status !== 'cancelled' && rent.extensionIntent === 'not_extend')
+    let note = ''
+    if (rent) {
+      note = ` [Tersedia mulai ${formatDateIndo(rent.endDate)}]`
+    }
+    return {
+      ...r,
+      availNote: note
+    }
+  })
 })
 
 // Input Sanitizers (Hanya angka & batas digit)
@@ -130,6 +157,16 @@ const updateCalculatedFields = () => {
   const months = Number(formMember.value.durationMonths) || 1
   if (formMember.value.startDate) {
     formMember.value.endDate = computeEndDate(formMember.value.startDate, months)
+  }
+
+  // Jika kamar yang dipilih sebelumnya tidak tersedia di tanggal baru ini, sesuaikan pilihan
+  if (formMember.value.roomId) {
+    const isStillAvailable = availableRooms.value.some(r => r.id === formMember.value.roomId)
+    if (!isStillAvailable) {
+      formMember.value.roomId = availableRooms.value[0]?.id || ''
+    }
+  } else if (availableRooms.value.length > 0) {
+    formMember.value.roomId = availableRooms.value[0]?.id || ''
   }
 }
 
@@ -230,20 +267,8 @@ const handleSaveMember = () => {
   if (addonCarParking.value) addonsList.push(`Parkir Mobil (${formatRupiah(50000 * duration)})`)
   const addonsNote = addonsList.length > 0 ? ` [Layanan Tambahan: ${addonsList.join(', ')}]` : ''
 
-  addPayment({
-    memberId: created.id,
-    period: `Sewa Awal ${duration} Bulan (${startDateFormatted} - ${endDateFormatted})`,
-    amount: totalAmount,
-    durationMonths: duration,
-    method: 'Pembayaran Awal Kontrak (Lunas)',
-    date: formMember.value.startDate || todayStr,
-    dueDate: formMember.value.endDate,
-    status: 'paid',
-    notes: `Pembayaran LUNAS pada pendaftaran akun penyewa baru.${addonsNote}`
-  })
-
   // Catat History Penyewaan ke rentals.json
-  addRental({
+  const createdRent = addRental({
     memberId: created.id,
     roomId: formMember.value.roomId,
     startDate: formMember.value.startDate || todayStr,
@@ -254,6 +279,18 @@ const handleSaveMember = () => {
     totalAmount: totalAmount,
     addons: addonsList,
     status: 'active'
+  })
+
+  addPayment({
+    rentalId: createdRent.id,
+    period: `Sewa Awal ${duration} Bulan (${startDateFormatted} - ${endDateFormatted})`,
+    amount: totalAmount,
+    durationMonths: duration,
+    method: 'Pembayaran Awal Kontrak (Lunas)',
+    date: formMember.value.startDate || todayStr,
+    dueDate: formMember.value.endDate,
+    status: 'paid',
+    notes: `Pembayaran LUNAS pada pendaftaran akun penyewa baru.${addonsNote}`
   })
 
   // Siapkan URL & Pesan Otomatis WhatsApp
@@ -307,18 +344,6 @@ const handleDelete = (t: User) => {
       successNotice.value = ''
     }, 4000)
   }
-}
-
-const formatDateIndo = (dateStr?: string) => {
-  if (!dateStr) return '-'
-  const parts = dateStr.split('-')
-  if (parts.length !== 3) return dateStr
-  const [yearStr, monthStr, dayStr] = parts
-  if (!yearStr || !monthStr || !dayStr) return dateStr
-  const monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
-  const day = parseInt(dayStr, 10)
-  const monthIdx = parseInt(monthStr, 10) - 1
-  return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
 }
 
 const formatRupiah = (val?: number) => {
@@ -604,13 +629,16 @@ Akun Anda sudah aktif dan sudah bisa langsung diakses untuk melihat detail kamar
                 <div class="form-group">
                   <label>Pilih Kamar Tersedia <span class="required-star">*</span></label>
                   <select v-model="formMember.roomId" class="form-control" @change="updateCalculatedFields" required>
-                    <option value="" disabled>-- Pilih Kamar Tersedia --</option>
+                    <option value="" disabled>-- Pilih Kamar Tersedia ({{ availableRooms.length }} Kamar) --</option>
                     <option v-for="r in availableRooms" :key="r.id" :value="r.id">
-                      Kamar {{ r.number }} ({{ getBuildingName(r.buildingId) }} - {{ r.typeName }})
+                      Kamar {{ r.number }} ({{ getBuildingName(r.buildingId) }} - {{ r.typeName }}){{ r.availNote || '' }}
                     </option>
                   </select>
                   <small v-if="availableRooms.length === 0" style="color: #DC2626; font-size: 0.76rem; display: block; margin-top: 4px;">
-                    * Tidak ada kamar berstatus tersedia saat ini.
+                    * Tidak ada kamar berstatus tersedia pada tanggal {{ formatDateIndo(formMember.startDate) }}. Silakan ubah tanggal mulai sewa.
+                  </small>
+                  <small v-else style="color: #16A34A; font-size: 0.76rem; display: block; margin-top: 4px;">
+                    ✓ {{ availableRooms.length }} kamar siap ditempati pada tanggal {{ formatDateIndo(formMember.startDate) }}.
                   </small>
                 </div>
               </div>

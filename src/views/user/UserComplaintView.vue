@@ -4,8 +4,28 @@ import UserSidebar from '../../components/layout/UserSidebar.vue'
 import { useDataStore, type ComplaintData } from '../../composables/useDataStore'
 import { useAuth } from '../../composables/useAuth'
 
-const { complaints, addComplaint } = useDataStore()
+const { complaints, addComplaint, getTenantStayStatus } = useDataStore()
 const { currentUser } = useAuth()
+
+const stayStatus = computed(() => {
+  if (!currentUser.value?.id) return { hasActiveStay: false, isUpcomingOnly: false, upcomingRental: null }
+  return getTenantStayStatus(currentUser.value.id)
+})
+
+const isUpcomingOnly = computed(() => stayStatus.value.isUpcomingOnly)
+const upcomingRental = computed(() => stayStatus.value.upcomingRental)
+
+const formatDateIndo = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return dateStr
+  const monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
+  const day = parseInt(dayStr, 10)
+  const monthIdx = parseInt(monthStr, 10) - 1
+  return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
+}
 
 const activeFilter = ref<'all' | 'pending' | 'in-progress' | 'resolved'>('all')
 
@@ -92,47 +112,61 @@ const getStatusBadge = (status: string) => {
           <div class="complaint-form-box">
             <h2><i class='bx bxs-edit-location'></i> Buat Keluhan Baru</h2>
 
-            <div v-if="isSuccessMessage" class="alert-success">
-              <i class='bx bx-check-circle'></i> Keluhan berhasil dikirim & tersimpan ke <strong>complaints.json</strong>!
+            <!-- UPCOMING TENANT LOCKED STATE -->
+            <div v-if="isUpcomingOnly" class="upcoming-locked-box">
+              <div class="locked-icon"><i class='bx bx-lock-alt'></i></div>
+              <div class="locked-content">
+                <h3>Fitur Pengaduan Belum Aktif</h3>
+                <p>
+                  Masa sewa kamar Anda baru akan aktif pada <strong>{{ formatDateIndo(upcomingRental?.startDate) }}</strong>.
+                  Fitur pelaporan keluhan & fasilitas kamar akan terbuka secara otomatis setelah Anda resmi menempati kamar.
+                </p>
+              </div>
             </div>
 
-            <form @submit.prevent="handleAddComplaint">
-              <div class="form-group">
-                <label>Judul / Singkapan Keluhan</label>
-                <input type="text" v-model="newTitle" placeholder="Contoh: Kran air bocor" required />
+            <template v-else>
+              <div v-if="isSuccessMessage" class="alert-success">
+                <i class='bx bx-check-circle'></i> Keluhan berhasil dikirim & tersimpan ke <strong>complaints.json</strong>!
               </div>
 
-              <div class="form-row">
+              <form @submit.prevent="handleAddComplaint">
                 <div class="form-group">
-                  <label>Kategori</label>
-                  <select v-model="newCategory">
-                    <option value="Fasilitas Kamar">Fasilitas Kamar</option>
-                    <option value="Kebersihan & Lingkungan">Kebersihan & Lingkungan</option>
-                    <option value="Jaringan Internet / WiFi">Jaringan Internet / WiFi</option>
-                    <option value="Keamanan & Kunci">Keamanan & Kunci</option>
-                    <option value="Lainnya">Lainnya</option>
-                  </select>
+                  <label>Judul / Singkapan Keluhan</label>
+                  <input type="text" v-model="newTitle" placeholder="Contoh: Kran air bocor" required />
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Kategori</label>
+                    <select v-model="newCategory">
+                      <option value="Fasilitas Kamar">Fasilitas Kamar</option>
+                      <option value="Kebersihan & Lingkungan">Kebersihan & Lingkungan</option>
+                      <option value="Jaringan Internet / WiFi">Jaringan Internet / WiFi</option>
+                      <option value="Keamanan & Kunci">Keamanan & Kunci</option>
+                      <option value="Lainnya">Lainnya</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label>Tingkat Prioritas</label>
+                    <select v-model="newPriority">
+                      <option value="low">Rendah</option>
+                      <option value="medium">Sedang</option>
+                      <option value="high">Tinggi (Mendesak)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div class="form-group">
-                  <label>Tingkat Prioritas</label>
-                  <select v-model="newPriority">
-                    <option value="low">Rendah</option>
-                    <option value="medium">Sedang</option>
-                    <option value="high">Tinggi (Mendesak)</option>
-                  </select>
+                  <label>Deskripsi Detil Keluhan</label>
+                  <textarea v-model="newDescription" rows="4" placeholder="Jelaskan kendala secara mendetail..." required></textarea>
                 </div>
-              </div>
 
-              <div class="form-group">
-                <label>Deskripsi Detil Keluhan</label>
-                <textarea v-model="newDescription" rows="4" placeholder="Jelaskan kendala secara mendetail..." required></textarea>
-              </div>
-
-              <button type="submit" class="btn btn-primary submit-btn">
-                <i class='bx bx-paper-plane'></i> Kirim Keluhan
-              </button>
-            </form>
+                <button type="submit" class="btn btn-primary submit-btn">
+                  <i class='bx bx-paper-plane'></i> Kirim Keluhan
+                </button>
+              </form>
+            </template>
           </div>
 
           <!-- RIGHT COLUMN: RIWAYAT KELUHAN -->
@@ -281,6 +315,42 @@ const getStatusBadge = (status: string) => {
   align-items: center;
   gap: 8px;
   margin-bottom: 20px;
+}
+
+.upcoming-locked-box {
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.upcoming-locked-box .locked-icon {
+  width: 44px;
+  height: 44px;
+  background: #FDE68A;
+  color: #D97706;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.upcoming-locked-box .locked-content h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #92400E;
+  margin-bottom: 6px;
+}
+
+.upcoming-locked-box .locked-content p {
+  font-size: 0.88rem;
+  color: #78350F;
+  line-height: 1.5;
 }
 
 .form-group {

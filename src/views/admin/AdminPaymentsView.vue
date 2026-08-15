@@ -4,16 +4,30 @@ import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useDataStore, getRoomPriceByDuration, calculateRoomPrice, type PaymentData } from '../../composables/useDataStore'
 import { useAuth, type User } from '../../composables/useAuth'
 
-const { payments, addPayment, updatePaymentStatus, rooms, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, updateRental } = useDataStore()
+const { payments, addPayment, updatePaymentStatus, rooms, rentals, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, getRentalsByMemberId, getPaymentsByRentalId, getPaymentAmount, updateRental, addRental } = useDataStore()
 const { tenants, getTenantById, updateMember } = useAuth()
 
-const getTenantName = (memberId: string) => {
-  const tenant = getTenantById(memberId)
+const getTenantByPayment = (pay: PaymentData) => {
+  const rent = rentals.value.find(r => r.id === pay.rentalId)
+  if (rent) return getTenantById(rent.memberId)
+  return undefined
+}
+
+const getTenantName = (pay: PaymentData | string) => {
+  if (typeof pay === 'object') {
+    const t = getTenantByPayment(pay)
+    return t ? t.name : 'Penyewa'
+  }
+  const tenant = getTenantById(pay)
   return tenant ? tenant.name : 'Penyewa'
 }
 
-const getTenantUsername = (memberId: string) => {
-  const tenant = getTenantById(memberId)
+const getTenantUsername = (pay: PaymentData | string) => {
+  if (typeof pay === 'object') {
+    const t = getTenantByPayment(pay)
+    return t ? `@${t.username}` : ''
+  }
+  const tenant = getTenantById(pay)
   return tenant ? `@${tenant.username}` : ''
 }
 
@@ -58,19 +72,20 @@ const closeProofModal = () => {
   selectedPaymentProof.value = null
 }
 
-const getPaymentTenantRoom = (memberId: string) => {
-  const rent = getActiveRentalByMemberId(memberId)
+const getPaymentTenantRoom = (pay: PaymentData | string) => {
+  const rentId = typeof pay === 'object' ? pay.rentalId : null
+  const rent = rentId ? rentals.value.find(r => r.id === rentId) : (typeof pay === 'string' ? getActiveRentalByMemberId(pay) : null)
   const rm = rent ? getRoomById(rent.roomId) : null
   if (!rm) return 'Kamar Kost'
   return `Kamar ${rm.number} (${getBuildingName(rm.buildingId)})`
 }
 
-// Computed list of expiring tenants (H-30 days or less)
+// Computed list of expiring tenants (H-30 days or less, yang belum lunas perpanjang)
 const expiringTenants = computed(() => {
   const now = new Date()
   return tenants.value.map(t => {
     const rent = getActiveRentalByMemberId(t.id)
-    let daysLeft = 30
+    let daysLeft = 999
     if (rent && rent.endDate) {
       const end = new Date(rent.endDate)
       if (!isNaN(end.getTime())) {
@@ -78,17 +93,29 @@ const expiringTenants = computed(() => {
         daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       }
     }
+
+    // Cek apakah penyewa ini sudah punya kontrak perpanjangan di masa depan yang sudah dibayar lunas
+    const memberRents = getRentalsByMemberId(t.id)
+    const hasPaidFutureRental = memberRents.some(r => {
+      if (r.id === rent?.id) return false
+      const isFuture = rent?.endDate ? new Date(r.startDate) >= new Date(rent.endDate) : false
+      if (!isFuture || r.status === 'cancelled') return false
+      const rPayments = getPaymentsByRentalId(r.id)
+      return rPayments.some(p => p.status === 'paid') || r.status === 'active'
+    })
+
     const rm = rent?.roomId ? getRoomById(rent.roomId) : null
     return {
       ...t,
       endDate: rent?.endDate || '',
       daysLeft,
+      hasPaidFutureRental,
       room: rm,
       roomNum: rm ? `Kamar ${rm.number}` : 'Kamar A13',
       bldName: rm ? getBuildingName(rm.buildingId) : 'Gedung A',
       typeId: rm?.typeId || 'km-luar'
     }
-  }).filter(t => t.daysLeft <= 30)
+  }).filter(t => t.daysLeft <= 30 && !t.hasPaidFutureRental)
 })
 
 // Form Kirim Tagihan Baru
@@ -123,7 +150,7 @@ const filteredPayments = computed(() => {
   }
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
-    list = list.filter(p => getTenantName(p.memberId).toLowerCase().includes(q) || p.period.toLowerCase().includes(q))
+    list = list.filter(p => getTenantName(p).toLowerCase().includes(q) || p.period.toLowerCase().includes(q))
   }
   return list
 })
@@ -175,12 +202,13 @@ const handleSendInvoice = () => {
   }
 
   const tenant = getTenantById(formInvoice.value.memberId)
+  const rent = getActiveRentalByMemberId(formInvoice.value.memberId)
   const tenantPhone = formatWaPhone(tenant?.phone)
   const tenantName = tenant?.name || 'Penyewa'
   const duration = Number(formInvoice.value.durationMonths) || 1
 
   const created = addPayment({
-    memberId: formInvoice.value.memberId,
+    rentalId: rent?.id || 'RNT-001',
     period: formInvoice.value.period,
     amount: Number(formInvoice.value.amount),
     method: formInvoice.value.method,
@@ -196,7 +224,7 @@ const handleSendInvoice = () => {
 
 Berikut rincian tagihan sewa Kost Sekar Space Anda:
 📌 Paket Sewa: ${created.period} (${duration} Bulan)
-📌 Nominal Sewa: ${formatRupiah(created.amount)}
+📌 Nominal Sewa: ${formatRupiah(getPaymentAmount(created))}
 📌 Tenggat Jatuh Tempo: ${created.dueDate || '05 September 2026'}
 
 Mohon lakukan pembayaran melalui rekening resmi Sekar Space:
@@ -215,33 +243,45 @@ Setelah transfer, mohon upload bukti pembayaran pada Portal Penyewa. Terima kasi
   }, 5000)
 }
 
-// Action: Confirm Payment & AUTOMATICALLY UPDATE TENANT LEASE!
+// Action: Confirm Payment & CREATE NEW EXTENSION RENTAL ROW
 const handleConfirmPayment = (pay: PaymentData) => {
   updatePaymentStatus(pay.id, 'paid', 'Pembayaran telah diverifikasi & dikonfirmasi LUNAS oleh admin.')
 
-  const tenant = getTenantById(pay.memberId)
-  if (tenant) {
-    const duration = pay.durationMonths || 1
-    const rent = getActiveRentalByMemberId(tenant.id)
-    const currentEnd = rent?.endDate ? new Date(rent.endDate) : new Date()
-    currentEnd.setMonth(currentEnd.getMonth() + duration)
-    const newEndDate = currentEnd.toISOString().substring(0, 10)
+  const currentRent = rentals.value.find(r => r.id === pay.rentalId)
+  const tenant = currentRent ? getTenantById(currentRent.memberId) : null
 
-    // Automatically update rental record
-    if (rent) {
-      updateRental(rent.id, {
-        endDate: newEndDate,
-        durationMonths: (rent.durationMonths || 1) + duration,
-        status: 'active'
-      })
-      if (rent.roomId) {
-        updateRoom(rent.roomId, { status: 'occupied' })
-      }
+  if (tenant && currentRent) {
+    const duration = pay.durationMonths || 1
+    const startDate = currentRent.endDate || new Date().toISOString().substring(0, 10)
+    
+    // Hitung tanggal akhir sewa perpanjangan baru
+    const end = new Date(startDate)
+    end.setMonth(end.getMonth() + duration)
+    const newEndDate = end.toISOString().substring(0, 10)
+
+    // Tambahkan baris perpanjangan sewa baru (History booking tersimpan rapi)
+    const newRent = addRental({
+      memberId: tenant.id,
+      roomId: currentRent.roomId,
+      startDate: startDate,
+      endDate: newEndDate,
+      durationMonths: duration,
+      basePrice: getPaymentAmount(pay),
+      addonPrice: 0,
+      totalAmount: getPaymentAmount(pay),
+      addons: currentRent.addons || [],
+      status: 'active'
+    })
+    
+    pay.rentalId = newRent.id
+
+    if (currentRent.roomId) {
+      updateRoom(currentRent.roomId, { status: 'occupied' })
     }
 
-    noticeMessage.value = `Pembayaran LUNAS! Data sewa ${tenant.name} otomatis diperpanjang +${duration} bulan hingga ${newEndDate}.`
+    noticeMessage.value = `Pembayaran LUNAS! Kontrak perpanjangan sewa ${tenant.name} baru (+${duration} bulan s.d. ${newEndDate}) berhasil ditambahkan ke riwayat sewa.`
   } else {
-    noticeMessage.value = `Pembayaran ${pay.period} oleh ${getTenantName(pay.memberId)} telah dikonfirmasi LUNAS!`
+    noticeMessage.value = `Pembayaran ${pay.period} telah dikonfirmasi LUNAS!`
   }
 
   setTimeout(() => {
@@ -253,7 +293,7 @@ const handleRejectPayment = (pay: PaymentData) => {
   const reason = prompt('Alasan penolakan konfirmasi pembayaran:', 'Bukti transfer tidak terbaca / nominal belum masuk.')
   if (reason !== null) {
     updatePaymentStatus(pay.id, 'rejected', reason)
-    noticeMessage.value = `Pembayaran ${pay.period} oleh ${getTenantName(pay.memberId)} telah ditolak.`
+    noticeMessage.value = `Pembayaran ${pay.period} oleh ${getTenantName(pay)} telah ditolak.`
     setTimeout(() => {
       noticeMessage.value = ''
     }, 4000)
@@ -261,14 +301,14 @@ const handleRejectPayment = (pay: PaymentData) => {
 }
 
 const getWaBillLink = (pay: PaymentData) => {
-  const tenant = getTenantById(pay.memberId)
+  const tenant = getTenantByPayment(pay)
   const phone = formatWaPhone(tenant?.phone)
   const name = tenant?.name || 'Penyewa'
   const text = `Halo Kak ${name}, 👋
 
 Berikut rincian tagihan sewa Kost Sekar Space Anda:
 📌 Periode: ${pay.period}
-📌 Nominal Sewa: ${formatRupiah(pay.amount)}
+📌 Nominal Sewa: ${formatRupiah(getPaymentAmount(pay))}
 📌 Batas Jatuh Tempo: ${pay.dueDate || '05 September 2026'}
 
 Mohon lakukan pembayaran ke Rekening Resmi Sekar Space:
@@ -421,8 +461,8 @@ const formatRupiah = (val: number) => {
             <tbody>
               <tr v-for="pay in filteredPayments" :key="pay.id">
                 <td>
-                  <strong>{{ getTenantName(pay.memberId) }}</strong>
-                  <div class="sub-tenant-info">{{ getTenantUsername(pay.memberId) }}</div>
+                  <strong>{{ getTenantName(pay) }}</strong>
+                  <div class="sub-tenant-info">{{ getTenantUsername(pay) }}</div>
                 </td>
                 <td>
                   <strong class="pay-period-title">{{ pay.period }}</strong>
@@ -432,7 +472,7 @@ const formatRupiah = (val: number) => {
                   </div>
                 </td>
                 <td>
-                  <strong class="price-amount">{{ formatRupiah(pay.amount) }}</strong>
+                  <strong class="price-amount">{{ formatRupiah(getPaymentAmount(pay)) }}</strong>
                 </td>
                 <td>
                   <span 
@@ -550,7 +590,7 @@ const formatRupiah = (val: number) => {
           <div class="proof-info-summary">
             <div class="proof-info-row">
               <span>Penyewa:</span>
-              <strong>{{ getTenantName(selectedPaymentProof.memberId) }} ({{ getPaymentTenantRoom(selectedPaymentProof.memberId) }})</strong>
+              <strong>{{ getTenantName(selectedPaymentProof) }} ({{ getPaymentTenantRoom(selectedPaymentProof) }})</strong>
             </div>
             <div class="proof-info-row">
               <span>Rincian Tagihan:</span>
@@ -562,7 +602,7 @@ const formatRupiah = (val: number) => {
             </div>
             <div class="proof-info-row">
               <span>Nominal Transfer:</span>
-              <strong class="proof-price-highlight">{{ formatRupiah(selectedPaymentProof.amount) }}</strong>
+              <strong class="proof-price-highlight">{{ formatRupiah(getPaymentAmount(selectedPaymentProof)) }}</strong>
             </div>
             <div class="proof-info-row">
               <span>Status Pembayaran:</span>
@@ -596,7 +636,7 @@ const formatRupiah = (val: number) => {
                 <div class="receipt-rows">
                   <div><span>No. Referensi:</span> <code>{{ selectedPaymentProof.id }}</code></div>
                   <div><span>Metode:</span> <strong>{{ selectedPaymentProof.method || 'Bank BCA / Mandiri' }}</strong></div>
-                  <div><span>Nominal:</span> <strong class="receipt-amt">{{ formatRupiah(selectedPaymentProof.amount) }}</strong></div>
+                  <div><span>Nominal:</span> <strong class="receipt-amt">{{ formatRupiah(getPaymentAmount(selectedPaymentProof)) }}</strong></div>
                   <div><span>Tanggal:</span> <span>{{ formatDateIndo(selectedPaymentProof.date) }}</span></div>
                   <div v-if="selectedPaymentProof.notes"><span>Catatan:</span> <em>"{{ selectedPaymentProof.notes }}"</em></div>
                 </div>
