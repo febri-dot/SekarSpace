@@ -12,6 +12,35 @@ const getTenantName = (memberId: string) => {
   return tenant ? tenant.name : 'Penyewa'
 }
 
+const getTenantUsername = (memberId: string) => {
+  const tenant = getTenantById(memberId)
+  return tenant ? `@${tenant.username}` : ''
+}
+
+const formatWaPhone = (phone?: string) => {
+  if (!phone) return '62895378020456'
+  let clean = phone.replace(/[^0-9]/g, '')
+  if (!clean) return '62895378020456'
+  if (clean.startsWith('0')) {
+    clean = '62' + clean.slice(1)
+  } else if (!clean.startsWith('62')) {
+    clean = '62' + clean
+  }
+  return clean
+}
+
+const formatDateIndo = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return dateStr
+  const monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
+  const day = parseInt(dayStr, 10)
+  const monthIdx = parseInt(monthStr, 10) - 1
+  return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
+}
+
 const activeTab = ref<'all' | 'pending' | 'paid' | 'rejected' | 'expiring'>('all')
 const searchQuery = ref('')
 const isInvoiceModalOpen = ref(false)
@@ -92,7 +121,7 @@ const closeInvoiceModal = () => {
 
 // H-1 Month Reminder: Sends WhatsApp inquiry with room's custom duration prices
 const sendHMinus1MonthReminder = (t: any) => {
-  const phone = (t.phone || '081234567890').replace(/[^0-9]/g, '')
+  const phone = formatWaPhone(t.phone)
   const rm = t.room ? t.room : (t.roomId ? getRoomById(t.roomId) : null)
 
   const p1 = formatRupiah(getRoomPriceByDuration(rm, 1))
@@ -125,7 +154,7 @@ const handleSendInvoice = () => {
   }
 
   const tenant = getTenantById(formInvoice.value.memberId)
-  const tenantPhone = (tenant?.phone || '081234567890').replace(/[^0-9]/g, '')
+  const tenantPhone = formatWaPhone(tenant?.phone)
   const tenantName = tenant?.name || 'Penyewa'
   const duration = Number(formInvoice.value.durationMonths) || 1
 
@@ -155,7 +184,7 @@ Mohon lakukan pembayaran melalui rekening resmi Sekar Space:
 
 Setelah transfer, mohon upload bukti pembayaran pada Portal Penyewa. Terima kasih! 🙏`
 
-  const waUrl = `https://wa.me/${tenantPhone || '6281234567890'}?text=${encodeURIComponent(waText)}`
+  const waUrl = `https://wa.me/${tenantPhone}?text=${encodeURIComponent(waText)}`
   window.open(waUrl, '_blank')
 
   noticeMessage.value = `Tagihan sewa ${created.period} berhasil terbit & pesan WhatsApp ke ${tenantName} telah terbuka!`
@@ -215,7 +244,7 @@ const handleRejectPayment = (pay: PaymentData) => {
 
 const getWaBillLink = (pay: PaymentData) => {
   const tenant = getTenantById(pay.memberId)
-  const phone = (tenant?.phone || '081234567890').replace(/[^0-9]/g, '')
+  const phone = formatWaPhone(tenant?.phone)
   const name = tenant?.name || 'Penyewa'
   const text = `Halo Kak ${name}, 👋
 
@@ -359,55 +388,60 @@ const formatRupiah = (val: number) => {
           </table>
         </div>
 
-        <!-- TRANSACTIONS VIEW TABLE -->
+        <!-- TRANSACTIONS VIEW TABLE (CONCISE & COMPACT) -->
         <div v-else class="table-wrapper">
           <table class="admin-table">
             <thead>
               <tr>
                 <th>Penyewa</th>
-                <th>Periode Tagihan</th>
-                <th>Nominal Sewa</th>
-                <th>Metode Pembayaran</th>
-                <th>Tanggal Upload</th>
+                <th>Rincian Tagihan & Tanggal</th>
+                <th>Nominal</th>
                 <th>Status</th>
-                <th>Konfirmasi & Aksi Admin</th>
+                <th>Aksi Admin</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="pay in filteredPayments" :key="pay.id">
                 <td>
                   <strong>{{ getTenantName(pay.memberId) }}</strong>
+                  <div class="sub-tenant-info">{{ getTenantUsername(pay.memberId) }}</div>
                 </td>
-                <td><span class="period-pill"><i class='bx bx-calendar'></i> {{ pay.period }}</span></td>
-                <td><strong class="text-primary">{{ formatRupiah(pay.amount) }}</strong></td>
-                <td>{{ pay.method }}</td>
-                <td>{{ pay.date }}</td>
+                <td>
+                  <strong class="pay-period-title">{{ pay.period }}</strong>
+                  <div class="pay-sub-meta">
+                    <span><i class='bx bx-calendar'></i> {{ formatDateIndo(pay.date) }}</span>
+                    <span v-if="pay.method">· {{ pay.method }}</span>
+                  </div>
+                </td>
+                <td>
+                  <strong class="price-amount">{{ formatRupiah(pay.amount) }}</strong>
+                </td>
                 <td>
                   <span 
                     class="status-pill"
                     :class="pay.status"
                   >
-                    {{ pay.status === 'paid' ? 'Lunas' : pay.status === 'pending' ? 'Perlu Konfirmasi' : 'Ditolak' }}
+                    {{ pay.status === 'paid' ? 'Lunas' : pay.status === 'pending' ? 'Verifikasi' : 'Ditolak' }}
                   </span>
                 </td>
                 <td>
                   <div class="action-buttons">
-                    <a :href="getWaBillLink(pay)" target="_blank" rel="noopener" class="btn-action btn-wa-send" title="Kirim Tagihan via WA">
+                    <a :href="getWaBillLink(pay)" target="_blank" rel="noopener" class="btn-action btn-wa-send" title="Kirim Pesan Tagihan via WA">
                       <i class='bx bxl-whatsapp'></i> Kirim WA
                     </a>
                     <template v-if="pay.status === 'pending'">
-                      <button class="btn-action btn-confirm" @click="handleConfirmPayment(pay)" title="Konfirmasi Lunas">
-                        <i class='bx bx-check'></i> Konfirmasi Lunas
+                      <button class="btn-action btn-confirm" @click="handleConfirmPayment(pay)" title="Konfirmasi Pembayaran Lunas">
+                        <i class='bx bx-check-circle'></i> Setujui
                       </button>
-                      <button class="btn-action btn-reject" @click="handleRejectPayment(pay)" title="Tolak Pembayaran">
-                        <i class='bx bx-x'></i> Tolak
+                      <button class="btn-action btn-reject" @click="handleRejectPayment(pay)" title="Tolak Pembayaran Ini">
+                        <i class='bx bx-x-circle'></i> Tolak
                       </button>
                     </template>
                   </div>
                 </td>
               </tr>
               <tr v-if="filteredPayments.length === 0">
-                <td colspan="7" class="empty-cell">Tidak ada data transaksi pembayaran yang ditemukan.</td>
+                <td colspan="5" class="empty-cell">Tidak ada data transaksi pembayaran yang ditemukan.</td>
               </tr>
             </tbody>
           </table>
@@ -667,6 +701,34 @@ const formatRupiah = (val: number) => {
   gap: 4px;
 }
 
+.sub-tenant-info {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.pay-period-title {
+  font-size: 0.9rem;
+  color: var(--dark);
+  display: block;
+}
+
+.pay-sub-meta {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.price-amount {
+  font-size: 0.95rem;
+  color: var(--primary);
+  font-weight: 800;
+}
+
 .status-pill {
   font-size: 0.75rem;
   font-weight: 700;
@@ -690,32 +752,44 @@ const formatRupiah = (val: number) => {
 }
 
 .action-buttons {
-  display: flex;
-  gap: 6px;
+  display: inline-flex;
+  gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
 }
 
 .btn-action {
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
-  border: none;
-  font-size: 0.78rem;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  transition: all var(--transition-fast);
+  gap: 6px;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.btn-action i {
+  font-size: 1rem;
 }
 
 .btn-wa-send {
-  background: #25D366;
+  background: linear-gradient(135deg, #25D366 0%, #10B981 100%);
   color: #ffffff !important;
-  text-decoration: none;
+  border: none;
+  box-shadow: 0 2px 8px rgba(37, 211, 102, 0.25);
 }
 
 .btn-wa-send:hover {
-  background: #1EBE5D;
+  background: linear-gradient(135deg, #1EBE5D 0%, #059669 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
   color: #ffffff !important;
 }
 
@@ -740,23 +814,31 @@ const formatRupiah = (val: number) => {
 }
 
 .btn-confirm {
-  background: #DCFCE7;
-  color: #15803D;
+  background: #ECFDF5;
+  color: #047857;
+  border: 1px solid #A7F3D0;
 }
 
 .btn-confirm:hover {
-  background: #16A34A;
-  color: white;
+  background: #10B981;
+  color: #ffffff;
+  border-color: #10B981;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(16, 185, 129, 0.35);
 }
 
 .btn-reject {
-  background: #FEE2E2;
-  color: #B91C1C;
+  background: #FEF2F2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
 }
 
 .btn-reject:hover {
-  background: #DC2626;
-  color: white;
+  background: #EF4444;
+  color: #ffffff;
+  border-color: #EF4444;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(239, 68, 68, 0.35);
 }
 
 .empty-cell {

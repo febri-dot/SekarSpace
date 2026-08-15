@@ -62,21 +62,22 @@
     "monthlyRent": 950000
   },
   {
-    "id": "MBR-04",
+    "name": "Febriyanti Putri",
     "username": "febri",
     "password": "123",
-    "name": "Febri",
-    "email": "febriyantip439@gmail.com",
-    "role": "member",
-    "nik": "3401234567890004",
-    "address": "Sleman, Yogyakarta",
+    "email": "febri@sekarspace.com",
+    "nik": "1234567890",
+    "address": "Manisrejo, Sembego RT 17 RW 39 Maguwoharjo Depok",
     "phone": "0895378020456",
-    "birthDate": "2003-02-15",
-    "parentPhone": "0895378020999",
-    "roomId": "C-21",
-    "startDate": "2026-08-12",
-    "endDate": "2027-08-31",
+    "birthDate": "2026-08-27",
+    "parentPhone": "1234567890",
+    "roomId": "A-12",
+    "monthlyRent": 600000,
+    "durationMonths": 1,
+    "startDate": "2026-08-15",
+    "endDate": "2026-12-15",
     "status": "aktif",
-    "monthlyRent": 950000
+    "id": "MBR-04",
+    "role": "member"
   }
 ]
