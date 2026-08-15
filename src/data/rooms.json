@@ -5,19 +5,7 @@
     "floor": 1,
     "buildingId": "bld-a",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "occupied",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "occupied"
   },
   {
     "id": "A-12",
@@ -25,19 +13,7 @@
     "floor": 1,
     "buildingId": "bld-a",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "occupied",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "occupied"
   },
   {
     "id": "A-13",
@@ -45,19 +21,7 @@
     "floor": 1,
     "buildingId": "bld-a",
     "typeId": "km-dalam",
-    "typeName": "Kamar Mandi Dalam",
-    "price": 850000,
-    "price1Month": 850000,
-    "price3Months": 2000000,
-    "price6Months": 4000000,
-    "price12Months": 8000000,
-    "status": "occupied",
-    "size": "3x4m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "occupied"
   },
   {
     "id": "A-14",
@@ -65,19 +29,7 @@
     "floor": 1,
     "buildingId": "bld-a",
     "typeId": "km-dalam",
-    "typeName": "Kamar Mandi Dalam",
-    "price": 850000,
-    "price1Month": 850000,
-    "price3Months": 2000000,
-    "price6Months": 4000000,
-    "price12Months": 8000000,
-    "status": "occupied",
-    "size": "3x4m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "A-21",
@@ -85,19 +37,7 @@
     "floor": 2,
     "buildingId": "bld-a",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "A-22",
@@ -105,19 +45,7 @@
     "floor": 2,
     "buildingId": "bld-a",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "A-23",
@@ -125,19 +53,7 @@
     "floor": 2,
     "buildingId": "bld-a",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "A-24",
@@ -145,19 +61,7 @@
     "floor": 2,
     "buildingId": "bld-a",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "A-25",
@@ -165,19 +69,7 @@
     "floor": 2,
     "buildingId": "bld-a",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "A-26",
@@ -185,19 +77,7 @@
     "floor": 2,
     "buildingId": "bld-a",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "B-11",
@@ -205,19 +85,7 @@
     "floor": 1,
     "buildingId": "bld-b",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "B-12",
@@ -225,19 +93,7 @@
     "floor": 1,
     "buildingId": "bld-b",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "B-21",
@@ -245,19 +101,7 @@
     "floor": 2,
     "buildingId": "bld-b",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "B-22",
@@ -265,19 +109,7 @@
     "floor": 2,
     "buildingId": "bld-b",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "B-23",
@@ -285,19 +117,7 @@
     "floor": 2,
     "buildingId": "bld-b",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "B-24",
@@ -305,19 +125,7 @@
     "floor": 2,
     "buildingId": "bld-b",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "C-11",
@@ -325,19 +133,7 @@
     "floor": 1,
     "buildingId": "bld-c",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "C-12",
@@ -345,19 +141,7 @@
     "floor": 1,
     "buildingId": "bld-c",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "C-13",
@@ -365,19 +149,7 @@
     "floor": 1,
     "buildingId": "bld-c",
     "typeId": "km-dalam",
-    "typeName": "Kamar Mandi Dalam",
-    "price": 850000,
-    "price1Month": 850000,
-    "price3Months": 2000000,
-    "price6Months": 4000000,
-    "price12Months": 8000000,
-    "status": "available",
-    "size": "3x4m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "occupied"
   },
   {
     "id": "C-14",
@@ -385,19 +157,7 @@
     "floor": 1,
     "buildingId": "bld-c",
     "typeId": "km-dalam",
-    "typeName": "Kamar Mandi Dalam",
-    "price": 850000,
-    "price1Month": 850000,
-    "price3Months": 2000000,
-    "price6Months": 4000000,
-    "price12Months": 8000000,
-    "status": "available",
-    "size": "3x4m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "C-21",
@@ -405,19 +165,7 @@
     "floor": 2,
     "buildingId": "bld-c",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "occupied",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "occupied"
   },
   {
     "id": "C-22",
@@ -425,19 +173,7 @@
     "floor": 2,
     "buildingId": "bld-c",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   },
   {
     "id": "C-23",
@@ -445,19 +181,7 @@
     "floor": 2,
     "buildingId": "bld-c",
     "typeId": "km-luar",
-    "typeName": "Kamar Mandi Luar",
-    "price": 600000,
-    "price1Month": 600000,
-    "price3Months": 1800000,
-    "price6Months": 3500000,
-    "price12Months": 7000000,
-    "status": "available",
-    "size": "3x3m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "occupied"
   },
   {
     "id": "C-24",
@@ -465,18 +189,6 @@
     "floor": 2,
     "buildingId": "bld-c",
     "typeId": "km-dalam",
-    "typeName": "Kamar Mandi Dalam",
-    "price": 850000,
-    "price1Month": 850000,
-    "price3Months": 2000000,
-    "price6Months": 4000000,
-    "price12Months": 8000000,
-    "status": "available",
-    "size": "3x4m",
-    "features": [
-      "Kasur & Bantal",
-      "Lemari Pakaian",
-      "Meja & Cermin"
-    ]
+    "status": "available"
   }
 ]

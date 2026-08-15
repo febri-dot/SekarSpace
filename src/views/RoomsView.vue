@@ -1,14 +1,77 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import Navbar from '../components/layout/Navbar.vue'
 import Footer from '../components/layout/Footer.vue'
-import { useDataStore, getRoomPriceByDuration, type RoomData } from '../composables/useDataStore'
+import { useDataStore, getRoomPriceByDuration, type RoomData, type RoomTypeData } from '../composables/useDataStore'
 import communalFacilitiesData from '../data/communalFacilities.json'
 import roomGalleriesData from '../data/roomGalleries.json'
 
-const { rooms, bookRoom, buildings } = useDataStore()
+const { rooms, roomTypes, bookRoom, buildings, cmsSettings } = useDataStore()
 const route = useRoute()
+
+// Floating button state for Step 2 & Step 3
+const showScrollToTopBtn = ref(false)
+
+const handleScroll = () => {
+  if (currentStep.value === 2) {
+    showScrollToTopBtn.value = window.scrollY > 350
+  } else if (currentStep.value === 3) {
+    showScrollToTopBtn.value = window.scrollY > 300
+  } else {
+    showScrollToTopBtn.value = false
+  }
+}
+
+const handleFloatingAction = () => {
+  if (currentStep.value === 2) {
+    scrollToBuildingGrid()
+  } else if (currentStep.value === 3) {
+    window.scrollTo({ top: 140, behavior: 'smooth' })
+  }
+}
+
+// Dynamic Room Types Data derived directly from roomTypes.json + live room counts from rooms.json
+const roomTypesData = computed(() => {
+  const kmLuarMeta = (roomTypes.value.find(t => t.typeId === 'km-luar') || {}) as RoomTypeData
+  const kmDalamMeta = (roomTypes.value.find(t => t.typeId === 'km-dalam') || {}) as RoomTypeData
+
+  const kmLuarRooms = rooms.value.filter(r => r.typeId === 'km-luar')
+  const kmLuarAvailable = kmLuarRooms.filter(r => r.status === 'available').length
+  const minPriceKmLuar = kmLuarRooms.length > 0 
+    ? Math.min(...kmLuarRooms.map(r => r.price || r.price1Month || 600000))
+    : (cmsSettings.value?.priceKmLuarMonthly || 600000)
+
+  const kmDalamRooms = rooms.value.filter(r => r.typeId === 'km-dalam')
+  const kmDalamAvailable = kmDalamRooms.filter(r => r.status === 'available').length
+  const minPriceKmDalam = kmDalamRooms.length > 0
+    ? Math.min(...kmDalamRooms.map(r => r.price || r.price1Month || 850000))
+    : (cmsSettings.value?.priceKmDalamMonthly || 850000)
+
+  return {
+    kmLuar: {
+      ...kmLuarMeta,
+      price: minPriceKmLuar,
+      totalRooms: kmLuarRooms.length,
+      availableRooms: kmLuarAvailable
+    },
+    kmDalam: {
+      ...kmDalamMeta,
+      price: minPriceKmDalam,
+      totalRooms: kmDalamRooms.length,
+      availableRooms: kmDalamAvailable
+    }
+  }
+})
+
+const getAvailableCountForBuilding = (bId: string) => {
+  return rooms.value.filter(r => {
+    const isThisBuilding = r.buildingId === bId || (bId === 'utama' && r.buildingId === 'bld-a') || (bId === 'timur' && r.buildingId === 'bld-b') || (bId === 'barat' && r.buildingId === 'bld-c')
+    const isAvail = r.status === 'available'
+    const isTypeMatch = !selectedType.value || r.typeId === selectedType.value
+    return isThisBuilding && isAvail && isTypeMatch
+  }).length
+}
 
 // Step Management
 const currentStep = ref<number>(1)
@@ -120,7 +183,7 @@ const basePriceTotal = computed(() => {
 
 const totalAddonsTotal = computed(() => {
   let addons = 0
-  if (calcAddonExtraPerson.value) addons += 250000 // Flat fee
+  if (calcAddonExtraPerson.value) addons += 250000 * calcDuration.value
   if (calcAddonCarParking.value) addons += 50000 * calcDuration.value
   return addons
 })
@@ -135,8 +198,12 @@ const calcWaMessage = computed(() => {
   const bldName = currentBuilding.value.name
   const roomType = selectedRoom.value.typeName
   const addons = []
-  if (calcAddonExtraPerson.value) addons.push('Penghuni Lebih dari 1 Orang (+Rp 250rb flat)')
-  if (calcAddonCarParking.value) addons.push('Parkir Mobil (+Rp 50rb/bln)')
+  if (calcAddonExtraPerson.value) {
+    addons.push(`Penghuni Lebih dari 1 Orang (Rp ${(250000 * calcDuration.value).toLocaleString('id-ID')} untuk ${calcDuration.value} bln)`)
+  }
+  if (calcAddonCarParking.value) {
+    addons.push(`Parkir Mobil (Rp ${(50000 * calcDuration.value).toLocaleString('id-ID')} untuk ${calcDuration.value} bln)`)
+  }
   const addonStr = addons.length > 0 ? addons.join(', ') : 'Tanpa Layanan Tambahan'
 
   const text = `Halo Admin Sekar Space, saya berminat memesan Kamar ${roomNum} (${bldName} - ${roomType}) dengan rincian:
@@ -158,6 +225,24 @@ const selectType = (type: 'km-luar' | 'km-dalam') => {
 const selectBuilding = (bId: string) => {
   selectedBuildingId.value = bId
   selectedRoomId.value = null // Reset room selection when building changes
+
+  nextTick(() => {
+    const el = document.getElementById('floorPlanSection')
+    if (el) {
+      const topPos = el.getBoundingClientRect().top + window.scrollY - 85
+      window.scrollTo({ top: topPos, behavior: 'smooth' })
+    }
+  })
+}
+
+const scrollToBuildingGrid = () => {
+  const el = document.getElementById('buildingSelectionSection')
+  if (el) {
+    const topPos = el.getBoundingClientRect().top + window.scrollY - 85
+    window.scrollTo({ top: topPos, behavior: 'smooth' })
+  } else {
+    window.scrollTo({ top: 150, behavior: 'smooth' })
+  }
 }
 
 const selectRoomFromFloorPlan = (roomNode: any) => {
@@ -198,8 +283,6 @@ const formatRupiah = (val: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
 }
 
-
-
 const applyRouteQuery = () => {
   const queryTipe = route.query.tipe as string
   if (queryTipe === 'km-luar' || queryTipe === 'km-dalam') {
@@ -210,10 +293,11 @@ const applyRouteQuery = () => {
 
 onMounted(() => {
   applyRouteQuery()
+  window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
-watch(() => route.query.tipe, () => {
-  applyRouteQuery()
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -292,21 +376,24 @@ watch(() => route.query.tipe, () => {
             :class="{ selected: selectedType === 'km-luar' }"
             @click="selectType('km-luar')"
           >
+            <div class="type-badge-top">
+              <span class="badge-avail-pill">
+                <i class='bx bx-check-circle'></i> {{ roomTypesData.kmLuar.availableRooms }} Kamar Tersedia
+              </span>
+            </div>
             <div class="type-card-icon">
               <i class='bx bx-door-open'></i>
             </div>
-            <h3>Kamar Mandi Luar</h3>
-            <p class="type-desc">Kamar bersih & ekonomis dengan fasilitas kamar mandi luar terawat bersama.</p>
+            <h3>{{ roomTypesData.kmLuar.typeName }}</h3>
+            <p class="type-desc">{{ roomTypesData.kmLuar.desc }}</p>
             <ul class="type-features">
-              <li><i class='bx bx-check-circle'></i> Ukuran 3 x 3 Meter</li>
-              <li><i class='bx bx-check-circle'></i> Kasur, Bantal & Lemari Pakaian</li>
-              <li><i class='bx bx-check-circle'></i> Meja & Cermin</li>
-              <li><i class='bx bx-check-circle'></i> WiFi Cepat 24 Jam</li>
-              <li><i class='bx bx-check-circle'></i> Access Dapur & Kulkas Bersama</li>
+              <li v-for="(feat, idx) in roomTypesData.kmLuar.features" :key="idx">
+                <i class='bx bx-check-circle'></i> {{ feat }}
+              </li>
             </ul>
             <div class="type-price">
               <span class="price-label">Mulai dari</span>
-              <strong class="price-amount">Rp 700.000 <span>/ bulan</span></strong>
+              <strong class="price-amount">{{ formatRupiah(roomTypesData.kmLuar.price) }} <span>/ bulan</span></strong>
             </div>
             <button class="btn btn-primary type-btn">Pilih Tipe Kamar Ini</button>
           </div>
@@ -318,23 +405,26 @@ watch(() => route.query.tipe, () => {
             @click="selectType('km-dalam')"
           >
             <div class="type-badge-float">
-              <i class='bx bxs-star'></i> Populer & Favorit
+              <i class='bx bxs-star'></i> {{ roomTypesData.kmDalam.badge }}
+            </div>
+            <div class="type-badge-top">
+              <span class="badge-avail-pill">
+                <i class='bx bx-check-circle'></i> {{ roomTypesData.kmDalam.availableRooms }} Kamar Tersedia
+              </span>
             </div>
             <div class="type-card-icon">
               <i class='bx bx-bath'></i>
             </div>
-            <h3>Kamar Mandi Dalam</h3>
-            <p class="type-desc">Kamar lebih luas dengan kamar mandi pribadi di dalam kamar untuk kenyamanan & privasi ekstra.</p>
+            <h3>{{ roomTypesData.kmDalam.typeName }}</h3>
+            <p class="type-desc">{{ roomTypesData.kmDalam.desc }}</p>
             <ul class="type-features">
-              <li><i class='bx bx-check-circle'></i> Ukuran 3 x 4 Meter</li>
-              <li><i class='bx bx-check-circle'></i> Kamar Mandi Dalam (Ember & Closet)</li>
-              <li><i class='bx bx-check-circle'></i> Kasur Springbed & Lemari 2 Pintu</li>
-              <li><i class='bx bx-check-circle'></i> Meja, Cermin & Token Listrik</li>
-              <li><i class='bx bx-check-circle'></i> WiFi Cepat 24 Jam</li>
+              <li v-for="(feat, idx) in roomTypesData.kmDalam.features" :key="idx">
+                <i class='bx bx-check-circle'></i> {{ feat }}
+              </li>
             </ul>
             <div class="type-price">
               <span class="price-label">Mulai dari</span>
-              <strong class="price-amount">Rp 950.000 <span>/ bulan</span></strong>
+              <strong class="price-amount">{{ formatRupiah(roomTypesData.kmDalam.price) }} <span>/ bulan</span></strong>
             </div>
             <button class="btn btn-primary type-btn">Pilih Tipe Kamar Ini</button>
           </div>
@@ -342,10 +432,24 @@ watch(() => route.query.tipe, () => {
       </section>
 
       <!-- ==================== STEP 2: PILIH GEDUNG & DENAH BANGUNAN ==================== -->
-      <section v-if="currentStep === 2" class="step-panel">
+      <section v-if="currentStep === 2" id="buildingSelectionSection" class="step-panel">
         <div class="step-title">
           <h2>Langkah 2: Pilih Gedung & Lihat Denah Layout</h2>
           <p>Pilih gedung hunian Anda untuk melihat tata letak ruangan (Lantai 1 & 2) dan kamar yang masih siap dihuni</p>
+        </div>
+
+        <!-- Selected Room Type Notice Banner -->
+        <div class="type-filter-notice">
+          <div class="filter-notice-icon">
+            <i :class="selectedType === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open'"></i>
+          </div>
+          <div class="filter-notice-text">
+            <h4>Filter Aktif: {{ selectedType === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar' }}</h4>
+            <p>Jumlah kamar yang ditampilkan di bawah adalah kamar yang <strong>tersedia khusus tipe {{ selectedType === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar' }}</strong>.</p>
+          </div>
+          <button class="btn btn-outline btn-sm filter-change-btn" @click="goToStep(1)">
+            <i class='bx bx-edit-alt'></i> Ubah Tipe
+          </button>
         </div>
 
         <!-- Building Selector Cards -->
@@ -370,19 +474,18 @@ watch(() => route.query.tipe, () => {
             </ul>
             <div class="building-footer">
               <span class="badge-avail">
-                <i class='bx bx-check-circle'></i> {{ rooms.filter(r => r.buildingId === bld.id && r.status === 'available').length }} Kamar Tersedia
+                <i class='bx bx-check-circle'></i> {{ getAvailableCountForBuilding(bld.id) }} Kamar {{ selectedType === 'km-dalam' ? 'KM Dalam' : 'KM Luar' }} Tersedia
               </span>
-              <button class="btn btn-ghost btn-sm">Lihat Denah Gedung</button>
             </div>
           </div>
         </div>
 
         <!-- INTERACTIVE FLOOR PLAN DENAH BANGUNAN FOR SELECTED BUILDING -->
-        <div class="floor-plan-container">
+        <div id="floorPlanSection" class="floor-plan-container">
           <div class="floor-plan-header">
             <div>
               <h3><i class='bx bx-map-alt'></i> Denah Layout — {{ currentBuilding.name }}</h3>
-              <p>Klik salah satu nomor kamar pada denah di bawah untuk langsung menuju detail dan pemesanan.</p>
+              <p>Menampilkan denah ruangan. Klik nomor kamar tipe <strong>{{ selectedType === 'km-dalam' ? 'KM Dalam' : 'KM Luar' }}</strong> yang berwarna hijau untuk memesan.</p>
             </div>
             <div class="floor-switcher">
               <button 
@@ -449,17 +552,6 @@ watch(() => route.query.tipe, () => {
                 <span v-if="node.isRoom && node.status === 'Tersedia' && node.typeId === selectedType" class="node-click-hint">Pilih Kamar Ini</span>
               </div>
             </div>
-          </div>
-
-          <div class="floor-plan-cta">
-            <button 
-              class="btn btn-primary" 
-              @click="goToStep(3)" 
-              :disabled="!selectedRoomId"
-              :title="!selectedRoomId ? 'Pilih kamar terlebih dahulu' : ''"
-            >
-              Lanjutkan ke Detail & Pesan Kamar <i class='bx bx-right-arrow-alt'></i>
-            </button>
           </div>
         </div>
       </section>
@@ -601,7 +693,7 @@ watch(() => route.query.tipe, () => {
                     <input type="checkbox" v-model="calcAddonExtraPerson" />
                     <div class="checkbox-text">
                       <strong>Penghuni Lebih dari 1 Orang</strong>
-                      <span>+ Rp 250.000 (Flat/Tetap)</span>
+                      <span>+ Rp 250.000 / bulan</span>
                     </div>
                   </label>
                   <label class="checkbox-card" :class="{ checked: calcAddonCarParking }">
@@ -623,8 +715,8 @@ watch(() => route.query.tipe, () => {
                 <strong>{{ formatRupiah(basePriceTotal) }}</strong>
               </div>
               <div v-if="calcAddonExtraPerson" class="summary-row">
-                <span>Tambahan Penghuni:</span>
-                <strong>+ {{ formatRupiah(250000) }}</strong>
+                <span>Tambahan Penghuni ({{ calcDuration }} Bln):</span>
+                <strong>+ {{ formatRupiah(250000 * calcDuration) }}</strong>
               </div>
               <div v-if="calcAddonCarParking" class="summary-row">
                 <span>Parkir Mobil ({{ calcDuration }} Bln):</span>
@@ -705,6 +797,20 @@ watch(() => route.query.tipe, () => {
         </div>
       </Transition>
     </Teleport>
+
+    <!-- Floating Back to Top / Action Button for Step 2 & Step 3 -->
+    <Transition name="fade-slide">
+      <button 
+        v-if="(currentStep === 2 || currentStep === 3) && showScrollToTopBtn" 
+        class="floating-scroll-top-btn"
+        @click="handleFloatingAction"
+        :aria-label="currentStep === 2 ? 'Kembali ke Pilihan Gedung' : 'Kembali ke Atas'"
+        :title="currentStep === 2 ? 'Kembali ke pilihan gedung di atas' : 'Kembali ke detail kamar di atas'"
+      >
+        <i class='bx bx-up-arrow-alt'></i>
+        <span>{{ currentStep === 2 ? 'Pilih Gedung Lain' : 'Kembali ke Atas' }}</span>
+      </button>
+    </Transition>
   </div>
 </template>
 
@@ -714,16 +820,23 @@ watch(() => route.query.tipe, () => {
   flex-direction: column;
   min-height: 100vh;
   background: var(--off-white);
+  position: relative;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .main-body {
   flex: 1;
-  padding-top: 100px;
-  padding-bottom: 80px;
+  padding-top: 95px;
+  padding-bottom: 70px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .page-header {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   text-align: center;
 }
 
@@ -732,9 +845,9 @@ watch(() => route.query.tipe, () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   color: var(--text-muted);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .breadcrumb a {
@@ -742,13 +855,13 @@ watch(() => route.query.tipe, () => {
 }
 
 .page-header h1 {
-  font-size: 2.2rem;
-  margin-bottom: 8px;
+  font-size: 1.95rem;
+  margin-bottom: 6px;
 }
 
 .page-header p {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 /* STEP PROGRESS INDICATOR */
@@ -756,22 +869,22 @@ watch(() => route.query.tipe, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: 700px;
-  margin: 0 auto 36px;
+  max-width: 640px;
+  margin: 0 auto 28px;
 }
 
 .step-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   cursor: pointer;
   transition: all var(--transition-base);
 }
 
 .step-number {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: var(--white);
   border: 2px solid var(--border);
@@ -780,7 +893,7 @@ watch(() => route.query.tipe, () => {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: all var(--transition-base);
 }
 
@@ -792,7 +905,7 @@ watch(() => route.query.tipe, () => {
 }
 
 .step-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -803,9 +916,9 @@ watch(() => route.query.tipe, () => {
 
 .step-connector {
   flex: 1;
-  height: 3px;
+  height: 2px;
   background: var(--border);
-  margin: 0 16px 24px;
+  margin: 0 14px 20px;
 }
 
 .step-connector.active {
@@ -817,8 +930,8 @@ watch(() => route.query.tipe, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 32px;
+  gap: 10px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
@@ -826,9 +939,9 @@ watch(() => route.query.tipe, () => {
   background: var(--white);
   border: 1px solid var(--border);
   color: var(--primary);
-  padding: 6px 16px;
+  padding: 5px 14px;
   border-radius: var(--radius-full);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -851,7 +964,7 @@ watch(() => route.query.tipe, () => {
 
 .summary-separator {
   color: var(--text-muted);
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
@@ -863,29 +976,29 @@ watch(() => route.query.tipe, () => {
 .step-title {
   text-align: center;
   max-width: 760px;
-  margin: 0 auto 40px;
+  margin: 0 auto 28px;
   padding: 0 16px;
 }
 
 .step-title h2 {
-  font-size: clamp(1.5rem, 3.2vw, 1.95rem);
+  font-size: clamp(1.4rem, 2.8vw, 1.75rem);
   color: var(--dark);
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   font-weight: 700;
   line-height: 1.3;
 }
 
 .step-title p {
-  font-size: 1rem;
+  font-size: 0.92rem;
   color: var(--text-muted);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 /* STEP 1: TYPE SELECTION GRID */
 .type-selection-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 32px;
+  gap: 28px;
   max-width: 920px;
   margin: 0 auto;
 }
@@ -894,7 +1007,7 @@ watch(() => route.query.tipe, () => {
   background: var(--white);
   border: 2px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 32px;
+  padding: 28px 28px 30px;
   position: relative;
   cursor: pointer;
   transition: all var(--transition-smooth);
@@ -916,48 +1029,68 @@ watch(() => route.query.tipe, () => {
 
 .type-badge-float {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 18px;
+  right: 18px;
   background: linear-gradient(135deg, #E8A838, #D4912A);
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 700;
   padding: 4px 12px;
   border-radius: var(--radius-full);
-  box-shadow: 0 4px 12px rgba(212, 145, 42, 0.3);
+  box-shadow: 0 4px 12px rgba(212, 145, 42, 0.28);
+}
+
+.type-badge-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.badge-avail-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  background: #E8F5E9;
+  color: #1B5E20;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(46, 125, 50, 0.2);
 }
 
 .type-card-icon {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-md);
   background: var(--tertiary);
   color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
-  margin-bottom: 16px;
+  font-size: 1.5rem;
+  margin-bottom: 14px;
 }
 
 .type-card h3 {
-  font-size: 1.35rem;
-  margin-bottom: 8px;
+  font-size: 1.3rem;
+  margin-bottom: 6px;
   color: var(--dark);
 }
 
 .type-desc {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
-  margin-bottom: 20px;
-  line-height: 1.5;
+  margin-bottom: 16px;
+  line-height: 1.48;
 }
 
 .type-features {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
 }
 
@@ -965,44 +1098,127 @@ watch(() => route.query.tipe, () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   color: var(--dark);
 }
 
 .type-features i {
   color: #16A34A;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .type-price {
   margin-top: auto;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .price-label {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
 .price-amount {
   font-family: var(--font-heading);
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   color: var(--primary);
   font-weight: 700;
 }
 
 .price-amount span {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 400;
   color: var(--text-muted);
 }
 
 .type-btn {
   width: 100%;
+  padding: 10px 20px;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 /* STEP 2: BUILDING GRID & FLOOR PLAN */
+.type-filter-notice {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--tertiary-light);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  max-width: 920px;
+  margin: 0 auto 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-notice-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 8px rgba(84, 26, 26, 0.1);
+}
+
+.filter-notice-text {
+  flex: 1;
+}
+
+.filter-notice-text h4 {
+  font-size: 0.98rem;
+  color: var(--primary);
+  margin-bottom: 2px;
+  font-weight: 700;
+}
+
+.filter-notice-text p {
+  font-size: 0.88rem;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.filter-change-btn {
+  white-space: nowrap;
+  font-size: 0.82rem;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: var(--white);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-change-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+}
+
+@media (max-width: 600px) {
+  .type-filter-notice {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+  .filter-change-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .building-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1095,18 +1311,21 @@ watch(() => route.query.tipe, () => {
 .building-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding-top: 12px;
   border-top: 1px solid var(--border);
 }
 
 .badge-avail {
   font-size: 0.8rem;
-  color: #16A34A;
+  color: #1B5E20;
+  background: #E8F5E9;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
   font-weight: 600;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  border: 1px solid rgba(46, 125, 50, 0.2);
 }
 
 /* FLOOR PLAN CONTAINER */
@@ -1371,20 +1590,30 @@ watch(() => route.query.tipe, () => {
   padding: 36px;
   margin-bottom: 32px;
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .room-gallery {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .gallery-main {
   position: relative;
-  height: 360px;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: radial-gradient(circle at center, #FAF7F4 0%, #EDE6DF 100%);
+  background: #201410;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1392,6 +1621,7 @@ watch(() => route.query.tipe, () => {
   border: 1px solid var(--border);
   box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.03);
   transition: all var(--transition-base);
+  box-sizing: border-box;
 }
 
 .gallery-main:hover {
@@ -1402,47 +1632,49 @@ watch(() => route.query.tipe, () => {
 .main-img {
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 16px rgba(84, 26, 26, 0.08));
-  transition: transform 0.4s ease, filter 0.4s ease;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.4s ease;
 }
 
 .gallery-main:hover .main-img {
-  transform: scale(1.02);
-  filter: drop-shadow(0 8px 24px rgba(84, 26, 26, 0.14));
+  transform: scale(1.03);
 }
 
 .gallery-badge {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 14px;
+  left: 14px;
   padding: 4px 12px;
-  background: rgba(84, 26, 26, 0.85);
+  background: rgba(84, 26, 26, 0.88);
   color: var(--white);
   font-size: 0.78rem;
   font-weight: 700;
   border-radius: var(--radius-full);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
   z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 .gallery-zoom-overlay {
   position: absolute;
   bottom: 0;
   inset-x: 0;
-  padding: 14px 16px;
-  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+  padding: 12px 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 70%, transparent 100%);
   color: var(--white);
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   z-index: 2;
   transition: all var(--transition-base);
+  box-sizing: border-box;
 }
 
 .gallery-main:hover .gallery-zoom-overlay {
-  background: linear-gradient(to top, rgba(84,26,26,0.9) 0%, transparent 100%);
+  background: linear-gradient(to top, rgba(84,26,26,0.92) 0%, rgba(84,26,26,0.5) 70%, transparent 100%);
 }
 
 /* LIGHTBOX FULLSCREEN MODAL */
@@ -1571,33 +1803,23 @@ watch(() => route.query.tipe, () => {
   right: -64px;
 }
 
-@media (max-width: 768px) {
-  .gallery-main {
-    height: 280px;
-  }
-  .lightbox-nav-btn.prev-btn {
-    left: 8px;
-  }
-  .lightbox-nav-btn.next-btn {
-    right: 8px;
-  }
-  .lightbox-close-btn {
-    top: -40px;
-    right: 8px;
-  }
-}
-
 .gallery-thumbs {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   padding-bottom: 6px;
   scrollbar-width: thin;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 .thumb-btn {
-  flex: 0 0 64px;
-  height: 56px;
+  flex: 0 0 60px;
+  width: 60px;
+  height: 48px;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid transparent;
@@ -1606,6 +1828,7 @@ watch(() => route.query.tipe, () => {
   transition: all var(--transition-base);
   padding: 0;
   background: var(--off-white);
+  flex-shrink: 0;
 }
 
 .thumb-btn.active {
@@ -2180,6 +2403,8 @@ watch(() => route.query.tipe, () => {
 }
 
 /* RESPONSIVE MEDIA QUERIES */
+
+/* ---- TABLET (max 1024px) ---- */
 @media (max-width: 1024px) {
   .type-selection-grid,
   .room-detail-layout,
@@ -2192,14 +2417,79 @@ watch(() => route.query.tipe, () => {
   .floor-node-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .room-detail-layout {
+    padding: 28px;
+    gap: 28px;
+  }
+  .estimator-container {
+    padding: 28px;
+  }
+  .floor-plan-container {
+    padding: 24px;
+  }
+  .spec-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
+/* ---- MOBILE LANDSCAPE / SMALL TABLET (max 768px) ---- */
 @media (max-width: 768px) {
+  .main-body {
+    padding-top: 78px;
+    padding-bottom: 50px;
+  }
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  .page-header p {
+    font-size: 0.85rem;
+  }
   .building-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .building-card {
+    padding: 20px 16px;
+  }
+  .building-card h3 {
+    font-size: 1.05rem;
   }
   .floor-node-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .floor-plan-container {
+    padding: 18px;
+    border-radius: var(--radius-lg);
+  }
+  .floor-plan-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .floor-plan-header h3 {
+    font-size: 1.1rem;
+  }
+  .floor-plan-header p {
+    font-size: 0.82rem;
+  }
+  .floor-switcher {
+    width: 100%;
+    justify-content: center;
+  }
+  .floor-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+  .floor-plan-legend {
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+  .floor-layout-box {
+    padding: 14px;
   }
   .spec-grid {
     grid-template-columns: 1fr;
@@ -2235,53 +2525,144 @@ watch(() => route.query.tipe, () => {
     font-size: 0.85rem;
   }
   .type-card {
-    padding: 24px 18px;
+    padding: 22px 18px;
   }
   .type-card h3 {
     font-size: 1.15rem;
   }
   .type-desc {
-    font-size: 0.85rem;
+    font-size: 0.84rem;
   }
-  .building-card {
+  .type-card-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+  }
+  .room-detail-layout {
     padding: 20px 16px;
-  }
-  .building-card h3 {
-    font-size: 1.05rem;
+    gap: 24px;
+    border-radius: var(--radius-lg);
   }
   .room-detail-header h2 {
     font-size: 1.25rem;
   }
-  .gallery-main img {
-    height: 240px;
+  .gallery-main {
+    aspect-ratio: 16 / 10;
   }
   .gallery-thumbs img {
-    width: 60px;
-    height: 45px;
+    width: 56px;
+    height: 44px;
   }
-  .estimator-box {
+  .room-price-display {
+    padding: 14px 16px;
+  }
+  .price-main {
+    font-size: 1.4rem;
+  }
+  .estimator-container {
     padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+  .estimator-header h3 {
+    font-size: 1.2rem;
+  }
+  .estimator-header p {
+    font-size: 0.85rem;
+  }
+  .estimator-body {
+    gap: 24px;
+  }
+  .estimator-summary-panel {
+    padding: 18px;
+  }
+  .room-number-section {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+  .room-number-pill {
+    min-width: 100px;
+    padding: 10px 14px;
   }
   .modal-content {
     width: 92vw;
     max-height: 90vh;
     padding: 24px 18px;
   }
+  .lightbox-nav-btn.prev-btn {
+    left: 8px;
+  }
+  .lightbox-nav-btn.next-btn {
+    right: 8px;
+  }
+  .lightbox-nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.6rem;
+  }
+  .lightbox-close-btn {
+    top: -40px;
+    right: 8px;
+  }
+  .lightbox-caption {
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+  .lightbox-caption h4 {
+    font-size: 0.95rem;
+  }
+  .modal-box {
+    padding: 24px 18px;
+    max-width: 95vw;
+  }
+  .modal-header h2 {
+    font-size: 1.2rem;
+  }
+  .floating-scroll-top-btn {
+    bottom: 20px;
+    right: 16px;
+    padding: 10px 16px;
+    font-size: 0.82rem;
+  }
+  .floating-scroll-top-btn i {
+    font-size: 1.1rem;
+  }
 }
 
+/* ---- MOBILE PORTRAIT (max 480px) ---- */
 @media (max-width: 480px) {
+  .main-body {
+    padding-top: 70px;
+    padding-bottom: 40px;
+  }
+  .page-header {
+    margin-bottom: 16px;
+  }
+  .page-header h1 {
+    font-size: 1.3rem;
+  }
+  .page-header p {
+    font-size: 0.8rem;
+  }
+  .breadcrumb {
+    font-size: 0.78rem;
+    gap: 6px;
+  }
   .step-progress {
     gap: 2px;
     padding: 0 6px;
+    margin-bottom: 16px;
   }
   .step-connector {
     margin: 0 4px 24px;
     min-width: 20px;
   }
   .step-label {
-    font-size: 0.65rem;
-    max-width: 70px;
+    font-size: 0.62rem;
+    max-width: 64px;
     text-align: center;
+    line-height: 1.25;
   }
   .step-number {
     width: 28px;
@@ -2290,55 +2671,507 @@ watch(() => route.query.tipe, () => {
   }
   .selection-summary {
     padding: 8px 10px;
+    gap: 5px;
   }
   .summary-chip {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     padding: 3px 6px;
+    gap: 4px;
+  }
+  .summary-chip i {
+    font-size: 0.78rem;
   }
   .summary-separator {
     display: none;
   }
+  .step-title {
+    margin-bottom: 18px;
+    padding: 0 8px;
+  }
   .step-title h2 {
-    font-size: 1.15rem;
+    font-size: 1.12rem;
   }
   .step-title p {
     font-size: 0.8rem;
   }
+  .type-selection-grid {
+    gap: 16px;
+  }
   .type-card {
-    padding: 20px 14px;
+    padding: 18px 14px 20px;
+    border-radius: var(--radius-lg);
+  }
+  .type-card h3 {
+    font-size: 1.08rem;
+  }
+  .type-card-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+  .type-desc {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+  }
+  .type-features {
+    gap: 6px;
+    margin-bottom: 14px;
   }
   .type-features li {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+  .type-features i {
+    font-size: 0.92rem;
+  }
+  .type-price {
+    margin-bottom: 12px;
+  }
+  .price-label {
+    font-size: 0.7rem;
   }
   .price-amount {
     font-size: 1.15rem;
   }
-  .floor-node-grid {
+  .price-amount span {
+    font-size: 0.76rem;
+  }
+  .type-btn {
+    padding: 9px 14px;
+    font-size: 0.85rem;
+  }
+  .type-badge-float {
+    top: 12px;
+    right: 12px;
+    font-size: 0.68rem;
+    padding: 3px 8px;
+  }
+  .badge-avail-pill {
+    font-size: 0.68rem;
+    padding: 2px 7px;
+  }
+  /* Step 2 */
+  .type-filter-notice {
+    flex-direction: column;
+    align-items: flex-start;
     gap: 10px;
+    padding: 14px;
+    margin-bottom: 20px;
   }
-  .room-node {
-    padding: 14px 12px;
+  .filter-notice-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 1.2rem;
   }
-  .gallery-main img {
-    height: 200px;
+  .filter-notice-text h4 {
+    font-size: 0.88rem;
+  }
+  .filter-notice-text p {
+    font-size: 0.8rem;
+  }
+  .filter-change-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  .building-grid {
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .building-card {
+    padding: 16px 14px;
+    border-radius: var(--radius-lg);
+  }
+  .building-card h3 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+  .building-desc {
+    font-size: 0.78rem;
+    margin-bottom: 10px;
+  }
+  .building-fac-list {
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .building-fac-list li {
+    font-size: 0.76rem;
+  }
+  .building-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.3rem;
+  }
+  .building-badge {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+  }
+  .badge-avail {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+  }
+  .floor-plan-container {
+    padding: 14px;
+    border-radius: var(--radius-md);
+  }
+  .floor-plan-header h3 {
+    font-size: 1rem;
+  }
+  .floor-plan-header p {
+    font-size: 0.78rem;
+  }
+  .floor-switcher {
+    gap: 4px;
+  }
+  .floor-btn {
+    padding: 7px 10px;
+    font-size: 0.78rem;
+    gap: 4px;
+  }
+  .floor-plan-legend {
+    gap: 8px;
+    padding: 8px 10px;
+    font-size: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .legend-pill {
+    font-size: 0.66rem;
+    padding: 2px 7px;
+  }
+  .floor-layout-box {
+    padding: 10px;
+    margin-bottom: 14px;
+  }
+  .floor-node-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .floor-node-card {
+    padding: 14px 10px 10px;
+  }
+  .node-room-type-tag {
+    top: 6px;
+    right: 6px;
+    font-size: 0.58rem;
+    padding: 1px 6px;
+  }
+  .node-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+  .node-num {
+    font-size: 0.92rem;
+  }
+  .node-type {
+    font-size: 0.7rem;
+    margin-bottom: 4px;
+  }
+  .node-badge {
+    font-size: 0.62rem;
+    padding: 2px 6px;
+  }
+  .node-click-hint {
+    font-size: 0.62rem;
+    margin-top: 4px;
+  }
+  /* Step 3 */
+  .room-detail-layout {
+    padding: 16px 12px;
+    gap: 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+  }
+  .gallery-main {
+    aspect-ratio: 16 / 11;
+    border-radius: var(--radius-md);
+  }
+  .gallery-badge {
+    top: 10px;
+    left: 10px;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+  .gallery-zoom-overlay {
+    padding: 10px 12px;
+    font-size: 0.78rem;
   }
   .gallery-thumbs {
     gap: 6px;
   }
-  .gallery-thumbs img {
-    width: 50px;
-    height: 38px;
+  .thumb-btn {
+    flex: 0 0 52px;
+    height: 44px;
+  }
+  .type-badge {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+  }
+  .room-specs-header h2 {
+    font-size: 1.2rem;
+  }
+  .building-name {
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+  }
+  .room-price-display {
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+  .price-main {
+    font-size: 1.3rem;
+  }
+  .price-main span {
+    font-size: 0.78rem;
   }
   .spec-item {
     padding: 10px 12px;
+    gap: 10px;
   }
-  .estimator-box {
+  .spec-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
+  .spec-text small {
+    font-size: 0.7rem;
+  }
+  .spec-text strong {
+    font-size: 0.82rem;
+  }
+  .room-number-section {
     padding: 16px 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+  }
+  .room-number-section h3 {
+    font-size: 1.05rem;
+  }
+  .room-number-section p {
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+  }
+  .room-number-grid {
+    gap: 8px;
+  }
+  .room-number-pill {
+    min-width: 90px;
+    padding: 8px 12px;
+  }
+  .room-number-pill i {
+    font-size: 1.1rem;
+  }
+  .room-number-pill span {
+    font-size: 0.85rem;
+  }
+  .room-number-pill small {
+    font-size: 0.66rem;
+  }
+  .estimator-container {
+    padding: 16px 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+  }
+  .estimator-header {
+    margin-bottom: 18px;
+  }
+  .estimator-tag {
+    font-size: 0.72rem;
+    padding: 3px 10px;
+  }
+  .estimator-header h3 {
+    font-size: 1.1rem;
+  }
+  .estimator-header p {
+    font-size: 0.82rem;
+  }
+  .estimator-body {
+    gap: 20px;
+  }
+  .estimator-controls {
+    gap: 18px;
+  }
+  .estimator-label {
+    font-size: 0.85rem;
+  }
+  .range-marks {
+    font-size: 0.7rem;
+  }
+  .checkbox-card {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .checkbox-card input {
+    width: 16px;
+    height: 16px;
+  }
+  .checkbox-text strong {
+    font-size: 0.82rem;
+  }
+  .checkbox-text span {
+    font-size: 0.72rem;
+  }
+  .estimator-summary-panel {
+    padding: 14px;
+    gap: 10px;
+  }
+  .summary-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+  .summary-row {
+    font-size: 0.82rem;
+  }
+  .grand-price {
+    font-size: 1.15rem;
+  }
+  .booking-cta-group {
+    margin-top: 10px;
+    gap: 8px;
+  }
+  .btn-wa,
+  .btn-secondary {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+  .step-nav-footer {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .step-nav-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .modal-box {
+    padding: 20px 14px;
+    max-width: 96vw;
+    border-radius: var(--radius-lg);
+  }
+  .modal-header h2 {
+    font-size: 1.1rem;
+  }
+  .modal-header p {
+    font-size: 0.82rem;
+  }
+  .form-group label {
+    font-size: 0.8rem;
+  }
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.85rem;
+    padding: 9px 12px;
+  }
+  .form-summary {
+    font-size: 0.82rem;
+    padding: 10px 12px;
+  }
+  .form-summary strong {
+    font-size: 1rem;
   }
   .modal-content {
     width: 96vw;
     padding: 20px 14px;
     border-radius: var(--radius-lg);
   }
+  .lightbox-img {
+    max-width: 94vw;
+    max-height: 70vh;
+    border-radius: var(--radius-md);
+  }
+  .lightbox-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.4rem;
+  }
+  .lightbox-nav-btn.prev-btn {
+    left: 4px;
+  }
+  .lightbox-nav-btn.next-btn {
+    right: 4px;
+  }
+  .lightbox-close-btn {
+    top: -36px;
+    right: 4px;
+    width: 34px;
+    height: 34px;
+    font-size: 1.3rem;
+  }
+  .lightbox-caption h4 {
+    font-size: 0.85rem;
+  }
+  .lightbox-badge {
+    font-size: 0.68rem;
+  }
+  .lightbox-counter {
+    font-size: 0.75rem;
+  }
+  .room-lightbox-backdrop {
+    padding: 12px;
+  }
+  .floating-scroll-top-btn {
+    bottom: 16px;
+    right: 12px;
+    padding: 9px 14px;
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+  .floating-scroll-top-btn i {
+    font-size: 1rem;
+  }
+  .floating-scroll-top-btn span {
+    font-size: 0.76rem;
+  }
+}
+
+/* FLOATING BUTTON (STEP 2: BACK TO BUILDING SELECTOR) */
+.floating-scroll-top-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 99;
+  background: var(--primary);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 11px 20px;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(84, 26, 26, 0.35);
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+}
+
+.floating-scroll-top-btn:hover {
+  background: var(--primary-light);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 30px rgba(84, 26, 26, 0.45);
+}
+
+.floating-scroll-top-btn i {
+  font-size: 1.25rem;
+  animation: bounceUp 1.5s infinite;
+}
+
+@keyframes bounceUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
 }
 </style>

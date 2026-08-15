@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Navbar from '../components/layout/Navbar.vue'
 import Footer from '../components/layout/Footer.vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useDataStore, getRoomPriceByDuration } from '../composables/useDataStore'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const { cmsSettings, facilities, nearbyPlacesData, testimonials, galleryData, faqs, rooms } = useDataStore()
+const route = useRoute()
+const { cmsSettings, facilities, nearbyPlacesData, testimonials, galleryData, faqs, rooms, roomTypes } = useDataStore()
 
 // Interactive State
 const activeFaq = ref<number | null>(null)
@@ -234,6 +235,9 @@ const getPriceKmDalam = computed(() => {
   return formatRupiah(getRoomPriceByDuration(sampleKmDalamRoom.value, duration))
 })
 
+const roomTypeKmLuar = computed(() => roomTypes.value.find(t => t.typeId === 'km-luar'))
+const roomTypeKmDalam = computed(() => roomTypes.value.find(t => t.typeId === 'km-dalam'))
+
 // Scroll Progress
 const handleWindowScroll = () => {
   const winScroll = document.documentElement.scrollTop || document.body.scrollTop
@@ -323,7 +327,16 @@ const initGsapAnimations = () => {
       }
     )
 
-    // 5. TESTIMONIALS SECTION
+    // 5. GALLERY SECTION
+    gsap.fromTo('.gallery-double-row-wrapper', 
+      { y: 45, opacity: 0 },
+      { 
+        y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'all',
+        scrollTrigger: { trigger: '#gallery', start: 'top 85%', once: true }
+      }
+    )
+
+    // 6. TESTIMONIALS SECTION
     gsap.fromTo('.testimonial-card', 
       { scale: 0.9, opacity: 0 },
       { 
@@ -332,11 +345,11 @@ const initGsapAnimations = () => {
       }
     )
 
-    // 8. FAQ SECTION
+    // 7. FAQ SECTION
     gsap.fromTo('.faq-intro', 
       { x: -40, opacity: 0 },
       { 
-        x: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'all',
+        y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'all',
         scrollTrigger: { trigger: '#faq', start: 'top 85%', once: true }
       }
     )
@@ -349,16 +362,16 @@ const initGsapAnimations = () => {
       }
     )
 
-    // 9. GALLERY SECTION
-    gsap.fromTo('.gallery-double-row-wrapper', 
-      { y: 45, opacity: 0 },
+    // 8. BANNER CLOSING CTA SECTION
+    gsap.fromTo('.closing-cta-card', 
+      { scale: 0.94, opacity: 0, y: 30 },
       { 
-        y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'all',
-        scrollTrigger: { trigger: '#gallery', start: 'top 85%', once: true }
+        scale: 1, opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', clearProps: 'all',
+        scrollTrigger: { trigger: '#closingCta', start: 'top 85%', once: true }
       }
     )
 
-    // 10. CONTACT SECTION
+    // 9. CONTACT SECTION
     gsap.fromTo('.contact-item', 
       { x: -40, opacity: 0 },
       { 
@@ -381,11 +394,58 @@ const initGsapAnimations = () => {
   }, 200)
 }
 
+const pendingHash = ref('')
+
+const scrollToHash = (hash: string) => {
+  if (!hash) return
+  const doScroll = () => {
+    const el = document.querySelector(hash)
+    if (el) {
+      // Gunakan scrollTo manual dengan offset navbar
+      const rect = el.getBoundingClientRect()
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const targetY = rect.top + scrollTop - 80
+      window.scrollTo({ top: targetY, behavior: 'smooth' })
+    }
+  }
+  // Retry beberapa kali dengan jeda, karena layout bisa belum final
+  let attempts = 0
+  const tryScroll = () => {
+    attempts++
+    const el = document.querySelector(hash)
+    if (el) {
+      // Tunggu 2 frame render agar posisi elemen sudah final
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          doScroll()
+        })
+      })
+    } else if (attempts < 10) {
+      setTimeout(tryScroll, 100)
+    }
+  }
+  tryScroll()
+}
+
+watch(() => route.hash, (newHash) => {
+  if (newHash) {
+    // Jika komponen sudah mounted, langsung scroll
+    scrollToHash(newHash)
+  }
+})
+
 onMounted(() => {
   window.addEventListener('scroll', handleWindowScroll)
   startHeroTimer()
   nextTick(() => {
     initGsapAnimations()
+    // Setelah GSAP init + ScrollTrigger.refresh selesai, baru scroll ke hash
+    if (route.hash) {
+      // Tunggu 500ms agar GSAP animations clearProps selesai dan layout final
+      setTimeout(() => {
+        scrollToHash(route.hash)
+      }, 500)
+    }
   })
 })
 
@@ -489,7 +549,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- FACILITIES SECTION -->
+      <!-- 2. FACILITIES SECTION -->
       <section id="facilities" class="section facilities" aria-labelledby="facilitiesHeading">
         <div class="container">
           <header class="section-header">
@@ -519,7 +579,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- ROOMS PREVIEW SECTION WITH DYNAMIC PRICING TOGGLE -->
+      <!-- 3. ROOMS PREVIEW SECTION WITH DYNAMIC PRICING TOGGLE -->
       <section id="rooms" class="section rooms" aria-labelledby="roomsHeading">
         <div class="container">
           <header class="section-header">
@@ -541,44 +601,43 @@ onUnmounted(() => {
                 :class="{ active: roomPricingPeriod === 'quarterly' }"
                 @click="roomPricingPeriod = 'quarterly'"
               >
-                3 Bulan <span class="discount-badge">Paket 3 Bln</span>
+                3 Bulan
               </button>
               <button 
                 class="period-btn" 
                 :class="{ active: roomPricingPeriod === 'semi-annual' }"
                 @click="roomPricingPeriod = 'semi-annual'"
               >
-                6 Bulan <span class="discount-badge">Paket 6 Bln</span>
+                6 Bulan
               </button>
               <button 
                 class="period-btn" 
                 :class="{ active: roomPricingPeriod === 'yearly' }"
                 @click="roomPricingPeriod = 'yearly'"
               >
-                12 Bulan <span class="discount-badge badge-best">Paket 1 Thn</span>
+                12 Bulan
               </button>
             </div>
           </header>
 
           <div class="room-comparison">
             <!-- Kamar Mandi Luar -->
-            <RouterLink to="/rooms?tipe=km-luar" class="room-type-card" id="roomKmLuar">
+            <RouterLink v-if="roomTypeKmLuar" to="/rooms?tipe=km-luar" class="room-type-card" id="roomKmLuar">
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/fasilitas-luas-kamar.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
+                <img :src="roomTypeKmLuar.image || '/assets/images/fasilitas-luas-kamar.png'" :alt="`Tipe ${roomTypeKmLuar.typeName} Sekar Space`" class="room-type-img">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
-                  <i class='bx bx-door-open'></i>
+                  <i :class="roomTypeKmLuar.icon || 'bx bx-door-open'"></i>
                 </div>
               </div>
               <div class="room-type-content">
-                <span class="room-type-tag">Standard</span>
-                <h3>Kamar Mandi Luar</h3>
-                <p class="room-type-desc">Kamar nyaman dengan akses kamar mandi bersama yang selalu bersih dan terawat.</p>
+                <span class="room-type-tag">{{ roomTypeKmLuar.tag || 'Standard' }}</span>
+                <h3>{{ roomTypeKmLuar.typeName }}</h3>
+                <p class="room-type-desc">{{ roomTypeKmLuar.desc }}</p>
                 <ul class="room-type-features">
-                  <li><i class='bx bx-check-circle'></i> Ukuran 3 × 3 meter</li>
-                  <li><i class='bx bx-check-circle'></i> Kasur & Lemari</li>
-                  <li><i class='bx bx-check-circle'></i> Cermin</li>
-                  <li><i class='bx bx-check-circle'></i> WiFi 24 Jam</li>
+                  <li v-for="(feat, idx) in roomTypeKmLuar.features" :key="idx">
+                    <i class='bx bx-check-circle'></i> {{ feat }}
+                  </li>
                 </ul>
                 <div class="room-type-price">
                   <span class="price-from">
@@ -599,26 +658,25 @@ onUnmounted(() => {
             </div>
 
             <!-- Kamar Mandi Dalam -->
-            <RouterLink to="/rooms?tipe=km-dalam" class="room-type-card room-type-premium" id="roomKmDalam">
+            <RouterLink v-if="roomTypeKmDalam" to="/rooms?tipe=km-dalam" class="room-type-card room-type-premium" id="roomKmDalam">
               <div class="room-type-badge-float">
-                <i class='bx bxs-star'></i> Populer
+                <i class='bx bxs-star'></i> {{ roomTypeKmDalam.badge || 'Populer' }}
               </div>
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/kamar-km-dalam-1.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
+                <img :src="roomTypeKmDalam.image || '/assets/images/kamar-km-dalam-1.png'" :alt="`Tipe ${roomTypeKmDalam.typeName} Sekar Space`" class="room-type-img">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
-                  <i class='bx bx-bath'></i>
+                  <i :class="roomTypeKmDalam.icon || 'bx bx-bath'"></i>
                 </div>
               </div>
               <div class="room-type-content">
-                <span class="room-type-tag tag-premium">Premium</span>
-                <h3>Kamar Mandi Dalam</h3>
-                <p class="room-type-desc">Privasi lebih dengan kamar mandi dalam yang nyaman. Lebih leluasa dan eksklusif.</p>
+                <span class="room-type-tag tag-premium">{{ roomTypeKmDalam.tag || 'Premium' }}</span>
+                <h3>{{ roomTypeKmDalam.typeName }}</h3>
+                <p class="room-type-desc">{{ roomTypeKmDalam.desc }}</p>
                 <ul class="room-type-features">
-                  <li><i class='bx bx-check-circle'></i> Ukuran 3 × 3 meter</li>
-                  <li><i class='bx bx-check-circle'></i> Kasur & Lemari</li>
-                  <li><i class='bx bx-check-circle'></i> Cermin</li>
-                  <li><i class='bx bx-check-circle'></i> WiFi 24 Jam</li>
+                  <li v-for="(feat, idx) in roomTypeKmDalam.features" :key="idx">
+                    <i class='bx bx-check-circle'></i> {{ feat }}
+                  </li>
                 </ul>
                 <div class="room-type-price">
                   <span class="price-from">
@@ -636,9 +694,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-
-
-      <!-- NEW SECTION 2: ACCESSIBILITY & NEARBY PLACES -->
+      <!-- 4. ACCESSIBILITY & NEARBY PLACES -->
       <section id="accessibility" class="section accessibility-section">
         <div class="container">
           <header class="section-header">
@@ -684,7 +740,130 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- NEW SECTION 3: TESTIMONIAL CAROUSEL -->
+      <!-- 5. GALLERY SECTION (2-ROW DYNAMIC BENTO GRID WITH 100% GAPLESS INFINITY MARQUEE) -->
+      <section id="gallery" class="section gallery" aria-labelledby="galleryHeading">
+        <div class="container">
+          <header class="section-header">
+            <span class="section-tag">Suasana Kost</span>
+            <h2 id="galleryHeading">Galeri <span class="text-gradient">Hunian</span></h2>
+            <p>Lihat lebih dekat kenyamanan lingkungan, tipe kamar, dan fasilitas di Kost Muslimah Sekar Wangi. Hover pada galeri untuk menjeda pergerakan.</p>
+
+            <!-- Gallery Filter Tabs -->
+            <div class="gallery-filters justify-center">
+              <button 
+                v-for="cat in galleryCategories" 
+                :key="cat.id"
+                class="filter-btn"
+                :class="{ active: selectedCategory === cat.id }"
+                @click="selectGalleryCategory(cat.id)"
+              >
+                {{ cat.label }}
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- 2-ROW INFINITE HORIZONTAL MARQUEE -->
+        <div class="gallery-double-row-wrapper">
+          <!-- Row 1: Left Infinite Loop -->
+          <div class="gallery-marquee-row row-left">
+            <div class="gallery-marquee-track">
+              <div 
+                v-for="(item, idx) in filteredRow1" 
+                :key="`r1-a-${item.id}-${idx}`"
+                class="gallery-card"
+                :class="item.sizeClass"
+                role="button"
+                tabindex="0"
+                :aria-label="`Buka foto ukuran penuh: ${item.title}`"
+                @click="openLightbox(item)"
+                @keydown.enter.prevent="openLightbox(item)"
+                @keydown.space.prevent="openLightbox(item)"
+              >
+                <div class="gallery-img-wrapper">
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
+                  <div class="gallery-overlay">
+                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Duplicate for seamless math 100% infinite loop -->
+              <div 
+                v-for="(item, idx) in filteredRow1" 
+                :key="`r1-b-${item.id}-${idx}`"
+                class="gallery-card"
+                :class="item.sizeClass"
+                role="button"
+                tabindex="0"
+                :aria-label="`Buka foto ukuran penuh: ${item.title}`"
+                @click="openLightbox(item)"
+                @keydown.enter.prevent="openLightbox(item)"
+                @keydown.space.prevent="openLightbox(item)"
+              >
+                <div class="gallery-img-wrapper">
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
+                  <div class="gallery-overlay">
+                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Right Infinite Loop -->
+          <div class="gallery-marquee-row row-right">
+            <div class="gallery-marquee-track">
+              <div 
+                v-for="(item, idx) in filteredRow2" 
+                :key="`r2-a-${item.id}-${idx}`"
+                class="gallery-card"
+                :class="item.sizeClass"
+                role="button"
+                tabindex="0"
+                :aria-label="`Buka foto ukuran penuh: ${item.title}`"
+                @click="openLightbox(item)"
+                @keydown.enter.prevent="openLightbox(item)"
+                @keydown.space.prevent="openLightbox(item)"
+              >
+                <div class="gallery-img-wrapper">
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
+                  <div class="gallery-overlay">
+                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Duplicate for seamless math 100% infinite loop -->
+              <div 
+                v-for="(item, idx) in filteredRow2" 
+                :key="`r2-b-${item.id}-${idx}`"
+                class="gallery-card"
+                :class="item.sizeClass"
+                role="button"
+                tabindex="0"
+                :aria-label="`Buka foto ukuran penuh: ${item.title}`"
+                @click="openLightbox(item)"
+                @keydown.enter.prevent="openLightbox(item)"
+                @keydown.space.prevent="openLightbox(item)"
+              >
+                <div class="gallery-img-wrapper">
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
+                  <div class="gallery-overlay">
+                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. TESTIMONIAL CAROUSEL -->
       <section id="testimonials" class="section testimonials-section">
         <div class="container">
           <header class="section-header">
@@ -720,9 +899,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-
-
-      <!-- FAQ SECTION -->
+      <!-- 7. FAQ SECTION -->
       <section id="faq" class="section faq" aria-labelledby="faqHeading">
         <div class="container">
           <div class="faq-grid">
@@ -777,122 +954,48 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- GALLERY SECTION (2-ROW DYNAMIC BENTO GRID WITH 100% GAPLESS INFINITY MARQUEE) -->
-      <section id="gallery" class="section gallery" aria-labelledby="galleryHeading">
+      <!-- 8. BANNER CLOSING CTA SECTION -->
+      <section id="closingCta" class="section closing-cta-section" aria-label="Aksi Pemesanan Kamar">
         <div class="container">
-          <header class="section-header">
-            <span class="section-tag">Suasana Kost</span>
-            <h2 id="galleryHeading">Galeri <span class="text-gradient">Hunian</span></h2>
-            <p>Lihat lebih dekat kenyamanan lingkungan, tipe kamar, dan fasilitas di Kost Muslimah Sekar Wangi. Hover pada galeri untuk menjeda pergerakan.</p>
-
-            <!-- Gallery Filter Tabs -->
-            <div class="gallery-filters justify-center">
-              <button 
-                v-for="cat in galleryCategories" 
-                :key="cat.id"
-                class="filter-btn"
-                :class="{ active: selectedCategory === cat.id }"
-                @click="selectGalleryCategory(cat.id)"
-              >
-                {{ cat.label }}
-              </button>
-            </div>
-          </header>
-        </div>
-
-        <!-- 2-ROW INFINITE HORIZONTAL MARQUEE -->
-        <div class="gallery-double-row-wrapper">
-          <!-- Row 1: Left Infinite Loop -->
-          <div class="gallery-marquee-row row-left">
-            <div class="gallery-marquee-track">
-              <div 
-                v-for="(item, idx) in filteredRow1" 
-                :key="`r1-a-${item.id}-${idx}`"
-                class="gallery-card"
-                :class="item.sizeClass"
-                @click="openLightbox(item)"
-              >
-                <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
-                  <div class="gallery-overlay">
-                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <div class="gallery-zoom-icon">
-                      <i class='bx bx-search-plus'></i>
-                    </div>
-                  </div>
-                </div>
+          <div class="closing-cta-card">
+            <div class="closing-cta-glow glow-1"></div>
+            <div class="closing-cta-glow glow-2"></div>
+            <div class="closing-cta-content">
+              <span class="closing-cta-badge">
+                <i class='bx bxs-hot'></i> Kuota Kamar Cepat Terisi
+              </span>
+              <h2>Siap Menikmati Hunian Nyaman & Syar'i di <br class="cta-br"><span class="text-gradient-gold">Sekar Space?</span></h2>
+              <p>Dapatkan kamar idaman dengan fasilitas lengkap, lingkungan aman & bersih, serta lokasi super strategis di Mlati, Sleman.</p>
+              
+              <div class="closing-cta-actions">
+                <RouterLink to="/rooms" class="btn btn-closing-primary" id="btnClosingBook">
+                  <i class='bx bx-door-open'></i>
+                  <span>Pesan Kamar Sekarang</span>
+                </RouterLink>
+                <a 
+                  href="https://wa.me/62895378020456?text=Halo%20Admin%20Sekar%20Space%2C%20saya%20ingin%20jadwalkan%20survei%20kamar%20kost." 
+                  class="btn btn-closing-secondary" 
+                  id="btnClosingSurvey"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <i class='bx bxl-whatsapp'></i>
+                  <span>Jadwalkan Survei via WA</span>
+                </a>
               </div>
 
-              <!-- Duplicate for seamless math 100% infinite loop -->
-              <div 
-                v-for="(item, idx) in filteredRow1" 
-                :key="`r1-b-${item.id}-${idx}`"
-                class="gallery-card"
-                :class="item.sizeClass"
-                @click="openLightbox(item)"
-              >
-                <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
-                  <div class="gallery-overlay">
-                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <div class="gallery-zoom-icon">
-                      <i class='bx bx-search-plus'></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Row 2: Right Infinite Loop -->
-          <div class="gallery-marquee-row row-right">
-            <div class="gallery-marquee-track">
-              <div 
-                v-for="(item, idx) in filteredRow2" 
-                :key="`r2-a-${item.id}-${idx}`"
-                class="gallery-card"
-                :class="item.sizeClass"
-                @click="openLightbox(item)"
-              >
-                <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
-                  <div class="gallery-overlay">
-                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <div class="gallery-zoom-icon">
-                      <i class='bx bx-search-plus'></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Duplicate for seamless math 100% infinite loop -->
-              <div 
-                v-for="(item, idx) in filteredRow2" 
-                :key="`r2-b-${item.id}-${idx}`"
-                class="gallery-card"
-                :class="item.sizeClass"
-                @click="openLightbox(item)"
-              >
-                <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
-                  <div class="gallery-overlay">
-                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <div class="gallery-zoom-icon">
-                      <i class='bx bx-search-plus'></i>
-                    </div>
-                  </div>
-                </div>
+              <div class="closing-cta-perks">
+                <span class="perk-item"><i class='bx bx-check-shield'></i> 100% Khusus Muslimah</span>
+                <span class="perk-item"><i class='bx bx-check-shield'></i> Tanpa Biaya Tersembunyi</span>
+                <span class="perk-item"><i class='bx bx-check-shield'></i> Free Wi-Fi 24 Jam</span>
+                <span class="perk-item"><i class='bx bx-check-shield'></i> Akses Kunci & CCTV Aman</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- CONTACT SECTION -->
+      <!-- 9. CONTACT SECTION -->
       <section id="contact" class="section contact" aria-labelledby="contactHeading">
         <div class="container">
           <header class="section-header">
@@ -927,7 +1030,7 @@ onUnmounted(() => {
                   </div>
                   <div>
                     <h3>Email</h3>
-                    <p><a href="mailto:info@sekarspace.com">info@sekarspace.com</a></p>
+                    <p><a :href="'mailto:' + (cmsSettings.contactEmail || 'sekarcreative00@gmail.com')">{{ cmsSettings.contactEmail || 'sekarcreative00@gmail.com' }}</a></p>
                   </div>
                 </div>
                 <div class="contact-item" id="contactHours">
@@ -941,6 +1044,10 @@ onUnmounted(() => {
                 </div>
               </address>
               <div class="contact-cta-group">
+                <RouterLink to="/rooms" class="contact-cta-btn cta-rooms-btn" id="ctaRoomsContact">
+                  <i class='bx bx-door-open'></i>
+                  <span>Pilih Kamar Tersedia</span>
+                </RouterLink>
                 <a 
                   href="https://wa.me/62895378020456?text=Halo%20Sekar%20Space%2C%20saya%20ingin%20bertanya%20tentang%20ketersediaan%20kamar." 
                   class="contact-cta-btn cta-wa" 
@@ -1083,10 +1190,16 @@ onUnmounted(() => {
   flex-direction: column;
   min-height: 100vh;
   position: relative;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .main-body {
   flex: 1;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* Scroll Progress Bar */
@@ -1393,6 +1506,9 @@ onUnmounted(() => {
 .section {
   padding: var(--section-padding);
   position: relative;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
 }
 
 .section-header {
@@ -1545,8 +1661,13 @@ onUnmounted(() => {
 
 /* ROOMS & PRICING SWITCHER */
 .rooms {
-  background: var(--off-white);
+  background: var(--bg-light);
   overflow: hidden;
+  padding: 80px 0;
+}
+
+.rooms .section-header {
+  margin: 0 auto 36px;
 }
 
 .pricing-period-selector {
@@ -1566,7 +1687,7 @@ onUnmounted(() => {
   border: none;
   background: transparent;
   border-radius: var(--radius-full);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -1582,23 +1703,13 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px rgba(84, 26, 26, 0.25);
 }
 
-.discount-badge {
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  background: #25D366;
-  color: white;
-  border-radius: var(--radius-full);
-}
-
-.discount-badge.badge-best {
-  background: #E8A838;
-}
-
 .room-comparison {
   display: flex;
   align-items: stretch;
   gap: 24px;
   width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .room-type-card {
@@ -1607,7 +1718,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 16px 16px 28px;
+  padding: 20px 20px 26px;
   background: var(--white);
   border: 2px solid var(--border);
   border-radius: var(--radius-xl);
@@ -1619,7 +1730,7 @@ onUnmounted(() => {
 }
 
 .room-type-card:hover {
-  transform: translateY(-8px) scale(1.01);
+  transform: translateY(-6px) scale(1.01);
   border-color: var(--secondary);
   box-shadow: var(--shadow-xl);
 }
@@ -1631,20 +1742,20 @@ onUnmounted(() => {
 
 .room-type-premium:hover {
   border-color: var(--primary);
-  box-shadow: 0 16px 48px rgba(84, 26, 26, 0.18);
+  box-shadow: 0 16px 48px rgba(84, 26, 26, 0.16);
 }
 
 .room-type-badge-float {
   position: absolute;
-  top: 26px;
-  right: 26px;
+  top: 16px;
+  right: 16px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 14px;
+  padding: 4px 12px;
   background: linear-gradient(135deg, #E8A838, #D4912A);
   color: var(--white);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   border-radius: var(--radius-full);
   z-index: 3;
@@ -1654,11 +1765,11 @@ onUnmounted(() => {
 
 .room-type-image-wrapper {
   width: 100%;
-  height: 250px;
+  height: 200px;
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   background: var(--off-white);
 }
 
@@ -1678,18 +1789,18 @@ onUnmounted(() => {
 
 .room-type-icon-badge {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 42px;
-  height: 42px;
+  bottom: 10px;
+  right: 10px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
   border-radius: var(--radius-md);
   color: var(--primary);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.4s ease;
   z-index: 2;
@@ -1717,7 +1828,7 @@ onUnmounted(() => {
 
 .room-type-tag {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 3px 12px;
   background: var(--tertiary);
   color: var(--primary);
   font-size: 0.72rem;
@@ -1725,7 +1836,7 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin: 0 auto 12px;
+  margin: 0 auto 10px;
 }
 
 .tag-premium {
@@ -1734,62 +1845,65 @@ onUnmounted(() => {
 }
 
 .room-type-content h3 {
-  font-size: 1.25rem;
-  margin-bottom: 8px;
+  font-size: 1.22rem;
+  margin-bottom: 6px;
   color: var(--dark);
 }
 
 .room-type-desc {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
-  line-height: 1.5;
-  margin-bottom: 16px;
+  line-height: 1.45;
+  margin-bottom: 14px;
 }
 
 .room-type-features {
   text-align: left;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .room-type-features li {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.88rem;
+  gap: 8px;
+  font-size: 0.85rem;
   color: var(--text);
-  padding: 6px 0;
+  padding: 2px 0;
 }
 
 .room-type-features li i {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: #16A34A;
   flex-shrink: 0;
 }
 
 .room-type-price {
   margin-top: auto;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .price-from {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   margin-bottom: 2px;
 }
 
 .room-type-price strong {
   font-family: var(--font-heading);
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--primary);
   transition: all var(--transition-base);
 }
 
 .room-type-price strong span {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 400;
   color: var(--text-muted);
 }
@@ -1799,11 +1913,11 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 28px;
+  padding: 10px 24px;
   background: var(--primary);
   color: var(--white);
   border-radius: var(--radius-full);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
   transition: all var(--transition-base);
   margin: 0 auto;
@@ -1811,12 +1925,12 @@ onUnmounted(() => {
 
 .room-type-card:hover .room-type-cta {
   background: var(--primary-light);
-  gap: 14px;
-  box-shadow: 0 8px 24px rgba(84, 26, 26, 0.25);
+  gap: 12px;
+  box-shadow: 0 6px 20px rgba(84, 26, 26, 0.22);
 }
 
 .room-type-cta i {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   transition: transform var(--transition-base);
 }
 
@@ -2051,7 +2165,7 @@ onUnmounted(() => {
 
 /* NEW STYLES: ACCESSIBILITY */
 .accessibility-section {
-  background: var(--off-white);
+  background: var(--white);
 }
 
 .place-filters {
@@ -2070,7 +2184,7 @@ onUnmounted(() => {
 }
 
 .place-card {
-  background: var(--white);
+  background: var(--off-white);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px;
@@ -2153,11 +2267,14 @@ onUnmounted(() => {
 /* NEW STYLES: TESTIMONIALS */
 .testimonials-section {
   background: var(--white);
+  overflow: hidden;
+  width: 100%;
 }
 
 .testimonial-slider-box {
   position: relative;
   max-width: 760px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -2179,6 +2296,12 @@ onUnmounted(() => {
   z-index: 5;
   box-shadow: var(--shadow-md);
   transition: all var(--transition-fast);
+}
+
+@media (max-width: 1100px) {
+  .testi-arrow {
+    display: none !important;
+  }
 }
 
 .testi-arrow:hover {
@@ -2366,7 +2489,7 @@ onUnmounted(() => {
 
 /* FAQ SECTION */
 .faq {
-  background: var(--white);
+  background: var(--bg-light);
   position: relative;
 }
 
@@ -2589,7 +2712,7 @@ onUnmounted(() => {
 
 /* GALLERY SECTION (2-ROW DYNAMIC BENTO GRID WITH 100% GAPLESS INFINITY MARQUEE) */
 .gallery {
-  background: var(--off-white);
+  background: var(--bg-light);
   padding-left: 0;
   padding-right: 0;
   padding-bottom: 80px;
@@ -2655,12 +2778,12 @@ onUnmounted(() => {
 
 .gallery-double-row-wrapper::before {
   left: 0;
-  background: linear-gradient(to right, var(--off-white), transparent);
+  background: linear-gradient(to right, var(--bg-light), transparent);
 }
 
 .gallery-double-row-wrapper::after {
   right: 0;
-  background: linear-gradient(to left, var(--off-white), transparent);
+  background: linear-gradient(to left, var(--bg-light), transparent);
 }
 
 .gallery-marquee-row {
@@ -2736,9 +2859,15 @@ onUnmounted(() => {
   height: 260px;
 }
 
-.gallery-card:hover {
+.gallery-card:hover,
+.gallery-card:focus-visible {
   transform: translateY(-6px) scale(1.03);
   box-shadow: var(--shadow-xl);
+}
+
+.gallery-card:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 3px;
 }
 
 .gallery-img-wrapper {
@@ -2755,7 +2884,8 @@ onUnmounted(() => {
   transition: transform 0.6s ease, filter 0.4s ease;
 }
 
-.gallery-card:hover .gallery-img {
+.gallery-card:hover .gallery-img,
+.gallery-card:focus-visible .gallery-img {
   transform: scale(1.1);
   filter: brightness(0.9);
 }
@@ -2768,7 +2898,13 @@ onUnmounted(() => {
   flex-direction: column;
   justify-content: flex-end;
   padding: 20px;
+  opacity: 0;
   transition: opacity var(--transition-base);
+}
+
+.gallery-card:hover .gallery-overlay,
+.gallery-card:focus-visible .gallery-overlay {
+  opacity: 1;
 }
 
 .gallery-cat-badge {
@@ -2791,33 +2927,206 @@ onUnmounted(() => {
   line-height: 1.3;
 }
 
-.gallery-zoom-icon {
+/* ==========================================================================
+   8. CLOSING BANNER CTA SECTION
+   ========================================================================== */
+.closing-cta-section {
+  background: var(--white);
+  padding: 40px 0 80px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.closing-cta-card {
+  position: relative;
+  background: linear-gradient(135deg, #541A1A 0%, #3D1212 50%, #2A0B0B 100%);
+  border: 1px solid rgba(220, 195, 170, 0.25);
+  border-radius: var(--radius-xl);
+  padding: 64px 40px;
+  text-align: center;
+  overflow: hidden;
+  max-width: 100%;
+  box-shadow: 0 20px 50px rgba(84, 26, 26, 0.28);
+}
+
+.closing-cta-glow {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 38px;
-  height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+.closing-cta-glow.glow-1 {
+  top: -60px;
+  left: -60px;
+  width: 260px;
+  height: 260px;
+  background: rgba(220, 195, 170, 0.2);
+}
+
+.closing-cta-glow.glow-2 {
+  bottom: -60px;
+  right: -60px;
+  width: 280px;
+  height: 280px;
+  background: rgba(241, 226, 209, 0.15);
+}
+
+.closing-cta-content {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.closing-cta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  background: rgba(220, 195, 170, 0.15);
+  border: 1px solid rgba(220, 195, 170, 0.35);
+  border-radius: var(--radius-full);
+  color: var(--secondary-light);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 20px;
   backdrop-filter: blur(8px);
+}
+
+.closing-cta-badge i {
+  color: #FFA726;
+  font-size: 1.1rem;
+}
+
+.closing-cta-content h2 {
   color: var(--white);
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 16px;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #F1E2D1 0%, #DCC3AA 50%, #E8D5C2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.closing-cta-content p {
+  color: rgba(247, 239, 229, 0.88);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin-bottom: 32px;
+}
+
+.closing-cta-actions {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all var(--transition-base);
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
 }
 
-.gallery-card:hover .gallery-zoom-icon {
-  opacity: 1;
-  transform: scale(1);
-  background: var(--white);
+.btn-closing-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 30px;
+  background: linear-gradient(135deg, #DCC3AA 0%, #C9A888 100%);
+  color: var(--primary-dark);
+  font-weight: 700;
+  font-size: 0.98rem;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(220, 195, 170, 0.35);
+  transition: all var(--transition-smooth);
+}
+
+.btn-closing-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(220, 195, 170, 0.5);
+  background: #FFF;
   color: var(--primary);
 }
 
-/* CONTACT SECTION */
+.btn-closing-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 26px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--white);
+  font-weight: 600;
+  font-size: 0.98rem;
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+  transition: all var(--transition-smooth);
+}
+
+.btn-closing-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--secondary);
+  color: var(--secondary-light);
+  transform: translateY(-3px);
+}
+
+.btn-closing-secondary i {
+  color: #25D366;
+  font-size: 1.3rem;
+}
+
+.closing-cta-perks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.perk-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(247, 239, 229, 0.8);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.perk-item i {
+  color: var(--secondary);
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .closing-cta-card {
+    padding: 40px 20px;
+  }
+
+  .closing-cta-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-closing-primary,
+  .btn-closing-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .closing-cta-perks {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}
+
+/* 9. CONTACT SECTION */
 .contact {
   background: var(--white);
 }
@@ -2911,6 +3220,18 @@ onUnmounted(() => {
 
 .contact-cta-btn i {
   font-size: 1.35rem;
+}
+
+.cta-rooms-btn {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 4px 14px rgba(84, 26, 26, 0.2);
+}
+
+.cta-rooms-btn:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  color: var(--white);
 }
 
 .cta-wa {
