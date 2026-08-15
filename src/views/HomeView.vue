@@ -143,12 +143,12 @@ const activeTestimonial = ref(0)
 const currentTestimonial = computed(() => {
   return testimonials.value[activeTestimonial.value] || testimonials.value[0] || {
     id: 1,
-    name: 'Anisa Rahmawati',
-    role: 'Mahasiswi UGM',
+    name: 'Zulfa Tsaniyatul Fadilah',
+    role: 'Mahasiswi UTY - Informatika',
     avatar: '',
     rating: 5,
-    tag: 'Penyewa',
-    comment: ''
+    tag: 'Penyewa Kamar A-11',
+    comment: 'Tinggal di Sekar Space dekat banget ke kampus UTY, aksesnya gampang dan aman.'
   }
 })
 

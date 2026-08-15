@@ -13,8 +13,6 @@ const formCms = ref({
   contactPhone: cmsSettings.value.contactPhone,
   contactEmail: cmsSettings.value.contactEmail,
   contactAddress: cmsSettings.value.contactAddress,
-  promoActive: cmsSettings.value.promoActive,
-  promoText: cmsSettings.value.promoText,
   // Prices
   priceKmLuarMonthly: cmsSettings.value.priceKmLuarMonthly || 700000,
   priceKmDalamMonthly: cmsSettings.value.priceKmDalamMonthly || 950000,
@@ -64,7 +62,7 @@ const formatRupiah = (val: number) => {
         <div>
           <span class="header-tag">Landing Page CMS & Pricing Console</span>
           <h1>Kelola Konten, <span class="text-gradient">Harga & Gambar Landing Page</span></h1>
-          <p>Ubah tarif sewa yang tampil di beranda, upload foto banner hero, dan atur running text promo.</p>
+          <p>Ubah tarif sewa yang tampil di beranda, upload foto banner hero, dan atur running text pengumuman.</p>
         </div>
         <button class="btn btn-primary" @click="handleSaveCms">
           <i class='bx bx-save'></i> Simpan Semua Perubahan
@@ -157,37 +155,21 @@ const formatRupiah = (val: number) => {
           </div>
         </div>
 
-        <!-- 3. ANNOUNCEMENT & PROMO CARD -->
+        <!-- 3. ANNOUNCEMENT CARD -->
         <div class="cms-card">
           <div class="card-header">
-            <h3><i class='bx bxs-megaphone'></i> Announcement Bar & Banner Promo</h3>
+            <h3><i class='bx bxs-megaphone'></i> Announcement Bar (Running Text)</h3>
           </div>
 
-          <div class="form-group mb-3">
-            <label>Running Text Announcement Bar (Top Marquee)</label>
+          <div class="form-group">
+            <label>Running Text Announcement Bar (Top Marquee Beranda)</label>
             <textarea 
               v-model="formCms.announcementBarText" 
               rows="2" 
               class="form-control" 
-              placeholder="Pesan pengumuman running text..."
+              placeholder="Pesan pengumuman running text yang berjalan di bagian paling atas..."
             ></textarea>
-          </div>
-
-          <div class="form-group mb-3">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="formCms.promoActive" />
-              <span>Aktifkan Highlight Banner Promo di Beranda</span>
-            </label>
-          </div>
-
-          <div v-if="formCms.promoActive" class="form-group">
-            <label>Teks Banner Promo</label>
-            <input 
-              type="text" 
-              v-model="formCms.promoText" 
-              class="form-control" 
-              placeholder="Diskon Rp 100.000 / bulan untuk sewa tahunan!" 
-            />
+            <small class="form-hint">Kosongkan jika tidak ingin menampilkan bar pengumuman.</small>
           </div>
         </div>
 
