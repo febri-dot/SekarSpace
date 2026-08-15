@@ -18,12 +18,7 @@
     "address": "Sleman, Yogyakarta",
     "phone": "081234567890",
     "birthDate": "2004-05-12",
-    "parentPhone": "081298765432",
-    "roomId": "A-13",
-    "startDate": "2025-09-01",
-    "endDate": "2026-09-01",
-    "status": "aktif",
-    "monthlyRent": 950000
+    "parentPhone": "081298765432"
   },
   {
     "id": "MBR-02",
@@ -36,12 +31,7 @@
     "address": "Bantul, Yogyakarta",
     "phone": "082345678901",
     "birthDate": "2004-03-21",
-    "parentPhone": "081287654321",
-    "roomId": "A-11",
-    "startDate": "2025-12-01",
-    "endDate": "2026-12-01",
-    "status": "aktif",
-    "monthlyRent": 700000
+    "parentPhone": "081287654321"
   },
   {
     "id": "MBR-03",
@@ -54,31 +44,6 @@
     "address": "Kulon Progo, Yogyakarta",
     "phone": "083456789012",
     "birthDate": "2004-07-10",
-    "parentPhone": "081276543210",
-    "roomId": "A-11",
-    "startDate": "2025-10-01",
-    "endDate": "2025-11-01",
-    "status": "aktif",
-    "monthlyRent": 600000,
-    "durationMonths": 1
-  },
-  {
-    "name": "Febriyanti Putri",
-    "username": "febri",
-    "password": "123",
-    "email": "febri@sekarspace.com",
-    "nik": "1234567890",
-    "address": "Manisrejo, Sembego RT 17 RW 39 Maguwoharjo Depok",
-    "phone": "0895378020456",
-    "birthDate": "2026-08-27",
-    "parentPhone": "1234567890",
-    "roomId": "A-12",
-    "monthlyRent": 600000,
-    "durationMonths": 1,
-    "startDate": "2026-08-15",
-    "endDate": "2026-12-15",
-    "status": "aktif",
-    "id": "MBR-04",
-    "role": "member"
+    "parentPhone": "081276543210"
   }
 ]

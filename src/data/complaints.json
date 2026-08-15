@@ -5,31 +5,20 @@
     "title": "AC Kamar Kurang Dingin",
     "category": "Fasilitas Kamar",
     "date": "2026-08-11",
-    "status": "in-progress",
+    "status": "resolved",
     "priority": "high",
     "description": "AC kamar terasa kurang dingin sejak kemarin malam meskipun suhu sudah diatur ke 18 derajat.",
-    "response": "Teknisi AC telah dijadwalkan untuk melakukan servis freon pada jam 14.00 WIB."
+    "response": "Teknisi AC telah melakukan servis penambahan freon dan pembersihan filter pada 12 Agustus 2026. AC sudah kembali dingin normal."
   },
   {
     "id": "CMP-002",
-    "memberId": "MBR-02",
-    "title": "Lampu Wastafel Mati",
-    "category": "Fasilitas Kamar",
-    "date": "2026-08-02",
-    "status": "resolved",
-    "priority": "low",
-    "description": "Lampu bohlam di atas wastafel kamar mandi mati.",
-    "response": "Bohlam lampu telah diganti baru oleh pengurus kost pada 03 Ags 2026."
-  },
-  {
-    "id": "CMP-003",
     "memberId": "MBR-03",
-    "title": "WiFi Sering Terputus",
+    "title": "Koneksi WiFi di Lantai 1 Agak Lambat",
     "category": "Jaringan Internet / WiFi",
-    "date": "2026-08-10",
+    "date": "2026-08-15",
     "status": "pending",
     "priority": "medium",
-    "description": "Koneksi WiFi sering terputus-putus terutama di area balkon lantai 2.",
+    "description": "Koneksi WiFi di kamar A12 terasa agak lambat saat jam 19.00 - 21.00 malam.",
     "response": ""
   }
 ]

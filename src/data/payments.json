@@ -1,98 +1,50 @@
 [
   {
+    "id": "PAY-2026-01",
     "memberId": "MBR-01",
-    "period": "Perpanjangan Sewa 1 Bulan",
-    "amount": 850000,
-    "method": "Transfer Bank BCA / Mandiri",
-    "date": "2026-08-15",
-    "dueDate": "05 September 2026",
-    "status": "pending",
-    "notes": "Tagihan perpanjangan sewa kost Sekar Space",
-    "durationMonths": 1,
-    "id": "PAY-2026-09"
+    "period": "Sewa Awal 12 Bulan (01 Sep 2025 - 01 Sep 2026)",
+    "amount": 8000000,
+    "durationMonths": 12,
+    "method": "Transfer Bank BCA",
+    "date": "2025-09-01",
+    "dueDate": "2026-09-01",
+    "status": "paid",
+    "notes": "Pembayaran lunas sewa awal 1 tahun (Kamar A13)"
   },
   {
-    "memberId": "MBR-04",
-    "period": "Perpanjangan Sewa 3 Bulan",
+    "id": "PAY-2026-02",
+    "memberId": "MBR-01",
+    "period": "Perpanjangan Sewa 6 Bulan (01 Sep 2026 - 01 Mar 2027)",
+    "amount": 4000000,
+    "durationMonths": 6,
+    "method": "Transfer Bank BCA",
+    "date": "2026-08-01",
+    "dueDate": "2027-03-01",
+    "status": "paid",
+    "notes": "Perpanjangan kontrak sewa 6 bulan telah terverifikasi lunas"
+  },
+  {
+    "id": "PAY-2026-03",
+    "memberId": "MBR-02",
+    "period": "Sewa Awal 12 Bulan (16 Sep 2025 - 16 Sep 2026)",
+    "amount": 7000000,
+    "durationMonths": 12,
+    "method": "Transfer Bank Mandiri",
+    "date": "2025-09-16",
+    "dueDate": "2026-09-16",
+    "status": "paid",
+    "notes": "Pembayaran lunas sewa awal 1 tahun (Kamar A11)"
+  },
+  {
+    "id": "PAY-2026-04",
+    "memberId": "MBR-03",
+    "period": "Sewa Awal 3 Bulan (23 Mei 2026 - 23 Ags 2026)",
     "amount": 1800000,
     "durationMonths": 3,
-    "method": "Transfer BCA",
-    "date": "2026-08-15",
+    "method": "Transfer Bank BCA",
+    "date": "2026-05-23",
+    "dueDate": "2026-08-23",
     "status": "paid",
-    "notes": "Pembayaran telah diverifikasi & dikonfirmasi LUNAS oleh admin.",
-    "id": "PAY-2026-08"
-  },
-  {
-    "memberId": "MBR-04",
-    "period": "Sewa Awal 1 Bulan (15 Agt 2026 - 15 Sep 2026)",
-    "amount": 600000,
-    "durationMonths": 1,
-    "method": "Pembayaran Awal Kontrak (Lunas)",
-    "date": "2026-08-15",
-    "dueDate": "2026-09-15",
-    "status": "paid",
-    "notes": "Pembayaran otomatis dikonfirmasi LUNAS pada pendaftaran akun penyewa baru.",
-    "id": "PAY-2026-07"
-  },
-  {
-    "memberId": "MBR-05",
-    "period": "Sewa Awal 1 Bulan (15 Agt 2026 - 15 Sep 2026)",
-    "amount": 600000,
-    "durationMonths": 1,
-    "method": "Pembayaran Awal Kontrak (Lunas)",
-    "date": "2026-08-15",
-    "dueDate": "2026-09-15",
-    "status": "paid",
-    "notes": "Pembayaran otomatis dikonfirmasi LUNAS pada pendaftaran akun penyewa baru.",
-    "id": "PAY-2026-06"
-  },
-  {
-    "memberId": "MBR-01",
-    "period": "September 2026",
-    "amount": 950000,
-    "method": "Transfer Bank BCA / Mandiri",
-    "date": "2026-08-14",
-    "dueDate": "05 September 2026",
-    "status": "paid",
-    "notes": "Pembayaran telah diverifikasi & dikonfirmasi LUNAS oleh admin.",
-    "id": "PAY-2026-05"
-  },
-  {
-    "memberId": "MBR-01",
-    "period": "September 2026",
-    "amount": 950000,
-    "method": "Transfer Bank BCA / Mandiri",
-    "date": "2026-08-14",
-    "dueDate": "05 September 2026",
-    "status": "rejected",
-    "notes": "Bukti transfer tidak terbaca / nominal belum masuk.",
-    "id": "PAY-2026-04"
-  },
-  {
-    "id": "PAY-2026-08",
-    "memberId": "MBR-01",
-    "period": "Agustus 2026",
-    "amount": 950000,
-    "method": "Transfer BCA",
-    "date": "2026-08-01",
-    "status": "paid"
-  },
-  {
-    "id": "PAY-2026-07",
-    "memberId": "MBR-01",
-    "period": "Juli 2026",
-    "amount": 950000,
-    "method": "Transfer BCA",
-    "date": "2026-07-01",
-    "status": "paid"
-  },
-  {
-    "id": "PAY-2026-06",
-    "memberId": "MBR-01",
-    "period": "Juni 2026",
-    "amount": 950000,
-    "method": "Transfer Mandiri",
-    "date": "2026-06-02",
-    "status": "paid"
+    "notes": "Pembayaran lunas sewa paket 3 bulan (Kamar A12)"
   }
 ]

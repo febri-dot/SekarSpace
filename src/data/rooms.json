@@ -149,7 +149,7 @@
     "floor": 1,
     "buildingId": "bld-c",
     "typeId": "km-dalam",
-    "status": "occupied"
+    "status": "available"
   },
   {
     "id": "C-14",
@@ -165,7 +165,7 @@
     "floor": 2,
     "buildingId": "bld-c",
     "typeId": "km-luar",
-    "status": "occupied"
+    "status": "available"
   },
   {
     "id": "C-22",
@@ -181,7 +181,7 @@
     "floor": 2,
     "buildingId": "bld-c",
     "typeId": "km-luar",
-    "status": "occupied"
+    "status": "available"
   },
   {
     "id": "C-24",
