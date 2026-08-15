@@ -33,11 +33,12 @@ const formatDateIndo = (dateStr?: string) => {
   if (!dateStr) return '-'
   const parts = dateStr.split('-')
   if (parts.length !== 3) return dateStr
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return dateStr
   const monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
-  const day = parseInt(parts[2], 10)
-  const monthIdx = parseInt(parts[1], 10) - 1
-  const year = parts[0]
-  return `${day} ${monthsIndo[monthIdx] || ''} ${year}`
+  const day = parseInt(dayStr, 10)
+  const monthIdx = parseInt(monthStr, 10) - 1
+  return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
 }
 
 const activeTab = ref<'all' | 'pending' | 'paid' | 'rejected' | 'expiring'>('all')

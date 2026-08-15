@@ -17,9 +17,11 @@ const computeEndDate = (startDateStr: string, months: number): string => {
   if (!startDateStr || !months) return ''
   const parts = startDateStr.split('-')
   if (parts.length !== 3) return ''
-  const year = parseInt(parts[0], 10)
-  const month = parseInt(parts[1], 10)
-  const day = parseInt(parts[2], 10)
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return ''
+  const year = parseInt(yearStr, 10)
+  const month = parseInt(monthStr, 10)
+  const day = parseInt(dayStr, 10)
   if (isNaN(year) || isNaN(month) || isNaN(day)) return ''
 
   const targetDate = new Date(year, month - 1 + Number(months), day)
@@ -174,11 +176,12 @@ const formatDateIndo = (dateStr?: string) => {
   if (!dateStr) return '-'
   const parts = dateStr.split('-')
   if (parts.length !== 3) return dateStr
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return dateStr
   const monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
-  const day = parts[2]
-  const monthIdx = parseInt(parts[1], 10) - 1
-  const year = parts[0]
-  return `${day} ${monthsIndo[monthIdx] || ''} ${year}`
+  const day = parseInt(dayStr, 10)
+  const monthIdx = parseInt(monthStr, 10) - 1
+  return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
 }
 
 const formatRupiah = (val?: number) => {

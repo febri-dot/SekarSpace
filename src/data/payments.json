@@ -1,6 +1,29 @@
 [
   {
     "memberId": "MBR-01",
+    "period": "Perpanjangan Sewa 1 Bulan",
+    "amount": 850000,
+    "durationMonths": 1,
+    "method": "Transfer BCA",
+    "date": "2026-08-15",
+    "status": "pending",
+    "notes": "Test Bayar",
+    "id": "PAY-2026-07"
+  },
+  {
+    "memberId": "MBR-05",
+    "period": "Sewa Awal 12 Bulan (15 Agt 2026 - 15 Agt 2027)",
+    "amount": 6999996,
+    "durationMonths": 12,
+    "method": "Pembayaran Awal Kontrak (Lunas)",
+    "date": "2026-08-15",
+    "dueDate": "2027-08-15",
+    "status": "paid",
+    "notes": "Pembayaran otomatis dikonfirmasi LUNAS pada pendaftaran akun penyewa baru.",
+    "id": "PAY-2026-06"
+  },
+  {
+    "memberId": "MBR-01",
     "period": "September 2026",
     "amount": 950000,
     "method": "Transfer Bank BCA / Mandiri",
