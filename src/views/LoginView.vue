@@ -36,17 +36,7 @@ const handleLogin = () => {
   }, 400)
 }
 
-const quickLoginAdmin = () => {
-  username.value = 'admin'
-  password.value = 'admin123'
-  handleLogin()
-}
 
-const quickLoginMember = () => {
-  username.value = 'keyla'
-  password.value = 'user123'
-  handleLogin()
-}
 </script>
 
 <template>
@@ -103,17 +93,7 @@ const quickLoginMember = () => {
           </button>
         </form>
 
-        <div class="quick-demo-box">
-          <span class="demo-title">Atau Gunakan Quick Demo Login:</span>
-          <div class="demo-buttons">
-            <button class="demo-btn admin-demo" @click="quickLoginAdmin">
-              <i class='bx bxs-shield'></i> Login Admin
-            </button>
-            <button class="demo-btn member-demo" @click="quickLoginMember">
-              <i class='bx bxs-user-badge'></i> Login Member (Keyla)
-            </button>
-          </div>
-        </div>
+
 
         <div class="login-footer-info">
           <p><i class='bx bx-info-circle'></i> Ingin mendaftar akun baru? Pendaftaran akun member baru hanya dapat dibuat langsung oleh <strong>Admin Pengelola Kost Sekar Space</strong>.</p>
