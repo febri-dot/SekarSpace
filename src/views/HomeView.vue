@@ -1654,7 +1654,7 @@ onUnmounted(() => {
 
 .room-type-image-wrapper {
   width: 100%;
-  height: 220px;
+  height: 250px;
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -1666,7 +1666,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  object-position: center bottom;
   transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.4s ease;
 }
 
