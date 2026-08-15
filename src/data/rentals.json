@@ -1,33 +1,5 @@
 [
   {
-    "memberId": "MBR-03",
-    "roomId": "A-12",
-    "startDate": "2026-08-23",
-    "endDate": "2026-11-23",
-    "durationMonths": 3,
-    "basePrice": 1800000,
-    "addonPrice": 0,
-    "totalAmount": 1800000,
-    "addons": [],
-    "status": "active",
-    "id": "RNT-007",
-    "createdAt": "2026-08-15"
-  },
-  {
-    "memberId": "MBR-05",
-    "roomId": "A-11",
-    "startDate": "2026-09-17",
-    "endDate": "2027-03-17",
-    "durationMonths": 6,
-    "basePrice": 3500000,
-    "addonPrice": 0,
-    "totalAmount": 3500000,
-    "addons": [],
-    "status": "active",
-    "id": "RNT-006",
-    "createdAt": "2026-08-15"
-  },
-  {
     "id": "RNT-001",
     "memberId": "MBR-01",
     "roomId": "A-13",
@@ -98,6 +70,35 @@
     "totalAmount": 600000,
     "addons": [],
     "status": "active",
+    "extensionIntent": "pending",
     "createdAt": "2026-08-15"
+  },
+  {
+    "id": "RNT-006",
+    "memberId": "MBR-05",
+    "roomId": "A-11",
+    "startDate": "2026-09-17",
+    "endDate": "2027-03-17",
+    "durationMonths": 6,
+    "basePrice": 3500000,
+    "addonPrice": 0,
+    "totalAmount": 3500000,
+    "addons": [],
+    "status": "active",
+    "createdAt": "2026-08-15"
+  },
+  {
+    "id": "RNT-007",
+    "memberId": "MBR-06",
+    "roomId": "C-13",
+    "startDate": "2026-07-01",
+    "endDate": "2027-01-01",
+    "durationMonths": 6,
+    "basePrice": 4200000,
+    "addonPrice": 0,
+    "totalAmount": 4200000,
+    "addons": [],
+    "status": "active",
+    "createdAt": "2026-07-01"
   }
 ]

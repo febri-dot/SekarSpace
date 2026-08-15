@@ -4,7 +4,7 @@ import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useDataStore, getRoomPriceByDuration, calculateRoomPrice, type PaymentData } from '../../composables/useDataStore'
 import { useAuth, type User } from '../../composables/useAuth'
 
-const { payments, addPayment, updatePaymentStatus, rooms, rentals, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, getRentalsByMemberId, getPaymentsByRentalId, getPaymentAmount, updateRental, addRental } = useDataStore()
+const { payments, addPayment, updatePaymentStatus, rooms, rentals, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, getRentalsByMemberId, getPaymentsByRentalId, getRentalByPayment, getPaymentAmount, updateRental, addRental } = useDataStore()
 const { tenants, getTenantById, updateMember } = useAuth()
 
 const getTenantByPayment = (pay: PaymentData) => {
@@ -121,26 +121,43 @@ const expiringTenants = computed(() => {
 // Form Kirim Tagihan Baru
 const formInvoice = ref({
   memberId: tenants.value[0]?.id || 'MBR-01',
-  durationMonths: 1,
-  period: 'Perpanjangan Sewa 1 Bulan',
-  amount: 600000,
-  method: 'Transfer Bank BCA / Mandiri',
-  dueDate: '05 September 2026',
-  notes: 'Tagihan perpanjangan sewa kost Sekar Space'
+  dueDate: '',
+  notes: ''
 })
 
-// Auto calculate price based on selected tenant room custom duration prices
-const updateInvoiceAmount = () => {
-  const rent = getActiveRentalByMemberId(formInvoice.value.memberId)
-  const rm = rent?.roomId ? getRoomById(rent.roomId) : null
-  const duration = Number(formInvoice.value.durationMonths) || 1
-  
-  formInvoice.value.amount = getRoomPriceByDuration(rm, duration)
-  formInvoice.value.period = `Perpanjangan Sewa ${duration} Bulan`
+const selectedInvoiceRental = computed(() => {
+  return getActiveRentalByMemberId(formInvoice.value.memberId)
+})
+
+const selectedInvoiceRoom = computed(() => {
+  return selectedInvoiceRental.value?.roomId ? getRoomById(selectedInvoiceRental.value.roomId) : null
+})
+
+const selectedInvoiceBuildingName = computed(() => {
+  return selectedInvoiceRoom.value ? getBuildingName(selectedInvoiceRoom.value.buildingId) : 'Gedung A'
+})
+
+const invoiceRoomPrices = computed(() => {
+  const rm = selectedInvoiceRoom.value
+  return {
+    p1: formatRupiah(getRoomPriceByDuration(rm, 1)),
+    p3: formatRupiah(getRoomPriceByDuration(rm, 3)),
+    p6: formatRupiah(getRoomPriceByDuration(rm, 6)),
+    p12: formatRupiah(getRoomPriceByDuration(rm, 12))
+  }
+})
+
+const updateInvoiceDueDate = () => {
+  const rent = selectedInvoiceRental.value
+  if (rent?.endDate) {
+    formInvoice.value.dueDate = formatDateIndo(rent.endDate)
+  } else {
+    formInvoice.value.dueDate = 'Sesuai Akhir Masa Sewa'
+  }
 }
 
-watch(() => [formInvoice.value.memberId, formInvoice.value.durationMonths], () => {
-  updateInvoiceAmount()
+watch(() => formInvoice.value.memberId, () => {
+  updateInvoiceDueDate()
 })
 
 const filteredPayments = computed(() => {
@@ -159,7 +176,8 @@ const openInvoiceModal = (targetMemberId?: string) => {
   if (targetMemberId) {
     formInvoice.value.memberId = targetMemberId
   }
-  updateInvoiceAmount()
+  updateInvoiceDueDate()
+  formInvoice.value.notes = ''
   isInvoiceModalOpen.value = true
 }
 
@@ -196,47 +214,39 @@ Mohon beri tahu kami paket durasi mana yang ingin Kakak ambil agar kami dapat me
 
 // Action: Submit Invoice and Send WhatsApp
 const handleSendInvoice = () => {
-  if (!formInvoice.value.memberId || !formInvoice.value.amount) {
-    alert('Mohon lengkapi penyewa dan nominal tagihan.')
+  if (!formInvoice.value.memberId) {
+    alert('Mohon pilih penyewa.')
     return
   }
 
   const tenant = getTenantById(formInvoice.value.memberId)
-  const rent = getActiveRentalByMemberId(formInvoice.value.memberId)
+  const rent = selectedInvoiceRental.value
+  const rm = selectedInvoiceRoom.value
   const tenantPhone = formatWaPhone(tenant?.phone)
   const tenantName = tenant?.name || 'Penyewa'
-  const duration = Number(formInvoice.value.durationMonths) || 1
+  const roomNum = rm ? `Kamar ${rm.number}` : 'Kamar Kost'
+  const bldName = selectedInvoiceBuildingName.value
+  const dueDateStr = formInvoice.value.dueDate || (rent?.endDate ? formatDateIndo(rent.endDate) : 'Jatuh Tempo')
+  const { p1, p3, p6, p12 } = invoiceRoomPrices.value
 
-  const created = addPayment({
-    rentalId: rent?.id || 'RNT-001',
-    period: formInvoice.value.period,
-    amount: Number(formInvoice.value.amount),
-    method: formInvoice.value.method,
-    date: new Date().toISOString().substring(0, 10),
-    dueDate: formInvoice.value.dueDate,
-    status: 'pending',
-    notes: formInvoice.value.notes,
-    durationMonths: duration
-  })
+  const notesSection = formInvoice.value.notes?.trim() ? `\n📝 Catatan Pengelola:\n${formInvoice.value.notes.trim()}\n` : ''
 
-  // Open WhatsApp directly to send bill to tenant
   const waText = `Halo Kak ${tenantName}, 👋
 
-Berikut rincian tagihan sewa Kost Sekar Space Anda:
-📌 Paket Sewa: ${created.period} (${duration} Bulan)
-📌 Nominal Sewa: ${formatRupiah(getPaymentAmount(created))}
-📌 Tenggat Jatuh Tempo: ${created.dueDate || '05 September 2026'}
+Mengingatkan bahwa masa sewa ${roomNum} (${bldName}) Kakak akan berakhir pada ${dueDateStr}.
 
-Mohon lakukan pembayaran melalui rekening resmi Sekar Space:
-• BCA: 1234 5678 90 (a.n. Sekar Space Kost)
-• Mandiri: 9876 5432 10 (a.n. Sekar Space Kost)
-
-Setelah transfer, mohon upload bukti pembayaran pada Portal Penyewa. Terima kasih! 🙏`
+📌 Berikut rincian tarif perpanjangan sewa:
+• Paket 1 Bulan: ${p1}
+• Paket 3 Bulan: ${p3}
+• Paket 6 Bulan: ${p6}
+• Paket 12 Bulan: ${p12}
+${notesSection}
+Silakan konfirmasi paket durasi yang ingin Kakak ambil atau lakukan konfirmasi langsung melalui Portal Penyewa Sekar Space. Terima kasih! 🙏`
 
   const waUrl = `https://wa.me/${tenantPhone}?text=${encodeURIComponent(waText)}`
   window.open(waUrl, '_blank')
 
-  noticeMessage.value = `Tagihan sewa ${created.period} berhasil terbit & pesan WhatsApp ke ${tenantName} telah terbuka!`
+  noticeMessage.value = `Pemberitahuan tagihan sewa ke ${tenantName} telah dibuka di WhatsApp!`
   closeInvoiceModal()
   setTimeout(() => {
     noticeMessage.value = ''
@@ -304,18 +314,28 @@ const getWaBillLink = (pay: PaymentData) => {
   const tenant = getTenantByPayment(pay)
   const phone = formatWaPhone(tenant?.phone)
   const name = tenant?.name || 'Penyewa'
+  const rent = getRentalByPayment(pay)
+  const rm = rent?.roomId ? getRoomById(rent.roomId) : null
+  const bldName = rm ? getBuildingName(rm.buildingId) : 'Kost Sekar Space'
+  const roomNum = rm ? `Kamar ${rm.number}` : ''
+  const dueDateStr = rent?.endDate ? formatDateIndo(rent.endDate) : (pay.dueDate || 'Jatuh Tempo')
+
+  const p1 = formatRupiah(getRoomPriceByDuration(rm, 1))
+  const p3 = formatRupiah(getRoomPriceByDuration(rm, 3))
+  const p6 = formatRupiah(getRoomPriceByDuration(rm, 6))
+  const p12 = formatRupiah(getRoomPriceByDuration(rm, 12))
+
   const text = `Halo Kak ${name}, 👋
 
-Berikut rincian tagihan sewa Kost Sekar Space Anda:
-📌 Periode: ${pay.period}
-📌 Nominal Sewa: ${formatRupiah(getPaymentAmount(pay))}
-📌 Batas Jatuh Tempo: ${pay.dueDate || '05 September 2026'}
+Mengingatkan bahwa masa sewa ${roomNum ? roomNum + ' (' + bldName + ')' : 'Kost Sekar Space'} Anda akan berakhir pada ${dueDateStr}.
 
-Mohon lakukan pembayaran ke Rekening Resmi Sekar Space:
-• BCA: 1234 5678 90 (a.n. Sekar Space Kost)
-• Mandiri: 9876 5432 10 (a.n. Sekar Space Kost)
+📌 Rincian Pilihan Paket Sewa:
+• Paket 1 Bulan: ${p1}
+• Paket 3 Bulan: ${p3}
+• Paket 6 Bulan: ${p6}
+• Paket 12 Bulan: ${p12}
 
-Setelah transfer, mohon upload bukti pembayaran di Portal Penyewa. Terima kasih! 🙏`
+Silakan konfirmasi pilihan paket sewa Anda melalui Portal Penyewa Sekar Space. Terima kasih! 🙏`
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
 }
@@ -517,59 +537,72 @@ const formatRupiah = (val: number) => {
         <button class="modal-close" @click="closeInvoiceModal"><i class='bx bx-x'></i></button>
 
         <div class="modal-header">
-          <h2><i class='bx bx-paper-plane'></i> Kirim Tagihan Sewa ke Penyewa</h2>
-          <p>Pilih paket durasi dan terbitkan tagihan resmi ke WhatsApp penyewa</p>
+          <h2><i class='bx bx-paper-plane'></i> Kirim Tagihan Sewa ke WhatsApp</h2>
+          <p>Kirimkan rincian tarif perpanjangan sewa dan tanggal jatuh tempo langsung ke penyewa</p>
         </div>
 
         <form @submit.prevent="handleSendInvoice" class="invoice-form">
           <div class="form-group">
             <label>Pilih Penyewa</label>
-            <select v-model="formInvoice.memberId" class="form-control" @change="updateInvoiceAmount" required>
+            <select v-model="formInvoice.memberId" class="form-control" required>
               <option v-for="t in tenants" :key="t.id" :value="t.id">
                 {{ t.name }} (@{{ t.username }})
               </option>
             </select>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>Paket Durasi Perpanjangan</label>
-              <select v-model="formInvoice.durationMonths" class="form-control" @change="updateInvoiceAmount" required>
-                <option :value="1">1 Bulan</option>
-                <option :value="3">3 Bulan</option>
-                <option :value="6">6 Bulan</option>
-                <option :value="12">12 Bulan (1 Tahun)</option>
-              </select>
+          <!-- INFO UNIT KAMAR & TANGGAL SELESAI -->
+          <div class="invoice-tenant-summary" v-if="selectedInvoiceRoom">
+            <div class="summary-item">
+              <span class="summary-label">Kamar Ditempati</span>
+              <strong>Kamar {{ selectedInvoiceRoom.number }} ({{ selectedInvoiceBuildingName }})</strong>
+              <small>{{ selectedInvoiceRoom.typeName }}</small>
             </div>
-
-            <div class="form-group">
-              <label>Nominal Tagihan Resmi (Rp)</label>
-              <input type="number" v-model="formInvoice.amount" class="form-control" required readonly />
-              <small class="text-muted">Harga otomatis dihitung sesuai tabel resmi</small>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Metode Pembayaran</label>
-              <input type="text" v-model="formInvoice.method" placeholder="Transfer BCA / Mandiri" class="form-control" required />
-            </div>
-
-            <div class="form-group">
-              <label>Tenggat Jatuh Tempo</label>
-              <input type="text" v-model="formInvoice.dueDate" placeholder="05 September 2026" class="form-control" required />
+            <div class="summary-item">
+              <span class="summary-label">Akhir Masa Sewa</span>
+              <strong class="text-danger">{{ selectedInvoiceRental?.endDate ? formatDateIndo(selectedInvoiceRental.endDate) : '-' }}</strong>
+              <small>Status: {{ selectedInvoiceRental?.extensionIntent === 'extend' ? 'Lanjut Sewa' : selectedInvoiceRental?.extensionIntent === 'not_extend' ? 'Tidak Lanjut' : 'Menunggu Konfirmasi' }}</small>
             </div>
           </div>
 
           <div class="form-group">
-            <label>Catatan Tagihan</label>
-            <textarea v-model="formInvoice.notes" rows="2" class="form-control" placeholder="Tuliskan catatan tambahan..."></textarea>
+            <label>Tenggat Jatuh Tempo</label>
+            <input type="text" v-model="formInvoice.dueDate" class="form-control" placeholder="Contoh: 15 September 2026" required />
+            <small class="text-muted">Secara otomatis menyesuaikan dengan tanggal berakhirnya sewa penyewa</small>
+          </div>
+
+          <!-- RINCIAN BIAYA KAMAR (OTOMATIS 1, 3, 6, 12 BULAN) -->
+          <div class="form-group">
+            <label>Rincian Tarif Sewa Kamar (Disertakan di Pesan WA)</label>
+            <div class="pricing-grid-preview">
+              <div class="price-pill-card">
+                <span>1 Bulan</span>
+                <strong>{{ invoiceRoomPrices.p1 }}</strong>
+              </div>
+              <div class="price-pill-card">
+                <span>3 Bulan</span>
+                <strong>{{ invoiceRoomPrices.p3 }}</strong>
+              </div>
+              <div class="price-pill-card">
+                <span>6 Bulan</span>
+                <strong>{{ invoiceRoomPrices.p6 }}</strong>
+              </div>
+              <div class="price-pill-card">
+                <span>12 Bulan</span>
+                <strong>{{ invoiceRoomPrices.p12 }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Catatan Tambahan (Opsional)</label>
+            <textarea v-model="formInvoice.notes" rows="2" class="form-control" placeholder="Tuliskan catatan tambahan jika ada..."></textarea>
           </div>
 
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" @click="closeInvoiceModal">Batal</button>
-            <button type="submit" class="btn btn-primary">
-              <i class='bx bx-paper-plane'></i> Terbitkan & Kirim WA
+            <button type="submit" class="btn btn-primary btn-whatsapp-submit">
+              <i class='bx bxl-whatsapp'></i> Buka WhatsApp & Kirim Pesan
             </button>
           </div>
         </form>
@@ -1329,6 +1362,79 @@ const formatRupiah = (val: number) => {
   background: #1EBE5D;
 }
 
+.invoice-tenant-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background: var(--off-white);
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.summary-label {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.summary-item strong {
+  font-size: 0.88rem;
+  color: var(--dark);
+}
+
+.summary-item small {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.pricing-grid-preview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.price-pill-card {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.price-pill-card span {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.price-pill-card strong {
+  font-size: 0.84rem;
+  color: var(--primary);
+}
+
+.btn-whatsapp-submit {
+  background: #25D366;
+  border-color: #25D366;
+  color: white;
+}
+
+.btn-whatsapp-submit:hover {
+  background: #1EBE5D;
+  border-color: #1EBE5D;
+}
+
 @media (max-width: 992px) {
   .admin-main { margin-left: 0; padding: 20px; }
   .filter-bar { flex-direction: column; align-items: stretch; }
@@ -1346,6 +1452,7 @@ const formatRupiah = (val: number) => {
   .filter-pills { width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .filter-pill { flex-shrink: 0; }
   .form-row { grid-template-columns: 1fr; gap: 12px; }
+  .pricing-grid-preview { grid-template-columns: repeat(2, 1fr); }
   .modal-box { max-width: 92vw; max-height: 90vh; overflow-y: auto; padding: 24px 16px; }
   .modal-footer { flex-direction: column; }
   .modal-footer button { width: 100%; }

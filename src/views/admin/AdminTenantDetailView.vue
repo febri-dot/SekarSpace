@@ -195,21 +195,24 @@ const formatWaPhone = (phone?: string) => {
 // Generate WhatsApp Bill Link
 const waBillUrl = computed(() => {
   const phone = formatWaPhone(tenant.value.phone)
-  const formattedRent = formatRupiah(tenantMonthlyRent.value)
-  const endDateStr = activeRental.value ? formatDateIndo(activeRental.value.endDate) : '-'
+  const endDateStr = activeRental.value?.endDate ? formatDateIndo(activeRental.value.endDate) : '-'
+  const rm = activeRental.value?.roomId ? getRoomById(activeRental.value.roomId) : null
+  const p1 = formatRupiah(getRoomPriceByDuration(rm, 1))
+  const p3 = formatRupiah(getRoomPriceByDuration(rm, 3))
+  const p6 = formatRupiah(getRoomPriceByDuration(rm, 6))
+  const p12 = formatRupiah(getRoomPriceByDuration(rm, 12))
   
   const text = `Halo Kak ${tenant.value.name}, 👋
 
-Berikut adalah rincian informasi sewa Kost Sekar Space Anda:
-📌 Kamar: ${roomNumber.value} (${buildingName.value})
-📌 Nominal Sewa: ${formattedRent} / bulan
-📌 Periode Jatuh Tempo: s.d. ${endDateStr}
+Mengingatkan bahwa masa sewa ${roomNumber.value} (${buildingName.value}) Kakak akan berakhir pada ${endDateStr}.
 
-Mohon lakukan pembayaran melalui rekening resmi Sekar Space:
-• BCA: 1234 5678 90 (a.n. Sekar Space Kost)
-• Mandiri: 9876 5432 10 (a.n. Sekar Space Kost)
+📌 Berikut rincian tarif perpanjangan sewa:
+• Paket 1 Bulan: ${p1}
+• Paket 3 Bulan: ${p3}
+• Paket 6 Bulan: ${p6}
+• Paket 12 Bulan: ${p12}
 
-Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Portal Penyewa. Terima kasih! 🙏`
+Silakan konfirmasi paket durasi yang ingin Kakak ambil atau lakukan konfirmasi langsung melalui Portal Penyewa Sekar Space. Terima kasih! 🙏`
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
 })

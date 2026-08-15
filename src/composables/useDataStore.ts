@@ -219,10 +219,10 @@ export interface BuildingData {
   facilities: string[]
 }
 
-const STORAGE_ROOMS = 'sekar_space_rooms_v11'
+const STORAGE_ROOMS = 'sekar_space_rooms_v12'
 const STORAGE_ROOM_TYPES = 'sekar_space_room_types_v1'
-const STORAGE_COMPLAINTS = 'sekar_space_complaints_v7'
-const STORAGE_PAYMENTS = 'sekar_space_payments_v9'
+const STORAGE_COMPLAINTS = 'sekar_space_complaints_v8'
+const STORAGE_PAYMENTS = 'sekar_space_payments_v10'
 const STORAGE_CMS = 'sekar_space_cms_v7'
 const STORAGE_FACILITIES = 'sekar_space_facilities_v1'
 const STORAGE_NEARBY = 'sekar_space_nearby_v4'
@@ -230,8 +230,8 @@ const STORAGE_TESTIMONIALS = 'sekar_space_testimonials_v3'
 const STORAGE_GALLERY = 'sekar_space_gallery_v1'
 const STORAGE_FAQS = 'sekar_space_faqs_v1'
 const STORAGE_BUILDINGS = 'sekar_space_buildings_v3'
-const STORAGE_RENTALS = 'sekar_space_rentals_v8'
-const STORAGE_ROOM_TRANSFERS = 'sekar_space_room_transfers_v1'
+const STORAGE_RENTALS = 'sekar_space_rentals_v9'
+const STORAGE_ROOM_TRANSFERS = 'sekar_space_room_transfers_v2'
 
 const loadStorage = <T>(key: string, defaultValue: T): T => {
   const saved = localStorage.getItem(key)

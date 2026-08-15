@@ -20,5 +20,16 @@
     "priority": "medium",
     "description": "Koneksi WiFi di kamar A12 terasa agak lambat saat jam 19.00 - 21.00 malam.",
     "response": ""
+  },
+  {
+    "id": "CMP-003",
+    "memberId": "MBR-06",
+    "title": "Keran Wastafel Kamar Mandi Menetes",
+    "category": "Fasilitas Kamar Mandi",
+    "date": "2026-08-16",
+    "status": "in-progress",
+    "priority": "medium",
+    "description": "Keran air pada wastafel kamar mandi dalam terus menetes perlahan walau sudah ditutup rapat.",
+    "response": "Petugas maintenance sudah dijadwalkan datang untuk mengganti karet kran besok pagi pukul 09.00 WIB."
   }
 ]

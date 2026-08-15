@@ -149,7 +149,7 @@
     "floor": 1,
     "buildingId": "bld-c",
     "typeId": "km-dalam",
-    "status": "available"
+    "status": "occupied"
   },
   {
     "id": "C-14",
