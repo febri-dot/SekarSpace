@@ -150,31 +150,15 @@ onUnmounted(() => {
           <a href="/#contact" class="nav-link" :class="{ active: route.path === '/' && activeSection === 'contact' }" role="menuitem" @click="closeMobileNav">Kontak</a>
         </li>
         <li role="none" class="portal-nav-item">
-          <RouterLink v-if="isAdmin" to="/admin/dashboard" class="nav-link" @click="closeMobileNav">
-            <i class='bx bxs-shield'></i> Portal Admin
-          </RouterLink>
-
-          <RouterLink v-else-if="isLoggedIn" to="/user" class="nav-link" @click="closeMobileNav">
-            <i class='bx bxs-user-circle'></i> Portal Penyewa
-          </RouterLink>
-
-          <RouterLink v-else to="/login" class="nav-link" @click="closeMobileNav">
-            <i class='bx bx-log-in'></i> Login Akun
+          <RouterLink to="/login" class="nav-link" @click="closeMobileNav">
+            <i class='bx bx-log-in'></i> Login
           </RouterLink>
         </li>
         <div class="nav-indicator" :style="indicatorStyle"></div>
       </ul>
 
       <div class="nav-actions">
-        <RouterLink v-if="isAdmin" to="/admin/dashboard" class="btn btn-primary nav-btn">
-          <i class='bx bxs-shield'></i> Portal Admin
-        </RouterLink>
-
-        <RouterLink v-else-if="isLoggedIn" to="/user" class="btn btn-primary nav-btn">
-          <i class='bx bxs-user'></i> Portal Penyewa
-        </RouterLink>
-
-        <RouterLink v-else to="/login" class="btn btn-primary nav-btn">
+        <RouterLink to="/login" class="btn btn-primary nav-btn">
           <i class='bx bx-log-in'></i> Login
         </RouterLink>
 

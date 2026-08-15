@@ -10,7 +10,7 @@
     },
     {
       "id": "shopping",
-      "label": "Perbelanjaan & Publik"
+      "label": "Perbelanjaan & Transportasi"
     },
     {
       "id": "health",
@@ -24,63 +24,93 @@
   "places": [
     {
       "id": 1,
-      "name": "Universitas Gadjah Mada (UGM)",
+      "name": "Universitas Teknologi Yogyakarta (UTY)",
       "category": "campus",
-      "distance": "2.5 km",
-      "time": "5–7 menit (motor)",
-      "icon": "bx bxs-school",
+      "distance": "800 meter",
+      "time": "2–3 menit (motor)",
+      "icon": "bx bxs-graduation",
       "badge": "Kampus Utama",
-      "desc": "Akses cepat melalui Jl. Monjali / Jl. Ringroad Utara tanpa macet."
+      "desc": "Sangat dekat dengan Kampus 1 UTY (Ringroad Utara / Jombor), akses cepat tanpa hambatan."
     },
     {
       "id": 2,
-      "name": "Universitas Negeri Yogyakarta (UNY)",
+      "name": "STMM MMTC Yogyakarta",
       "category": "campus",
-      "distance": "3.8 km",
-      "time": "10 menit (motor)",
-      "icon": "bx bxs-graduation",
-      "badge": "Kampus",
-      "desc": "Rute mudah & nyaman menuju area Colombo dan Gejayan."
+      "distance": "1.2 km",
+      "time": "3–4 menit (motor)",
+      "icon": "bx bxs-school",
+      "badge": "Kampus Terdekat",
+      "desc": "Akses langsung ke Jl. Magelang Km 6, sangat mudah dijangkau bagi mahasiswi MMTC."
     },
     {
       "id": 3,
+      "name": "Jogja City Mall (JCM)",
+      "category": "shopping",
+      "distance": "1.8 km",
+      "time": "4–5 menit (motor)",
+      "icon": "bx bxs-shopping-bags",
+      "badge": "Mall Favorit",
+      "desc": "Pusat perbelanjaan favorit dengan bioskop XXI, supermarket, tenant lifestyle, dan kuliner lengkap."
+    },
+    {
+      "id": 4,
+      "name": "Terminal Jombor & Trans Jogja",
+      "category": "shopping",
+      "distance": "900 meter",
+      "time": "3 menit (motor)",
+      "icon": "bx bxs-bus",
+      "badge": "Transportasi Publik",
+      "desc": "Pusat transportasi antar kota, travel bandara, dan halte Trans Jogja menuju berbagai sudut Yogyakarta."
+    },
+    {
+      "id": 5,
+      "name": "Rumah Sakit Akademik UGM (RSA UGM)",
+      "category": "health",
+      "distance": "2.3 km",
+      "time": "5 menit (motor)",
+      "icon": "bx bxs-first-aid",
+      "badge": "Rumah Sakit Utama",
+      "desc": "Fasilitas medis terdekat di Jl. Kabupaten untuk layanan kesehatan lengkap dan IGD 24 jam."
+    },
+    {
+      "id": 6,
+      "name": "Apotek K-24 & Klinik Sinduadi",
+      "category": "health",
+      "distance": "500 meter",
+      "time": "2 menit (motor)",
+      "icon": "bx bxs-capsule",
+      "badge": "Apotek 24 Jam",
+      "desc": "Layanan farmasi dan konsultasi kesehatan darurat 24 jam non-stop dekat area kost."
+    },
+    {
+      "id": 7,
       "name": "Sleman City Hall (SCH)",
       "category": "shopping",
       "distance": "3.0 km",
       "time": "7 menit (motor)",
       "icon": "bx bxs-shopping-bag",
       "badge": "Pusat Perbelanjaan",
-      "desc": "Mall terbesar di Sleman dengan bioskop, supermarket, dan culinary hub."
+      "desc": "Mall besar di Jl. Magelang dengan fasilitas hiburan, bioskop, dan event exhibition."
     },
     {
-      "id": 4,
-      "name": "RSUP Dr. Sardjito",
-      "category": "health",
-      "distance": "2.8 km",
-      "time": "7 menit (motor)",
-      "icon": "bx bxs-first-aid",
-      "badge": "Rumah Sakit Rujukan",
-      "desc": "Fasilitas medis terdekat untuk kebutuhan kesehatan darurat maupun medis umum."
-    },
-    {
-      "id": 5,
+      "id": 8,
       "name": "Indomaret / Alfamart Trini",
       "category": "shopping",
       "distance": "300 meter",
       "time": "3 menit (jalan kaki)",
       "icon": "bx bxs-store-alt",
       "badge": "Minimarket 24h",
-      "desc": "Sangat dekat untuk membeli kebutuhan harian, cemilan, dan saldo e-money."
+      "desc": "Sangat dekat untuk membeli kebutuhan harian, cemilan, dan transaksi e-money."
     },
     {
-      "id": 6,
+      "id": 9,
       "name": "Masjid Al-Ikhlas Trini",
       "category": "worship",
       "distance": "150 meter",
       "time": "2 menit (jalan kaki)",
       "icon": "bx bxs-institution",
       "badge": "Tempat Ibadah",
-      "desc": "Masjid warga yang bersih dan aktif dengan jamaah muslimah sekitar."
+      "desc": "Masjid warga yang bersih, aman, dan aktif dengan jamaah muslimah sekitar kost."
     }
   ]
 }

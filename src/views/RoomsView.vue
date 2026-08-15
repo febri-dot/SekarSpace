@@ -5,6 +5,7 @@ import Navbar from '../components/layout/Navbar.vue'
 import Footer from '../components/layout/Footer.vue'
 import { useDataStore, getRoomPriceByDuration, type RoomData } from '../composables/useDataStore'
 import communalFacilitiesData from '../data/communalFacilities.json'
+import roomGalleriesData from '../data/roomGalleries.json'
 
 const { rooms, bookRoom, buildings } = useDataStore()
 const route = useRoute()
@@ -16,15 +17,43 @@ const selectedBuildingId = ref<string>('utama')
 const selectedRoomId = ref<string | null>(null)
 const activeFloor = ref<'floor1' | 'floor2'>('floor1')
 
+// Selected Active Room Object for Step 3
+const selectedRoom = computed<RoomData | null>(() => {
+  if (selectedRoomId.value) {
+    const found = rooms.value.find(r => r.id === selectedRoomId.value)
+    if (found) return found
+  }
+  return null
+})
+
 // Gallery State for Step 3
 const activeImageIndex = ref<number>(0)
-const galleryImages = [
-  { url: '/assets/images/foto-km-dalam.png', title: 'Kamar Mandi Dalam' },
-  { url: '/assets/images/fasilitas-km-luar.png', title: 'Kamar Mandi Luar' },
-  { url: '/assets/images/fasilitas-luas-kamar.png', title: 'Interior Kamar' },
-  { url: '/assets/images/fasilitas-dapur.png', title: 'Dapur Bersama' },
-  { url: '/assets/images/fasilitas-sofa.png', title: 'Ruang Tamu & Santai' }
-]
+
+// Dynamic Gallery Images based on Room Type loaded from JSON
+const galleryImages = computed(() => {
+  const typeKey = selectedRoom.value?.typeId === 'km-dalam' ? 'km-dalam' : 'km-luar'
+  return (roomGalleriesData as Record<string, { url: string; title: string }[]>)[typeKey] || []
+})
+
+// Reset gallery active index when room changes
+watch(selectedRoomId, () => {
+  activeImageIndex.value = 0
+})
+
+// Lightbox Preview Modal State
+const isLightboxOpen = ref(false)
+const openLightbox = () => {
+  isLightboxOpen.value = true
+}
+const closeLightbox = () => {
+  isLightboxOpen.value = false
+}
+const prevLightboxImage = () => {
+  activeImageIndex.value = (activeImageIndex.value - 1 + galleryImages.value.length) % galleryImages.value.length
+}
+const nextLightboxImage = () => {
+  activeImageIndex.value = (activeImageIndex.value + 1) % galleryImages.value.length
+}
 
 // Calculator & Estimator State for Step 3
 const durationOptions = [1, 3, 6, 12]
@@ -49,15 +78,6 @@ const roomsInSelectedBuilding = computed(() => {
 
 const availableRoomsInBuilding = computed(() => {
   return roomsInSelectedBuilding.value.filter(r => r.status === 'available')
-})
-
-// Selected Active Room Object for Step 3
-const selectedRoom = computed<RoomData | null>(() => {
-  if (selectedRoomId.value) {
-    const found = rooms.value.find(r => r.id === selectedRoomId.value)
-    if (found) return found
-  }
-  return null
 })
 
 // Helper to map building identifier to standard key
@@ -449,12 +469,12 @@ watch(() => route.query.tipe, () => {
         <div class="room-detail-layout">
           <!-- Left Column: Photo Gallery -->
           <div class="room-gallery">
-            <div class="gallery-main">
+            <div class="gallery-main" @click="openLightbox" title="Klik untuk melihat foto ukuran penuh">
               <span class="gallery-badge">{{ selectedRoom.typeName }}</span>
               <img :src="galleryImages[activeImageIndex]?.url || galleryImages[0]!.url" :alt="selectedRoom.typeName" class="main-img" />
               <div class="gallery-zoom-overlay">
-                <i class='bx bx-zoom-in'></i>
-                <span>{{ galleryImages[activeImageIndex]?.title }}</span>
+                <i class='bx bx-fullscreen'></i>
+                <span>{{ galleryImages[activeImageIndex]?.title }} · <em>Klik untuk perbesar</em></span>
               </div>
             </div>
             <div class="gallery-thumbs">
@@ -647,6 +667,44 @@ watch(() => route.query.tipe, () => {
 
 
     <Footer />
+
+    <!-- ROOM GALLERY FULLSCREEN LIGHTBOX PREVIEW -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div 
+          v-if="isLightboxOpen" 
+          class="room-lightbox-backdrop" 
+          @click="closeLightbox"
+        >
+          <div class="room-lightbox-content" @click.stop>
+            <button class="lightbox-close-btn" @click="closeLightbox" aria-label="Tutup preview">
+              <i class='bx bx-x'></i>
+            </button>
+            
+            <button class="lightbox-nav-btn prev-btn" @click="prevLightboxImage" aria-label="Foto sebelumnya">
+              <i class='bx bx-chevron-left'></i>
+            </button>
+
+            <div class="lightbox-image-box">
+              <img 
+                :src="galleryImages[activeImageIndex]?.url" 
+                :alt="galleryImages[activeImageIndex]?.title" 
+                class="lightbox-img" 
+              />
+              <div class="lightbox-caption">
+                <span class="lightbox-badge">{{ selectedRoom?.typeName }}</span>
+                <h4>{{ galleryImages[activeImageIndex]?.title }}</h4>
+                <span class="lightbox-counter">{{ activeImageIndex + 1 }} / {{ galleryImages.length }}</span>
+              </div>
+            </div>
+
+            <button class="lightbox-nav-btn next-btn" @click="nextLightboxImage" aria-label="Foto berikutnya">
+              <i class='bx bx-chevron-right'></i>
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -1323,21 +1381,35 @@ watch(() => route.query.tipe, () => {
 
 .gallery-main {
   position: relative;
-  height: 320px;
+  height: 360px;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: var(--dark);
+  background: radial-gradient(circle at center, #FAF7F4 0%, #EDE6DF 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: all var(--transition-base);
+}
+
+.gallery-main:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(84, 26, 26, 0.15);
 }
 
 .main-img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform 0.4s ease;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 16px rgba(84, 26, 26, 0.08));
+  transition: transform 0.4s ease, filter 0.4s ease;
 }
 
 .gallery-main:hover .main-img {
-  transform: scale(1.04);
+  transform: scale(1.02);
+  filter: drop-shadow(0 8px 24px rgba(84, 26, 26, 0.14));
 }
 
 .gallery-badge {
@@ -1351,29 +1423,181 @@ watch(() => route.query.tipe, () => {
   font-weight: 700;
   border-radius: var(--radius-full);
   backdrop-filter: blur(4px);
+  z-index: 2;
 }
 
 .gallery-zoom-overlay {
   position: absolute;
   bottom: 0;
   inset-x: 0;
-  padding: 16px;
-  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  padding: 14px 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
   color: var(--white);
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.85rem;
+  z-index: 2;
+  transition: all var(--transition-base);
+}
+
+.gallery-main:hover .gallery-zoom-overlay {
+  background: linear-gradient(to top, rgba(84,26,26,0.9) 0%, transparent 100%);
+}
+
+/* LIGHTBOX FULLSCREEN MODAL */
+.room-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 12, 10, 0.94);
+  backdrop-filter: blur(12px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.room-lightbox-content {
+  position: relative;
+  max-width: 92vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-image-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  max-height: 85vh;
+}
+
+.lightbox-img {
+  max-width: 86vw;
+  max-height: 76vh;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  animation: zoomIn 0.3s ease;
+}
+
+.lightbox-caption {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--white);
+}
+
+.lightbox-caption h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.lightbox-badge {
+  padding: 2px 10px;
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.lightbox-counter {
+  font-size: 0.85rem;
+  color: var(--secondary);
+  background: rgba(255, 255, 255, 0.12);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  width: 42px;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: var(--white);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.lightbox-close-btn:hover {
+  background: var(--primary);
+  transform: scale(1.1);
+}
+
+.lightbox-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: var(--white);
+  font-size: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  z-index: 10;
+}
+
+.lightbox-nav-btn:hover {
+  background: var(--primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.lightbox-nav-btn.prev-btn {
+  left: -64px;
+}
+
+.lightbox-nav-btn.next-btn {
+  right: -64px;
+}
+
+@media (max-width: 768px) {
+  .gallery-main {
+    height: 280px;
+  }
+  .lightbox-nav-btn.prev-btn {
+    left: 8px;
+  }
+  .lightbox-nav-btn.next-btn {
+    right: 8px;
+  }
+  .lightbox-close-btn {
+    top: -40px;
+    right: 8px;
+  }
 }
 
 .gallery-thumbs {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
 }
 
 .thumb-btn {
-  flex: 1;
-  height: 64px;
+  flex: 0 0 64px;
+  height: 56px;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid transparent;
@@ -1381,7 +1605,7 @@ watch(() => route.query.tipe, () => {
   opacity: 0.7;
   transition: all var(--transition-base);
   padding: 0;
-  background: none;
+  background: var(--off-white);
 }
 
 .thumb-btn.active {

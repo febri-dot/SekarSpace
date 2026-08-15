@@ -113,10 +113,6 @@ const handleLogout = () => {
         </RouterLink>
 
         <span class="nav-section-title">Navigasi Utama</span>
-        <RouterLink to="/user" class="sidebar-link" @click="closeSidebar">
-          <i class='bx bxs-user-circle'></i>
-          <span>Portal Penyewa</span>
-        </RouterLink>
         <RouterLink to="/" class="sidebar-link" @click="closeSidebar">
           <i class='bx bx-globe'></i>
           <span>Website Utama</span>

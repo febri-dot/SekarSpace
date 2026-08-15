@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { useAuth } from '../composables/useAuth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -91,4 +92,23 @@ const router = createRouter({
   }
 })
 
+router.beforeEach((to, from, next) => {
+  const { currentUser } = useAuth()
+
+  if (to.path.startsWith('/admin')) {
+    if (!currentUser.value || currentUser.value.role !== 'admin') {
+      return next('/login')
+    }
+  }
+
+  if (to.path.startsWith('/user')) {
+    if (!currentUser.value) {
+      return next('/login')
+    }
+  }
+
+  next()
+})
+
 export default router
+

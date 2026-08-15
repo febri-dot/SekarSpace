@@ -35,19 +35,19 @@ const heroSlides = computed(() => [
   },
   {
     id: 2,
-    image: cmsSettings.value.heroImage2 || '/assets/images/hero-kamar.png',
-    tag: 'Kamar Mandi Dalam Premium',
-    titleMain: 'Privasi & Ketenangan',
-    titleGradient: 'Maksimal Setiap Hari',
-    desc: 'Nikmati interior kamar eksklusif dengan cermin, lemari pakaian, kasur empuk, serta sirkulasi udara dan cahaya alami yang sehat.'
+    image: cmsSettings.value.heroImage2 || '/assets/images/fasilitas-km-luar.png',
+    tag: 'Tipe Kamar Mandi Luar',
+    titleMain: 'Kamar Nyaman',
+    titleGradient: 'Harga Terjangkau',
+    desc: 'Pilihan kamar dengan kamar mandi luar yang bersih dan terawat. Cocok untuk Anda yang menginginkan hunian nyaman dengan budget hemat.'
   },
   {
     id: 3,
-    image: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.png',
-    tag: 'Dapur Bersama Lengkap',
-    titleMain: 'Memasak Lebih Praktis',
-    titleGradient: '& Selalu Bersih',
-    desc: 'Dilengkapi kompor gas, kulkas bersama, kabinet penyimpanan, serta dispenser air minum untuk menunjang harian Anda.'
+    image: cmsSettings.value.heroImage3 || '/assets/images/foto-km-dalam.png',
+    tag: 'Tipe Kamar Mandi Dalam',
+    titleMain: 'Privasi & Kenyamanan',
+    titleGradient: 'Maksimal Setiap Hari',
+    desc: 'Nikmati kamar eksklusif dengan kamar mandi dalam pribadi. Privasi lebih terjaga untuk kenyamanan dan ketenangan Anda.'
   }
 ])
 
@@ -564,7 +564,7 @@ onUnmounted(() => {
             <!-- Kamar Mandi Luar -->
             <RouterLink to="/rooms?tipe=km-luar" class="room-type-card" id="roomKmLuar">
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/hero-bg.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
+                <img src="/assets/images/fasilitas-luas-kamar.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
                   <i class='bx bx-door-open'></i>
@@ -604,7 +604,7 @@ onUnmounted(() => {
                 <i class='bx bxs-star'></i> Populer
               </div>
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/hero-bg.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
+                <img src="/assets/images/kamar-km-dalam-1.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
                   <i class='bx bx-bath'></i>
@@ -1270,8 +1270,36 @@ onUnmounted(() => {
 }
 
 .hero-actions .btn {
-  padding: 14px 28px;
-  font-size: 0.95rem;
+  padding: 15px 32px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.hero-actions .btn-primary {
+  background: var(--white);
+  color: var(--primary);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+}
+
+.hero-actions .btn-primary:hover {
+  background: var(--secondary);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(255, 255, 255, 0.25);
+}
+
+.hero-actions .btn-ghost {
+  background: transparent;
+  color: var(--white);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.hero-actions .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--white);
+  color: var(--white);
+  transform: translateY(-2px);
 }
 
 .hero-stats {
@@ -1626,17 +1654,19 @@ onUnmounted(() => {
 
 .room-type-image-wrapper {
   width: 100%;
-  height: 200px;
+  height: 250px;
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
   margin-bottom: 20px;
+  background: var(--off-white);
 }
 
 .room-type-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center bottom;
   transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.4s ease;
 }
 
