@@ -564,7 +564,7 @@ onUnmounted(() => {
             <!-- Kamar Mandi Luar -->
             <RouterLink to="/rooms?tipe=km-luar" class="room-type-card" id="roomKmLuar">
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/fasilitas-km-luar.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
+                <img src="/assets/images/fasilitas-luas-kamar.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
                   <i class='bx bx-door-open'></i>
@@ -604,7 +604,7 @@ onUnmounted(() => {
                 <i class='bx bxs-star'></i> Populer
               </div>
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/foto-km-dalam.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
+                <img src="/assets/images/kamar-km-dalam-1.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
                   <i class='bx bx-bath'></i>
@@ -1654,17 +1654,19 @@ onUnmounted(() => {
 
 .room-type-image-wrapper {
   width: 100%;
-  height: 200px;
+  height: 220px;
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
   margin-bottom: 20px;
+  background: var(--off-white);
 }
 
 .room-type-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.4s ease;
 }
 
