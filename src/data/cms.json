@@ -13,8 +13,8 @@
   "priceKmLuarYearly": 650000,
   "priceKmDalamYearly": 880000,
   "heroImage1": "/assets/images/hero-gedung-depan.png",
-  "heroImage2": "/assets/images/fasilitas-km-luar.png",
-  "heroImage3": "/assets/images/foto-km-dalam.png",
+  "heroImage2": "/assets/images/hero-kamar.png",
+  "heroImage3": "/assets/images/hero-dapur.png",
   "bankAccounts": [
     {
       "bank": "BCA",
