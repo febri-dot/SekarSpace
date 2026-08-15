@@ -54,16 +54,6 @@
     },
     {
       "id": 4,
-      "name": "Universitas Gadjah Mada (UGM)",
-      "category": "campus",
-      "distance": "3.5 km",
-      "time": "8–10 menit (motor)",
-      "icon": "bx bxs-institution",
-      "badge": "Kampus",
-      "desc": "Rute mudah & nyaman menuju area Bulaksumur, Pogung, dan Sekip."
-    },
-    {
-      "id": 5,
       "name": "Sleman City Hall (SCH)",
       "category": "shopping",
       "distance": "3.0 km",
@@ -73,7 +63,7 @@
       "desc": "Mall terbesar di Sleman dengan bioskop, supermarket, dan culinary hub."
     },
     {
-      "id": 6,
+      "id": 5,
       "name": "Indomaret / Alfamart Trini",
       "category": "shopping",
       "distance": "300 meter",
@@ -83,7 +73,7 @@
       "desc": "Sangat dekat untuk membeli kebutuhan harian, cemilan, dan transaksi e-money."
     },
     {
-      "id": 7,
+      "id": 6,
       "name": "Masjid Al-Ikhlas Trini",
       "category": "worship",
       "distance": "150 meter",
