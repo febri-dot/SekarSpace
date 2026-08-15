@@ -999,7 +999,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 28px;
-  max-width: 920px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
@@ -1148,7 +1148,7 @@ onUnmounted(() => {
   border-left: 4px solid var(--primary);
   border-radius: var(--radius-lg);
   padding: 16px 20px;
-  max-width: 920px;
+  max-width: 1040px;
   margin: 0 auto 32px;
   box-shadow: var(--shadow-sm);
 }
@@ -1223,7 +1223,8 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  margin-bottom: 52px;
+  max-width: 1040px;
+  margin: 0 auto 48px;
 }
 
 .building-card {
@@ -1334,7 +1335,10 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 32px;
+  max-width: 1040px;
+  margin: 0 auto;
   box-shadow: var(--shadow-md);
+  box-sizing: border-box;
 }
 
 .floor-plan-header {
@@ -1588,10 +1592,10 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 36px;
-  margin-bottom: 32px;
+  max-width: 1040px;
+  margin: 0 auto 32px;
   box-shadow: var(--shadow-sm);
   min-width: 0;
-  max-width: 100%;
   width: 100%;
   box-sizing: border-box;
 }
@@ -1946,8 +1950,10 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 28px;
-  margin-bottom: 32px;
+  max-width: 1040px;
+  margin: 0 auto 32px;
   box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
 }
 
 .room-number-section h3 {
@@ -2038,8 +2044,10 @@ onUnmounted(() => {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 36px;
-  margin-bottom: 32px;
+  max-width: 1040px;
+  margin: 0 auto 32px;
   box-shadow: var(--shadow-md);
+  box-sizing: border-box;
 }
 
 .estimator-header {
@@ -2256,6 +2264,8 @@ onUnmounted(() => {
 .step-nav-footer {
   display: flex;
   justify-content: flex-start;
+  max-width: 1040px;
+  margin: 0 auto;
 }
 
 /* MODAL DIALOG */
