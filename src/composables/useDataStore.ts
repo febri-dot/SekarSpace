@@ -10,6 +10,22 @@ import defaultTestimonials from '../data/testimonials.json'
 import defaultGallery from '../data/gallery.json'
 import defaultFaqs from '../data/faqs.json'
 import defaultBuildings from '../data/buildings.json'
+import defaultRentals from '../data/rentals.json'
+
+export interface RentalData {
+  id: string
+  memberId: string
+  roomId: string
+  startDate: string
+  endDate: string
+  durationMonths: number
+  basePrice: number
+  addonPrice: number
+  totalAmount: number
+  addons: string[]
+  status: 'active' | 'completed' | 'cancelled'
+  createdAt: string
+}
 
 export interface RoomTypeData {
   typeId: 'km-luar' | 'km-dalam'
@@ -18,6 +34,11 @@ export interface RoomTypeData {
   badge: string
   desc: string
   size: string
+  price?: number
+  price1Month?: number
+  price3Months?: number
+  price6Months?: number
+  price12Months?: number
   icon: string
   image?: string
   features: string[]
@@ -72,12 +93,13 @@ export const getRoomPriceByDuration = (room?: RoomData | null, duration: number 
   }
   if (!room) return 600000 * duration
 
-  const typeMeta = (defaultRoomTypes as RoomTypeData[]).find(t => t.typeId === room?.typeId)
+  const currentTypes = roomTypes.value && roomTypes.value.length > 0 ? roomTypes.value : (defaultRoomTypes as RoomTypeData[])
+  const typeMeta = currentTypes.find(t => t.typeId === room?.typeId)
 
-  const p1 = room.price1Month ?? room.price ?? (typeMeta as any)?.price1Month ?? (typeMeta as any)?.price ?? (room.typeId === 'km-dalam' ? 850000 : 600000)
-  const p3 = room.price3Months ?? (typeMeta as any)?.price3Months ?? (room.typeId === 'km-dalam' ? 2000000 : 1800000)
-  const p6 = room.price6Months ?? (typeMeta as any)?.price6Months ?? (room.typeId === 'km-dalam' ? 4000000 : 3500000)
-  const p12 = room.price12Months ?? (typeMeta as any)?.price12Months ?? (room.typeId === 'km-dalam' ? 8000000 : 7000000)
+  const p1 = (typeMeta as any)?.price1Month ?? (typeMeta as any)?.price ?? room.price1Month ?? room.price ?? (room.typeId === 'km-dalam' ? 850000 : 600000)
+  const p3 = (typeMeta as any)?.price3Months ?? room.price3Months ?? (room.typeId === 'km-dalam' ? 2000000 : 1800000)
+  const p6 = (typeMeta as any)?.price6Months ?? room.price6Months ?? (room.typeId === 'km-dalam' ? 4000000 : 3500000)
+  const p12 = (typeMeta as any)?.price12Months ?? room.price12Months ?? (room.typeId === 'km-dalam' ? 8000000 : 7000000)
 
   if (duration === 1) return p1
   if (duration === 3) return p3
@@ -182,10 +204,10 @@ export interface BuildingData {
   facilities: string[]
 }
 
-const STORAGE_ROOMS = 'sekar_space_rooms_v10'
+const STORAGE_ROOMS = 'sekar_space_rooms_v11'
 const STORAGE_ROOM_TYPES = 'sekar_space_room_types_v1'
-const STORAGE_COMPLAINTS = 'sekar_space_complaints_v6'
-const STORAGE_PAYMENTS = 'sekar_space_payments_v6'
+const STORAGE_COMPLAINTS = 'sekar_space_complaints_v7'
+const STORAGE_PAYMENTS = 'sekar_space_payments_v7'
 const STORAGE_CMS = 'sekar_space_cms_v5'
 const STORAGE_FACILITIES = 'sekar_space_facilities_v1'
 const STORAGE_NEARBY = 'sekar_space_nearby_v4'
@@ -193,6 +215,7 @@ const STORAGE_TESTIMONIALS = 'sekar_space_testimonials_v3'
 const STORAGE_GALLERY = 'sekar_space_gallery_v1'
 const STORAGE_FAQS = 'sekar_space_faqs_v1'
 const STORAGE_BUILDINGS = 'sekar_space_buildings_v2'
+const STORAGE_RENTALS = 'sekar_space_rentals_v3'
 
 const loadStorage = <T>(key: string, defaultValue: T): T => {
   const saved = localStorage.getItem(key)
@@ -256,6 +279,7 @@ const galleryData = ref<{ categories: GalleryCategory[]; row1: GalleryItemData[]
 )
 const faqs = ref<FaqData[]>(loadStorage(STORAGE_FAQS, defaultFaqs as FaqData[]))
 const buildings = ref<BuildingData[]>(loadStorage(STORAGE_BUILDINGS, defaultBuildings as BuildingData[]))
+const rentals = ref<RentalData[]>(loadStorage(STORAGE_RENTALS, defaultRentals as RentalData[]))
 
 // Helper to physically write to disk JSON file via Vite API
 const writeJsonDisk = async (filename: string, data: any) => {
@@ -282,6 +306,7 @@ const saveAll = () => {
   localStorage.setItem(STORAGE_GALLERY, JSON.stringify(galleryData.value))
   localStorage.setItem(STORAGE_FAQS, JSON.stringify(faqs.value))
   localStorage.setItem(STORAGE_BUILDINGS, JSON.stringify(buildings.value))
+  localStorage.setItem(STORAGE_RENTALS, JSON.stringify(rentals.value))
 
   const normalizedRooms = rooms.value.map(r => ({
     id: r.id,
@@ -302,6 +327,7 @@ const saveAll = () => {
   writeJsonDisk('gallery', galleryData.value)
   writeJsonDisk('faqs', faqs.value)
   writeJsonDisk('buildings', buildings.value)
+  writeJsonDisk('rentals', rentals.value)
 }
 
 export function useDataStore() {
@@ -405,7 +431,63 @@ export function useDataStore() {
     galleryData.value = defaultGallery as any
     faqs.value = defaultFaqs as FaqData[]
     buildings.value = defaultBuildings as BuildingData[]
+    rentals.value = defaultRentals as RentalData[]
     saveAll()
+  }
+
+  const addRental = (newRent: Omit<RentalData, 'id' | 'createdAt'>): RentalData => {
+    const created: RentalData = {
+      ...newRent,
+      id: `RNT-00${rentals.value.length + 1}`,
+      createdAt: new Date().toISOString().substring(0, 10)
+    }
+    rentals.value.unshift(created)
+    saveAll()
+    return created
+  }
+
+  const getRentalsByMemberId = (memberId: string): RentalData[] => {
+    return rentals.value.filter(r => r.memberId === memberId)
+  }
+
+  const getActiveRentalByMemberId = (memberId: string): RentalData | undefined => {
+    return rentals.value.find(r => r.memberId === memberId && r.status === 'active') || rentals.value.find(r => r.memberId === memberId)
+  }
+
+  const getActiveRentalByRoomId = (roomId: string): RentalData | undefined => {
+    return rentals.value.find(r => r.roomId === roomId && r.status === 'active') || rentals.value.find(r => r.roomId === roomId)
+  }
+
+  const updateRoomType = (typeId: string, updatedFields: Partial<RoomTypeData>) => {
+    const item = roomTypes.value.find(t => t.typeId === typeId)
+    if (item) {
+      Object.assign(item, updatedFields)
+      if (updatedFields.price1Month) {
+        item.price = updatedFields.price1Month
+      }
+      // Sinkronkan harga kamar fisik yang memiliki typeId ini
+      rooms.value.forEach(r => {
+        if (r.typeId === typeId) {
+          if (updatedFields.price1Month) {
+            r.price = updatedFields.price1Month
+            r.price1Month = updatedFields.price1Month
+          }
+          if (updatedFields.price3Months) r.price3Months = updatedFields.price3Months
+          if (updatedFields.price6Months) r.price6Months = updatedFields.price6Months
+          if (updatedFields.price12Months) r.price12Months = updatedFields.price12Months
+          if (updatedFields.size) r.size = updatedFields.size
+        }
+      })
+      saveAll()
+    }
+  }
+
+  const updateRental = (id: string, updatedData: Partial<RentalData>) => {
+    const item = rentals.value.find(r => r.id === id)
+    if (item) {
+      Object.assign(item, updatedData)
+      saveAll()
+    }
   }
 
   return {
@@ -420,6 +502,7 @@ export function useDataStore() {
     galleryData,
     faqs,
     buildings,
+    rentals,
     getBuildingById,
     getBuildingName,
     getRoomById,
@@ -432,6 +515,12 @@ export function useDataStore() {
     deleteRoom,
     updateCmsSettings,
     bookRoom,
+    addRental,
+    getRentalsByMemberId,
+    getActiveRentalByMemberId,
+    getActiveRentalByRoomId,
+    updateRental,
+    updateRoomType,
     resetDataToJSON
   }
 }

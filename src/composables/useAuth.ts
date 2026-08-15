@@ -12,17 +12,11 @@ export interface User {
   phone?: string
   birthDate?: string
   parentPhone?: string
-  roomId?: string
-  startDate?: string
-  endDate?: string
-  durationMonths?: number
-  status?: 'aktif' | 'hampir-habis' | 'non-aktif'
-  monthlyRent?: number
   password?: string
 }
 
-const STORAGE_USERS_KEY = 'sekar_space_users_v7'
-const STORAGE_CURRENT_USER_KEY = 'sekar_space_current_user_v6'
+const STORAGE_USERS_KEY = 'sekar_space_users_v10'
+const STORAGE_CURRENT_USER_KEY = 'sekar_space_current_user_v9'
 
 // Load users from localStorage or JSON file data
 const loadUsers = (): User[] => {
@@ -106,8 +100,7 @@ export function useAuth() {
     const member: User = {
       ...newMemberData,
       id,
-      role: 'member',
-      status: newMemberData.status || 'aktif'
+      role: 'member'
     }
     users.value.push(member)
     saveUsers()

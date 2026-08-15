@@ -3,46 +3,60 @@ import { ref, computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useAuth } from '../../composables/useAuth'
-import { useDataStore } from '../../composables/useDataStore'
+import { useDataStore, getRoomPriceByDuration } from '../../composables/useDataStore'
 
 const route = useRoute()
-const { getTenantById, updateMember } = useAuth()
-const { rooms, getRoomById, getBuildingName, updateRoom } = useDataStore()
+const { getTenantById } = useAuth()
+const { rooms, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, updateRental, getRentalsByMemberId } = useDataStore()
 
 const tenantId = String(route.params.id)
 
 const tenant = computed(() => {
   return getTenantById(tenantId) || {
     id: tenantId,
-    name: 'Keyla Asyfa Zahra',
-    username: 'keyla01',
-    nik: '3401234567890001',
-    address: 'Sleman, Yogyakarta',
-    phone: '081234567890',
-    birthDate: '2004-05-12',
-    parentPhone: '081298765432',
-    roomId: 'A-13',
-    monthlyRent: 950000,
-    durationMonths: 12,
-    startDate: '2025-09-01',
-    endDate: '2026-09-01',
-    status: 'aktif'
+    name: 'Penyewa',
+    username: 'penyewa',
+    nik: '-',
+    address: '-',
+    phone: '-',
+    birthDate: '',
+    parentPhone: ''
   }
 })
 
-const room = computed(() => {
-  const rId = tenant.value?.roomId || 'A-13'
-  return getRoomById(rId)
+const activeRental = computed(() => {
+  return getActiveRentalByMemberId(tenantId)
 })
 
-const roomNumber = computed(() => room.value ? `Kamar ${room.value.number}` : 'Kamar A13')
-const roomType = computed(() => room.value?.typeName || 'Kamar Mandi Dalam')
-const buildingName = computed(() => room.value ? getBuildingName(room.value.buildingId) : 'Gedung A')
+const memberRentals = computed(() => {
+  return getRentalsByMemberId(tenantId)
+})
+
+const room = computed(() => {
+  const rId = activeRental.value?.roomId
+  return rId ? getRoomById(rId) : undefined
+})
+
+const roomNumber = computed(() => room.value ? `Kamar ${room.value.number}` : 'Belum Ada Kamar')
+const roomType = computed(() => room.value?.typeName || '-')
+const buildingName = computed(() => room.value ? getBuildingName(room.value.buildingId) : '-')
+
+const tenantMonthlyRent = computed(() => {
+  if (!room.value) return 600000
+  return getRoomPriceByDuration(room.value, 1)
+})
+
+const tenantTotalRent = computed(() => {
+  if (activeRental.value?.totalAmount) return activeRental.value.totalAmount
+  if (!room.value) return 600000
+  const d = activeRental.value?.durationMonths || 12
+  return getRoomPriceByDuration(room.value, d)
+})
 
 // Days remaining calculation
 const daysRemaining = computed(() => {
-  if (!tenant.value?.endDate) return 0
-  const end = new Date(tenant.value.endDate).getTime()
+  if (!activeRental.value?.endDate) return 0
+  const end = new Date(activeRental.value.endDate).getTime()
   const now = new Date().getTime()
   const diff = end - now
   return diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) : 0
@@ -102,11 +116,10 @@ const noticeMessage = ref('')
 
 const editForm = ref({
   roomId: 'A-13',
-  monthlyRent: 950000,
   durationMonths: 12,
   startDate: '2025-09-01',
   endDate: '2026-09-01',
-  status: 'aktif' as 'aktif' | 'hampir-habis' | 'non-aktif'
+  status: 'active' as 'active' | 'completed' | 'cancelled'
 })
 
 const onEditFormChange = () => {
@@ -116,17 +129,17 @@ const onEditFormChange = () => {
 }
 
 const openEditModal = () => {
-  const dMonths = tenant.value.durationMonths || 12
-  const sDate = tenant.value.startDate || '2025-09-01'
-  const eDate = tenant.value.endDate || computeEndDate(sDate, dMonths)
+  const r = activeRental.value
+  const dMonths = r?.durationMonths || 12
+  const sDate = r?.startDate || '2025-09-01'
+  const eDate = r?.endDate || computeEndDate(sDate, dMonths)
 
   editForm.value = {
-    roomId: tenant.value.roomId || 'A-13',
-    monthlyRent: tenant.value.monthlyRent || 950000,
+    roomId: r?.roomId || 'A-13',
     durationMonths: dMonths,
     startDate: sDate,
     endDate: eDate,
-    status: (tenant.value.status || 'aktif') as 'aktif' | 'hampir-habis' | 'non-aktif'
+    status: r?.status || 'active'
   }
   isEditModalOpen.value = true
 }
@@ -136,7 +149,7 @@ const closeEditModal = () => {
 }
 
 const handleSaveTenantRoom = () => {
-  const oldRoomId = tenant.value.roomId
+  const oldRoomId = activeRental.value?.roomId
   const newRoomId = editForm.value.roomId
 
   if (oldRoomId && oldRoomId !== newRoomId) {
@@ -144,14 +157,21 @@ const handleSaveTenantRoom = () => {
     updateRoom(newRoomId, { status: 'occupied' })
   }
 
-  updateMember(tenant.value.id, {
-    roomId: editForm.value.roomId,
-    monthlyRent: Number(editForm.value.monthlyRent),
-    durationMonths: Number(editForm.value.durationMonths),
-    startDate: editForm.value.startDate,
-    endDate: editForm.value.endDate,
-    status: editForm.value.status
-  })
+  if (activeRental.value) {
+    const selectedRoom = getRoomById(editForm.value.roomId)
+    const basePrice = selectedRoom ? getRoomPriceByDuration(selectedRoom, editForm.value.durationMonths) : 0
+    const addonPrice = activeRental.value.addonPrice || 0
+
+    updateRental(activeRental.value.id, {
+      roomId: editForm.value.roomId,
+      durationMonths: Number(editForm.value.durationMonths),
+      startDate: editForm.value.startDate,
+      endDate: editForm.value.endDate,
+      basePrice: basePrice,
+      totalAmount: basePrice + addonPrice,
+      status: editForm.value.status
+    })
+  }
 
   noticeMessage.value = 'Data kamar & sewa penyewa berhasil diperbarui!'
   closeEditModal()
@@ -175,14 +195,15 @@ const formatWaPhone = (phone?: string) => {
 // Generate WhatsApp Bill Link
 const waBillUrl = computed(() => {
   const phone = formatWaPhone(tenant.value.phone)
-  const formattedRent = formatRupiah(tenant.value.monthlyRent || 950000)
+  const formattedRent = formatRupiah(tenantMonthlyRent.value)
+  const endDateStr = activeRental.value ? formatDateIndo(activeRental.value.endDate) : '-'
   
   const text = `Halo Kak ${tenant.value.name}, 👋
 
 Berikut adalah rincian informasi sewa Kost Sekar Space Anda:
 📌 Kamar: ${roomNumber.value} (${buildingName.value})
 📌 Nominal Sewa: ${formattedRent} / bulan
-📌 Periode Jatuh Tempo: s.d. ${formatDateIndo(tenant.value.endDate)}
+📌 Periode Jatuh Tempo: s.d. ${endDateStr}
 
 Mohon lakukan pembayaran melalui rekening resmi Sekar Space:
 • BCA: 1234 5678 90 (a.n. Sekar Space Kost)
@@ -229,8 +250,8 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
             <div class="user-titles">
               <div class="user-tag-row">
                 <span class="username-tag">@{{ tenant.username }}</span>
-                <span class="status-pill" :class="tenant.status === 'aktif' ? 'pill-active' : 'pill-warning'">
-                  <i class='bx bx-check-circle'></i> Status: {{ tenant.status === 'aktif' ? 'Aktif Terisi' : 'Hampir Habis' }}
+                <span class="status-pill" :class="activeRental?.status === 'active' ? 'pill-active' : 'pill-warning'">
+                  <i class='bx bx-check-circle'></i> Status: {{ activeRental?.status === 'active' ? 'Aktif Terisi' : 'Selesai / Non-aktif' }}
                 </span>
               </div>
               <h2>{{ tenant.name }}</h2>
@@ -253,7 +274,7 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
               <i class='bx bx-calendar-check metric-icon'></i>
               <div>
                 <span class="metric-label">Durasi Kontrak</span>
-                <strong>{{ tenant.durationMonths || 12 }} Bulan</strong>
+                <strong>{{ activeRental?.durationMonths || 12 }} Bulan</strong>
                 <span class="metric-sub">{{ daysRemaining }} Hari Tersisa</span>
               </div>
             </div>
@@ -262,7 +283,7 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
               <i class='bx bx-wallet metric-icon'></i>
               <div>
                 <span class="metric-label">Harga Sewa Bulanan</span>
-                <strong>{{ formatRupiah(tenant.monthlyRent || 950000) }}</strong>
+                <strong>{{ formatRupiah(tenantMonthlyRent) }}</strong>
                 <span class="metric-sub">Lunas di Awal</span>
               </div>
             </div>
@@ -339,12 +360,12 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
 
               <div class="info-cell">
                 <span class="cell-label"><i class='bx bx-calendar-event'></i> Tanggal Mulai Sewa</span>
-                <span class="cell-value">{{ formatDateIndo(tenant.startDate) }}</span>
+                <span class="cell-value">{{ formatDateIndo(activeRental?.startDate) }}</span>
               </div>
 
               <div class="info-cell">
                 <span class="cell-label"><i class='bx bx-calendar-check'></i> Tanggal Selesai Sewa</span>
-                <span class="cell-value text-accent">{{ formatDateIndo(tenant.endDate) }}</span>
+                <span class="cell-value text-accent">{{ formatDateIndo(activeRental?.endDate) }}</span>
               </div>
 
               <div class="info-cell cell-full">
@@ -368,8 +389,8 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
                 </div>
               </div>
               <div class="pay-summary-right">
-                <span class="pay-box-amount">{{ formatRupiah((tenant.monthlyRent || 0) * (tenant.durationMonths || 12)) }}</span>
-                <span class="pay-box-sub">Total {{ tenant.durationMonths || 12 }} Bulan Kontrak</span>
+                <span class="pay-box-amount">{{ formatRupiah(tenantTotalRent) }}</span>
+                <span class="pay-box-sub">Total {{ activeRental?.durationMonths || 12 }} Bulan Kontrak</span>
               </div>
             </div>
 
@@ -400,7 +421,7 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
                 <label>Pilih Kamar Terbuka</label>
                 <select v-model="editForm.roomId" class="form-control" required>
                   <option v-for="r in rooms" :key="r.id" :value="r.id">
-                    Kamar {{ r.number }} ({{ getBuildingName(r.buildingId) }} - {{ r.typeName }}) {{ r.status === 'occupied' && r.id !== tenant.roomId ? '· Terisi' : '· Tersedia' }}
+                    Kamar {{ r.number }} ({{ getBuildingName(r.buildingId) }} - {{ r.typeName }}) {{ r.status === 'occupied' && r.id !== activeRental?.roomId ? '· Terisi' : '· Tersedia' }}
                   </option>
                 </select>
               </div>
@@ -432,17 +453,17 @@ Setelah transfer, mohon kirimkan konfirmasi atau upload bukti pembayaran di Port
                   <input type="date" v-model="editForm.endDate" class="form-control" required />
                 </div>
                 <div class="form-group">
-                  <label>Harga Sewa Bulanan (Rp)</label>
-                  <input type="number" v-model="editForm.monthlyRent" class="form-control" required />
+                  <label>Harga Paket Kamar</label>
+                  <input type="text" :value="formatRupiah(tenantTotalRent)" readonly class="form-control" />
                 </div>
               </div>
 
               <div class="form-group">
                 <label>Status Masa Sewa</label>
                 <select v-model="editForm.status" class="form-control">
-                  <option value="aktif">Aktif</option>
-                  <option value="hampir-habis">Hampir Habis (H-30 Hari)</option>
-                  <option value="non-aktif">Non-Aktif / Selesai</option>
+                  <option value="active">Aktif</option>
+                  <option value="completed">Selesai</option>
+                  <option value="cancelled">Dibatalkan</option>
                 </select>
               </div>
             </div>

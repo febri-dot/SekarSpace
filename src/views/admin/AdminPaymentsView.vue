@@ -4,7 +4,7 @@ import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useDataStore, getRoomPriceByDuration, calculateRoomPrice, type PaymentData } from '../../composables/useDataStore'
 import { useAuth, type User } from '../../composables/useAuth'
 
-const { payments, addPayment, updatePaymentStatus, rooms, getRoomById, getBuildingName, updateRoom } = useDataStore()
+const { payments, addPayment, updatePaymentStatus, rooms, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, updateRental } = useDataStore()
 const { tenants, getTenantById, updateMember } = useAuth()
 
 const getTenantName = (memberId: string) => {
@@ -44,30 +44,51 @@ const formatDateIndo = (dateStr?: string) => {
 const activeTab = ref<'all' | 'pending' | 'paid' | 'rejected' | 'expiring'>('all')
 const searchQuery = ref('')
 const isInvoiceModalOpen = ref(false)
+const isProofModalOpen = ref(false)
+const selectedPaymentProof = ref<PaymentData | null>(null)
 const noticeMessage = ref('')
+
+const openProofModal = (pay: PaymentData) => {
+  selectedPaymentProof.value = pay
+  isProofModalOpen.value = true
+}
+
+const closeProofModal = () => {
+  isProofModalOpen.value = false
+  selectedPaymentProof.value = null
+}
+
+const getPaymentTenantRoom = (memberId: string) => {
+  const rent = getActiveRentalByMemberId(memberId)
+  const rm = rent ? getRoomById(rent.roomId) : null
+  if (!rm) return 'Kamar Kost'
+  return `Kamar ${rm.number} (${getBuildingName(rm.buildingId)})`
+}
 
 // Computed list of expiring tenants (H-30 days or less)
 const expiringTenants = computed(() => {
   const now = new Date()
   return tenants.value.map(t => {
+    const rent = getActiveRentalByMemberId(t.id)
     let daysLeft = 30
-    if (t.endDate) {
-      const end = new Date(t.endDate)
+    if (rent && rent.endDate) {
+      const end = new Date(rent.endDate)
       if (!isNaN(end.getTime())) {
         const diffTime = end.getTime() - now.getTime()
         daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
       }
     }
-    const rm = t.roomId ? getRoomById(t.roomId) : null
+    const rm = rent?.roomId ? getRoomById(rent.roomId) : null
     return {
       ...t,
+      endDate: rent?.endDate || '',
       daysLeft,
       room: rm,
       roomNum: rm ? `Kamar ${rm.number}` : 'Kamar A13',
       bldName: rm ? getBuildingName(rm.buildingId) : 'Gedung A',
       typeId: rm?.typeId || 'km-luar'
     }
-  }).filter(t => t.status === 'hampir-habis' || t.daysLeft <= 30)
+  }).filter(t => t.daysLeft <= 30)
 })
 
 // Form Kirim Tagihan Baru
@@ -83,8 +104,8 @@ const formInvoice = ref({
 
 // Auto calculate price based on selected tenant room custom duration prices
 const updateInvoiceAmount = () => {
-  const t = getTenantById(formInvoice.value.memberId)
-  const rm = t?.roomId ? getRoomById(t.roomId) : null
+  const rent = getActiveRentalByMemberId(formInvoice.value.memberId)
+  const rm = rent?.roomId ? getRoomById(rent.roomId) : null
   const duration = Number(formInvoice.value.durationMonths) || 1
   
   formInvoice.value.amount = getRoomPriceByDuration(rm, duration)
@@ -200,25 +221,22 @@ const handleConfirmPayment = (pay: PaymentData) => {
 
   const tenant = getTenantById(pay.memberId)
   if (tenant) {
-    // Determine extension duration (from pay.durationMonths or inferred)
     const duration = pay.durationMonths || 1
-    
-    // Calculate new end date by adding duration months
-    let currentEnd = tenant.endDate ? new Date(tenant.endDate) : new Date()
-    if (isNaN(currentEnd.getTime())) currentEnd = new Date()
-    
+    const rent = getActiveRentalByMemberId(tenant.id)
+    const currentEnd = rent?.endDate ? new Date(rent.endDate) : new Date()
     currentEnd.setMonth(currentEnd.getMonth() + duration)
     const newEndDate = currentEnd.toISOString().substring(0, 10)
 
-    // Automatically update tenant record
-    updateMember(tenant.id, {
-      endDate: newEndDate,
-      status: 'aktif'
-    })
-
-    // Ensure room is occupied
-    if (tenant.roomId) {
-      updateRoom(tenant.roomId, { status: 'occupied' })
+    // Automatically update rental record
+    if (rent) {
+      updateRental(rent.id, {
+        endDate: newEndDate,
+        durationMonths: (rent.durationMonths || 1) + duration,
+        status: 'active'
+      })
+      if (rent.roomId) {
+        updateRoom(rent.roomId, { status: 'occupied' })
+      }
     }
 
     noticeMessage.value = `Pembayaran LUNAS! Data sewa ${tenant.name} otomatis diperpanjang +${duration} bulan hingga ${newEndDate}.`
@@ -426,8 +444,12 @@ const formatRupiah = (val: number) => {
                 </td>
                 <td>
                   <div class="action-buttons">
+                    <!-- Tombol Lihat Bukti Transfer -->
+                    <button class="btn-action btn-proof-view" @click="openProofModal(pay)" title="Lihat Bukti Transfer Pembayaran">
+                      <i class='bx bx-receipt'></i> Bukti
+                    </button>
                     <a :href="getWaBillLink(pay)" target="_blank" rel="noopener" class="btn-action btn-wa-send" title="Kirim Pesan Tagihan via WA">
-                      <i class='bx bxl-whatsapp'></i> Kirim WA
+                      <i class='bx bxl-whatsapp'></i> WA
                     </a>
                     <template v-if="pay.status === 'pending'">
                       <button class="btn-action btn-confirm" @click="handleConfirmPayment(pay)" title="Konfirmasi Pembayaran Lunas">
@@ -506,11 +528,100 @@ const formatRupiah = (val: number) => {
 
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" @click="closeInvoiceModal">Batal</button>
-            <button type="submit" class="btn btn-whatsapp-submit">
-              <i class='bx bxl-whatsapp'></i> Kirim Tagihan via WhatsApp
+            <button type="submit" class="btn btn-primary">
+              <i class='bx bx-paper-plane'></i> Terbitkan & Kirim WA
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- MODAL LIHAT BUKTI PEMBAYARAN -->
+    <div v-if="isProofModalOpen && selectedPaymentProof" class="modal-backdrop" @click.self="closeProofModal">
+      <div class="modal-box proof-modal-box">
+        <button class="modal-close" @click="closeProofModal"><i class='bx bx-x'></i></button>
+
+        <div class="modal-header">
+          <h2><i class='bx bx-receipt'></i> Bukti Transfer Pembayaran</h2>
+          <p>Verifikasi rincian dan bukti transfer yang diunggah oleh penyewa</p>
+        </div>
+
+        <div class="proof-modal-body">
+          <div class="proof-info-summary">
+            <div class="proof-info-row">
+              <span>Penyewa:</span>
+              <strong>{{ getTenantName(selectedPaymentProof.memberId) }} ({{ getPaymentTenantRoom(selectedPaymentProof.memberId) }})</strong>
+            </div>
+            <div class="proof-info-row">
+              <span>Rincian Tagihan:</span>
+              <strong>{{ selectedPaymentProof.period }}</strong>
+            </div>
+            <div class="proof-info-row">
+              <span>Metode & Tanggal:</span>
+              <strong>{{ selectedPaymentProof.method || 'Transfer Bank' }} · {{ formatDateIndo(selectedPaymentProof.date) }}</strong>
+            </div>
+            <div class="proof-info-row">
+              <span>Nominal Transfer:</span>
+              <strong class="proof-price-highlight">{{ formatRupiah(selectedPaymentProof.amount) }}</strong>
+            </div>
+            <div class="proof-info-row">
+              <span>Status Pembayaran:</span>
+              <span class="status-pill" :class="selectedPaymentProof.status">
+                {{ selectedPaymentProof.status === 'paid' ? 'Lunas' : selectedPaymentProof.status === 'pending' ? 'Perlu Konfirmasi' : 'Ditolak' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- TAMPILAN GAMBAR BUKTI ATAU STRUK DIGITAL -->
+          <div class="proof-display-card">
+            <div class="proof-card-label">
+              <i class='bx bx-image'></i> Dokumen / Bukti Transfer:
+            </div>
+            
+            <div v-if="selectedPaymentProof.proofImage" class="proof-image-wrapper">
+              <img :src="selectedPaymentProof.proofImage" alt="Bukti Transfer" class="proof-img-preview" />
+              <a :href="selectedPaymentProof.proofImage" target="_blank" rel="noopener" class="btn-open-image">
+                <i class='bx bx-fullscreen'></i> Buka Gambar Ukuran Penuh
+              </a>
+            </div>
+
+            <div v-else class="proof-mock-receipt">
+              <div class="receipt-inner">
+                <div class="receipt-header">
+                  <i class='bx bxs-check-shield receipt-icon'></i>
+                  <h4>Bukti Transfer Bank Terverifikasi</h4>
+                  <span>Kost Muslimah Sekar Space</span>
+                </div>
+                <div class="receipt-divider"></div>
+                <div class="receipt-rows">
+                  <div><span>No. Referensi:</span> <code>{{ selectedPaymentProof.id }}</code></div>
+                  <div><span>Metode:</span> <strong>{{ selectedPaymentProof.method || 'Bank BCA / Mandiri' }}</strong></div>
+                  <div><span>Nominal:</span> <strong class="receipt-amt">{{ formatRupiah(selectedPaymentProof.amount) }}</strong></div>
+                  <div><span>Tanggal:</span> <span>{{ formatDateIndo(selectedPaymentProof.date) }}</span></div>
+                  <div v-if="selectedPaymentProof.notes"><span>Catatan:</span> <em>"{{ selectedPaymentProof.notes }}"</em></div>
+                </div>
+                <div class="receipt-footer">
+                  <small><i class='bx bx-lock-alt'></i> Transaksi tercatat aman di sistem database Sekar Space</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer proof-modal-footer">
+          <template v-if="selectedPaymentProof.status === 'pending'">
+            <button type="button" class="btn btn-danger-action" @click="() => { const p = selectedPaymentProof; closeProofModal(); if(p) handleRejectPayment(p); }">
+              <i class='bx bx-x-circle'></i> Tolak Pembayaran
+            </button>
+            <button type="button" class="btn btn-primary" @click="() => { const p = selectedPaymentProof; closeProofModal(); if(p) handleConfirmPayment(p); }">
+              <i class='bx bx-check-circle'></i> Setujui & Nyatakan LUNAS
+            </button>
+          </template>
+          <a :href="getWaBillLink(selectedPaymentProof)" target="_blank" rel="noopener" class="btn btn-wa-modal">
+            <i class='bx bxl-whatsapp'></i> Chat WA Penyewa
+          </a>
+          <button type="button" class="btn btn-ghost" @click="closeProofModal">Tutup</button>
+        </div>
       </div>
     </div>
   </div>
@@ -967,8 +1078,215 @@ const formatRupiah = (val: number) => {
   width: 100%;
 }
 
-.flex-1 {
-  flex: 1;
+.btn-proof-view {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.btn-proof-view:hover {
+  background: #1D4ED8;
+  color: #FFFFFF;
+  border-color: #1D4ED8;
+}
+
+/* PROOF MODAL STYLES */
+.proof-modal-box {
+  max-width: 600px;
+}
+
+.proof-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.proof-info-summary {
+  background: #FAFAFA;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.86rem;
+}
+
+.proof-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.proof-info-row span {
+  color: var(--text-muted);
+}
+
+.proof-price-highlight {
+  font-size: 1.15rem;
+  color: #541A1A;
+  font-weight: 700;
+}
+
+.proof-display-card {
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: #FFFDF9;
+}
+
+.proof-card-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #541A1A;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.proof-image-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.proof-img-preview {
+  max-width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-open-image {
+  font-size: 0.78rem;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--tertiary-light);
+}
+
+.btn-open-image:hover {
+  text-decoration: underline;
+}
+
+.proof-mock-receipt {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+.receipt-header {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.receipt-icon {
+  font-size: 2rem;
+  color: #16A34A;
+  margin-bottom: 4px;
+}
+
+.receipt-header h4 {
+  font-size: 1rem;
+  color: var(--dark);
+  margin-bottom: 2px;
+}
+
+.receipt-header span {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+.receipt-divider {
+  border-top: 1px dashed var(--border);
+  margin: 10px 0;
+}
+
+.receipt-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.receipt-rows div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.receipt-rows span {
+  color: var(--text-muted);
+}
+
+.receipt-amt {
+  color: #16A34A;
+  font-size: 1rem;
+}
+
+.receipt-footer {
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  color: var(--text-muted);
+}
+
+.proof-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.btn-danger-action {
+  background: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-danger-action:hover {
+  background: #DC2626;
+  color: #FFFFFF;
+}
+
+.btn-wa-modal {
+  background: #25D366;
+  color: #FFFFFF !important;
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-wa-modal:hover {
+  background: #1EBE5D;
 }
 
 @media (max-width: 992px) {

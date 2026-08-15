@@ -4,13 +4,14 @@ import UserSidebar from '../../components/layout/UserSidebar.vue'
 import { useDataStore, getRoomPriceByDuration, type PaymentData } from '../../composables/useDataStore'
 import { useAuth } from '../../composables/useAuth'
 
-const { payments, addPayment, cmsSettings, getRoomById } = useDataStore()
+const { payments, addPayment, cmsSettings, getRoomById, getActiveRentalByMemberId } = useDataStore()
 const { currentUser } = useAuth()
 
 const copySuccessMsg = ref('')
 
 const currentRoom = computed(() => {
-  const rId = currentUser.value?.roomId || 'A-13'
+  const rent = currentUser.value?.id ? getActiveRentalByMemberId(currentUser.value.id) : null
+  const rId = rent?.roomId || 'A-13'
   return getRoomById(rId)
 })
 
@@ -42,6 +43,18 @@ const calculatedAmount = computed(() => {
 // Modal Invoice State
 const selectedInvoice = ref<PaymentData | null>(null)
 const isInvoiceModalOpen = ref(false)
+const proofImageBase64 = ref('')
+
+const handleFileUpload = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = () => {
+      proofImageBase64.value = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
 
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text.replace(/\s/g, ''))
@@ -63,7 +76,8 @@ const submitPayment = () => {
     method: `Transfer ${formBank.value}`,
     date: formDate.value,
     status: 'pending',
-    notes: formNotes.value
+    notes: formNotes.value,
+    proofImage: proofImageBase64.value || ''
   })
   isSubmitted.value = true
 }
@@ -159,7 +173,7 @@ const printReceipt = () => {
                   </div>
                   <div class="form-group">
                     <label>Unggah Bukti Transfer (Gambar / PDF)</label>
-                    <input type="file" accept="image/*,.pdf" />
+                    <input type="file" accept="image/*" @change="handleFileUpload" />
                   </div>
                 </div>
 

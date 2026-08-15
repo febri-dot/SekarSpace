@@ -5,7 +5,7 @@ import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useDataStore, type RoomData, type ComplaintData } from '../../composables/useDataStore'
 import { useAuth } from '../../composables/useAuth'
 
-const { rooms, complaints, payments, updateComplaintResponse, getBuildingName, getRoomById } = useDataStore()
+const { rooms, complaints, payments, updateComplaintResponse, getBuildingName, getRoomById, getActiveRentalByMemberId } = useDataStore()
 const { tenants: memberTenants, getTenantById } = useAuth()
 
 const getTenantName = (memberId: string) => {
@@ -14,22 +14,21 @@ const getTenantName = (memberId: string) => {
 }
 
 const getTenantRoomNumber = (tenant: any) => {
-  const rm = getRoomById(tenant.roomId || '')
+  const rent = getActiveRentalByMemberId(tenant.id)
+  const rm = rent ? getRoomById(rent.roomId) : null
   return rm ? `Kamar ${rm.number}` : 'Kamar A13'
 }
 
 const getTenantBuildingName = (tenant: any) => {
-  const rm = getRoomById(tenant.roomId || '')
+  const rent = getActiveRentalByMemberId(tenant.id)
+  const rm = rent ? getRoomById(rent.roomId) : null
   return rm ? getBuildingName(rm.buildingId) : 'Gedung A'
 }
 
 const getComplaintRoomNumber = (c: ComplaintData) => {
-  const t = getTenantById(c.memberId)
-  if (t && t.roomId) {
-    const rm = getRoomById(t.roomId)
-    if (rm) return `Kamar ${rm.number}`
-  }
-  return 'Kamar A13'
+  const rent = getActiveRentalByMemberId(c.memberId)
+  const rm = rent ? getRoomById(rent.roomId) : null
+  return rm ? `Kamar ${rm.number}` : 'Kamar A13'
 }
 
 // KPI Calculations
@@ -40,7 +39,12 @@ const availableRoomsCount = computed(() => rooms.value.filter(r => r.status === 
 const occupancyRate = computed(() => totalRoomsCount.value > 0 ? Math.round((occupiedRoomsCount.value / totalRoomsCount.value) * 100) : 0)
 
 const totalMonthlyRevenue = computed(() => {
-  return memberTenants.value.reduce((acc, tenant) => acc + (tenant.monthlyRent || 700000), 0)
+  return memberTenants.value.reduce((acc, tenant) => {
+    const rent = getActiveRentalByMemberId(tenant.id)
+    const rm = rent ? getRoomById(rent.roomId) : null
+    const price = rm ? (rm.price1Month || rm.price || 600000) : 600000
+    return acc + price
+  }, 0)
 })
 
 const pendingComplaintsCount = computed(() => {
@@ -102,26 +106,26 @@ const urgentNotifications = computed(() => {
     targetLink: string
   }>()
 
-  // 1. Check Lease Endings / Reminders
+  // 1. Check Tenants Near Expiration (H-30)
   memberTenants.value.forEach(t => {
-    const isHampirHabis = t.status === 'hampir-habis'
+    const rent = getActiveRentalByMemberId(t.id)
     let isEndingSoon = false
-    if (t.endDate) {
-      const endDateVal = new Date(t.endDate).getTime()
+    if (rent && rent.endDate) {
+      const endDateVal = new Date(rent.endDate).getTime()
       const nowVal = new Date('2026-08-14').getTime()
       const daysLeft = Math.ceil((endDateVal - nowVal) / (1000 * 3600 * 24))
       if (daysLeft <= 30) isEndingSoon = true
     }
 
-    if (isHampirHabis || isEndingSoon) {
-      const rm = getRoomById(t.roomId || '')
-      const roomNum = rm ? rm.number : (t.roomId || 'A14')
+    if (isEndingSoon && rent) {
+      const rm = getRoomById(rent.roomId)
+      const roomNum = rm ? rm.number : 'A14'
       map.set(`room-${roomNum}`, {
         id: `rem-${t.id}`,
         roomNumber: roomNum,
         buildingName: rm ? getBuildingName(rm.buildingId) : 'Gedung A',
         tenantName: t.name,
-        dueDate: t.endDate || '01 Agustus 2026',
+        dueDate: rent.endDate || '01 Agustus 2026',
         type: 'reminder',
         typeLabel: 'Jatuh Tempo Sewa',
         targetLink: '/admin/tenants'
@@ -131,7 +135,8 @@ const urgentNotifications = computed(() => {
 
   // 2. Check Unpaid Billings
   memberTenants.value.forEach(t => {
-    const rm = getRoomById(t.roomId || '')
+    const rent = getActiveRentalByMemberId(t.id)
+    const rm = rent ? getRoomById(rent.roomId) : null
     const roomNum = rm ? rm.number : 'A11'
     if (!map.has(`room-${roomNum}`)) {
       const hasPaidCurrentMonth = payments.value.some(p => p.memberId === t.id && p.period === 'Agustus 2026' && p.status === 'paid')
@@ -404,8 +409,8 @@ const formatRupiah = (val: number) => {
                 <p>{{ getTenantRoomNumber(tenant) }} · {{ getTenantBuildingName(tenant) }}</p>
                 <small class="tenant-phone"><i class='bx bxl-whatsapp'></i> {{ tenant.phone }}</small>
               </div>
-              <span class="tenant-status-pill" :class="tenant.status">
-                {{ tenant.status === 'aktif' ? 'Aktif' : 'Hampir Habis' }}
+              <span class="tenant-status-pill" :class="getActiveRentalByMemberId(tenant.id)?.status === 'active' ? 'aktif' : 'selesai'">
+                {{ getActiveRentalByMemberId(tenant.id)?.status === 'active' ? 'Aktif' : 'Selesai' }}
               </span>
             </div>
           </div>

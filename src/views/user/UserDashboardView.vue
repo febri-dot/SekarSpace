@@ -6,10 +6,15 @@ import { useAuth } from '../../composables/useAuth'
 import { useDataStore } from '../../composables/useDataStore'
 
 const { currentUser } = useAuth()
-const { cmsSettings, complaints, payments, getRoomById, getBuildingName } = useDataStore()
+const { cmsSettings, complaints, payments, getRoomById, getBuildingName, getActiveRentalByMemberId } = useDataStore()
+
+const currentRental = computed(() => {
+  if (!currentUser.value?.id) return undefined
+  return getActiveRentalByMemberId(currentUser.value.id)
+})
 
 const currentRoom = computed(() => {
-  const roomId = currentUser.value?.roomId || 'A-13'
+  const roomId = currentRental.value?.roomId || 'A-13'
   return getRoomById(roomId)
 })
 
@@ -17,10 +22,10 @@ const userName = computed(() => currentUser.value?.name || 'Keyla Asyfa Zahra')
 const roomNumber = computed(() => currentRoom.value ? `Kamar ${currentRoom.value.number}` : 'Kamar A13')
 const roomType = computed(() => currentRoom.value?.typeName || 'Kamar Mandi Dalam')
 const building = computed(() => currentRoom.value ? getBuildingName(currentRoom.value.buildingId) : 'Gedung A')
-const monthlyRent = computed(() => currentUser.value?.monthlyRent || currentRoom.value?.price || 950000)
+const monthlyRent = computed(() => currentRoom.value?.price1Month || currentRoom.value?.price || (currentRoom.value?.typeId === 'km-dalam' ? 850000 : 600000))
 
 // Countdown Timer Logic
-const targetDateStr = computed(() => currentUser.value?.endDate || '2027-08-31')
+const targetDateStr = computed(() => currentRental.value?.endDate || '2027-08-31')
 const daysLeft = ref(0)
 const hoursLeft = ref(0)
 const minutesLeft = ref(0)
@@ -67,7 +72,7 @@ const myPayments = computed(() => {
 })
 
 const isHMinus1Month = computed(() => {
-  return daysLeft.value <= 30 || currentUser.value?.status === 'hampir-habis'
+  return daysLeft.value <= 30
 })
 
 const formatRupiah = (val: number) => {

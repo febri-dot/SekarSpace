@@ -7,7 +7,7 @@ import { useDataStore } from '../../composables/useDataStore'
 const route = useRoute()
 const router = useRouter()
 const { currentUser, logout } = useAuth()
-const { getRoomById } = useDataStore()
+const { getRoomById, getActiveRentalByMemberId } = useDataStore()
 const isMobileSidebarOpen = ref(false)
 
 const toggleSidebar = () => {
@@ -31,7 +31,8 @@ const userInitials = computed(() => {
 })
 
 const userRoomText = computed(() => {
-  const rId = currentUser.value?.roomId || 'A-13'
+  const rent = currentUser.value?.id ? getActiveRentalByMemberId(currentUser.value.id) : null
+  const rId = rent?.roomId || 'A-13'
   const rm = getRoomById(rId)
   return rm ? `Kamar ${rm.number} · ${rm.typeName}` : 'Kamar A13'
 })
