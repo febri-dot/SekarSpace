@@ -1,51 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="logoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="badgeBg" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#541A1A" />
       <stop offset="100%" stop-color="#7A2626" />
     </linearGradient>
-    <linearGradient id="logoHeart" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="goldHeart" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" />
       <stop offset="100%" stop-color="#DCC3AA" />
     </linearGradient>
-    <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#DCC3AA" />
-      <stop offset="100%" stop-color="#B89778" />
-    </linearGradient>
   </defs>
 
-  <!-- Clean Background -->
-  <rect width="800" height="800" fill="#FFFFFF" rx="40"/>
+  <!-- Rounded Maroon Badge -->
+  <rect width="512" height="512" rx="120" fill="url(#badgeBg)" />
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="none" stroke="#DCC3AA" stroke-width="6" opacity="0.3" />
 
-  <!-- Logo Mark Container (Rounded Badge) -->
-  <g transform="translate(260, 130)">
-    <rect width="280" height="280" rx="64" fill="url(#logoBg)" filter="drop-shadow(0 16px 36px rgba(84, 26, 26, 0.28))"/>
-    <rect x="8" y="8" width="264" height="264" rx="56" fill="none" stroke="#DCC3AA" stroke-width="4" opacity="0.3"/>
+  <!-- Chimney -->
+  <path d="M 348 184 L 348 118 C 348 112 352.5 108 358.5 108 L 389.5 108 C 395.5 108 400 112 400 118 L 400 225" fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
 
-    <!-- Chimney -->
-    <path d="M 190 100 L 190 64 C 190 61 192.5 58 195.5 58 L 212.5 58 C 215.5 58 218 61 218 64 L 218 123" fill="none" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- House Silhouette Outline -->
+  <path d="M 256 82 L 424 220 C 431 226 435 235 435 245 L 435 388 C 435 410 417 428 395 428 L 117 428 C 95 428 77 410 77 388 L 77 245 C 77 235 81 226 88 220 Z" fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linejoin="round" stroke-linecap="round"/>
 
-    <!-- Home Base Silhouette -->
-    <path d="M 140 45 L 232 120 C 236 123 238 128 238 134 L 238 212 C 238 224 228 234 216 234 L 64 234 C 52 234 42 224 42 212 L 42 134 C 42 128 44 123 48 120 Z" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linejoin="round" stroke-linecap="round"/>
-
-    <!-- Heart Symbol in Center -->
-    <path d="M 140 202 C 140 202 87 165 87 126 C 87 108 101 95 119 95 C 130 95 137 101 140 106 C 143 101 150 95 161 95 C 179 95 193 108 193 126 C 193 165 140 202 140 202 Z" fill="url(#logoHeart)" />
-  </g>
-
-  <!-- Brand Typography -->
-  <text x="400" y="520" font-family="'Outfit', 'Inter', system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" text-anchor="middle" fill="#541A1A" letter-spacing="-1">
-    Sekar<tspan font-weight="800" fill="#2C1810">Space</tspan>
-  </text>
-
-  <!-- Tagline / Subtitle -->
-  <text x="400" y="580" font-family="'Outfit', 'Inter', system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" text-anchor="middle" fill="#8C7462" letter-spacing="4">
-    KOST MUSLIMAH SEKAR WANGI
-  </text>
-
-  <!-- Decorative Separator Line -->
-  <line x1="280" y1="620" x2="520" y2="620" stroke="#DCC3AA" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
-  
-  <text x="400" y="660" font-family="'Inter', system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" text-anchor="middle" fill="#A89080" letter-spacing="2">
-    YOGYAKARTA
-  </text>
+  <!-- Heart Symbol in Center -->
+  <path d="M 256 368 C 256 368 159 301 159 230 C 159 197 185 174 218 174 C 238 174 250 184 256 194 C 262 184 274 174 294 174 C 327 174 353 197 353 230 C 353 301 256 368 256 368 Z" fill="url(#goldHeart)" />
 </svg>
