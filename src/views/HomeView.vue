@@ -1264,14 +1264,57 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 18px;
   flex-wrap: wrap;
   margin-bottom: 36px;
 }
 
-.hero-actions .btn {
-  padding: 14px 28px;
-  font-size: 0.95rem;
+#btnExploreRooms {
+  background: linear-gradient(135deg, #541A1A 0%, #8C2A2A 100%);
+  color: #ffffff !important;
+  font-weight: 800;
+  font-size: 1.05rem;
+  padding: 16px 36px;
+  border-radius: var(--radius-full);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(84, 26, 26, 0.5);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+#btnExploreRooms:hover {
+  background: linear-gradient(135deg, #7A2626 0%, #A83232 100%);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 32px rgba(84, 26, 26, 0.65);
+  border-color: #ffffff;
+  color: #ffffff !important;
+}
+
+#btnWhatsapp {
+  background: linear-gradient(135deg, #25D366 0%, #10B981 100%);
+  color: #ffffff !important;
+  font-weight: 800;
+  font-size: 1.05rem;
+  padding: 16px 36px;
+  border-radius: var(--radius-full);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(37, 211, 102, 0.45);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+}
+
+#btnWhatsapp:hover {
+  background: linear-gradient(135deg, #1EBE5D 0%, #059669 100%);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 32px rgba(37, 211, 102, 0.65);
+  border-color: #ffffff;
+  color: #ffffff !important;
 }
 
 .hero-stats {
@@ -2863,48 +2906,53 @@ onUnmounted(() => {
 
 .contact-cta-group {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  margin-top: 24px;
 }
 
 .contact-cta-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: 14px 24px;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
-  font-size: 0.95rem;
-  transition: all var(--transition-smooth);
+  padding: 16px 28px;
+  border-radius: var(--radius-full);
+  font-weight: 800;
+  font-size: 1rem;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-decoration: none;
+  border: none;
+  flex: 1;
 }
 
 .contact-cta-btn i {
-  font-size: 1.35rem;
+  font-size: 1.4rem;
 }
 
 .cta-wa {
-  background: #25D366;
-  color: white;
-  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.25);
+  background: linear-gradient(135deg, #25D366 0%, #10B981 100%);
+  color: white !important;
+  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.35);
 }
 
 .cta-wa:hover {
-  background: #20b858;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(37, 211, 102, 0.35);
-  color: white;
+  background: linear-gradient(135deg, #1EBE5D 0%, #059669 100%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(37, 211, 102, 0.5);
+  color: white !important;
 }
 
 .cta-maps {
-  background: var(--tertiary);
-  color: var(--primary);
+  background: linear-gradient(135deg, #541A1A 0%, #7A2626 100%);
+  color: white !important;
+  box-shadow: 0 6px 20px rgba(84, 26, 26, 0.35);
 }
 
 .cta-maps:hover {
-  background: var(--secondary);
-  transform: translateY(-2px);
-  color: var(--primary);
+  background: linear-gradient(135deg, #7A2626 0%, #9E3030 100%);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(84, 26, 26, 0.5);
+  color: white !important;
 }
 
 .contact-map {

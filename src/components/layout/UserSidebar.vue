@@ -94,14 +94,10 @@ const userRoomText = computed(() => {
           <span>Tagihan & Bayar</span>
         </RouterLink>
 
-        <span class="nav-section-title">Portal Lain</span>
+        <span class="nav-section-title">Navigasi Utama</span>
         <RouterLink to="/" class="sidebar-link" @click="closeSidebar">
           <i class='bx bx-globe'></i>
           <span>Website Utama</span>
-        </RouterLink>
-        <RouterLink to="/admin/tenants" class="sidebar-link" @click="closeSidebar">
-          <i class='bx bxs-user-badge'></i>
-          <span>Portal Admin</span>
         </RouterLink>
       </nav>
 

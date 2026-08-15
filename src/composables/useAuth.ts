@@ -50,8 +50,7 @@ const loadCurrentUser = (): User | null => {
       console.error('Failed to parse saved current user', e)
     }
   }
-  const defaultMember = (defaultUsersData as User[]).find(u => u.role === 'member') || (defaultUsersData[0] as User)
-  return defaultMember
+  return null
 }
 
 const users = ref<User[]>(loadUsers())
