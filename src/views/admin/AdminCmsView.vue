@@ -21,12 +21,13 @@ const formCms = ref({
   // Images
   heroImage1: cmsSettings.value.heroImage1 || '/assets/images/hero-gedung-depan.png',
   heroImage2: cmsSettings.value.heroImage2 || '/assets/images/hero-kamar.png',
-  heroImage3: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.png'
+  heroImage3: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.png',
+  qrisImage: cmsSettings.value.qrisImage || ''
 })
 
 const noticeMessage = ref('')
 
-const handleFileUpload = (event: Event, imageKey: 'heroImage1' | 'heroImage2' | 'heroImage3') => {
+const handleFileUpload = (event: Event, imageKey: 'heroImage1' | 'heroImage2' | 'heroImage3' | 'qrisImage') => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files[0]) {
     const file = target.files[0]
@@ -38,6 +39,14 @@ const handleFileUpload = (event: Event, imageKey: 'heroImage1' | 'heroImage2' | 
     }
     reader.readAsDataURL(file)
   }
+}
+
+const removeQrisImage = () => {
+  formCms.value.qrisImage = ''
+}
+
+const useDefaultDemoQris = () => {
+  formCms.value.qrisImage = '/assets/images/qris-sekar-space.png'
 }
 
 const handleSaveCms = () => {
@@ -207,6 +216,43 @@ const formatRupiah = (val: number) => {
             </div>
           </div>
         </div>
+
+        <!-- 4. PENGATURAN QRIS PEMBAYARAN KOS -->
+        <div class="cms-card">
+          <div class="card-header">
+            <h3><i class='bx bx-qr-scan'></i> QRIS Pembayaran Resmi Kos</h3>
+          </div>
+          <p class="section-desc mb-3">
+            Unggah file barcode/gambar QRIS resmi kos Anda di sini. Jika file diunggah, penyewa dapat langsung melihat dan scan QRIS di Portal Pembayaran. Jika belum diunggah, sistem otomatis menampilkan status <em>"Metode Pembayaran Belum Tersedia"</em>.
+          </p>
+
+          <div class="qris-upload-section">
+            <div v-if="formCms.qrisImage" class="qris-preview-box">
+              <img :src="formCms.qrisImage" alt="QRIS Sekar Space Kost" class="qris-preview-img" />
+              <div class="qris-preview-meta">
+                <span class="badge-qris-active"><i class='bx bx-check-circle'></i> File QRIS Aktif</span>
+                <button type="button" class="btn btn-outline-danger btn-sm" @click="removeQrisImage">
+                  <i class='bx bx-trash'></i> Hapus QRIS
+                </button>
+              </div>
+            </div>
+            <div v-else class="qris-empty-placeholder">
+              <i class='bx bx-qr'></i>
+              <span>Belum ada gambar QRIS yang diunggah</span>
+            </div>
+
+            <div class="form-group mt-3">
+              <label>{{ formCms.qrisImage ? 'Ganti File Gambar QRIS' : 'Unggah File Gambar QRIS' }}</label>
+              <input type="file" accept="image/*" @change="handleFileUpload($event, 'qrisImage')" class="form-control" />
+              <div class="qris-action-quick mt-2">
+                <button type="button" class="btn btn-ghost btn-sm" @click="useDefaultDemoQris" style="font-size: 0.8rem; padding: 4px 10px;">
+                  <i class='bx bx-check-double'></i> Gunakan Gambar QRIS Resmi (Assets)
+                </button>
+              </div>
+              <small class="help-text">Format didukung: PNG, JPG, JPEG, WEBP. Tersimpan di sistem aset dan database CMS.</small>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -316,6 +362,94 @@ const formatRupiah = (val: number) => {
   border: 1px solid var(--border);
   font-size: 0.9rem;
   font-family: inherit;
+}
+
+.section-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.qris-upload-section {
+  background: var(--off-white);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+}
+
+.qris-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--white);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+
+.qris-preview-img {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  background: white;
+  padding: 6px;
+  border: 1px solid #E2E8F0;
+}
+
+.qris-preview-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.badge-qris-active {
+  background: #DCFCE7;
+  color: #16A34A;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-outline-danger {
+  background: transparent;
+  border: 1px solid #EF4444;
+  color: #EF4444;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-outline-danger:hover {
+  background: #EF4444;
+  color: white;
+}
+
+.qris-empty-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  gap: 6px;
+}
+
+.qris-empty-placeholder i {
+  font-size: 2.5rem;
+  color: #CBD5E1;
 }
 
 .help-text {

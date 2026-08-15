@@ -13,6 +13,7 @@
   "heroImage1": "/assets/images/hero-gedung-depan.png",
   "heroImage2": "/assets/images/hero-kamar.png",
   "heroImage3": "/assets/images/hero-dapur.png",
+  "qrisImage": "/assets/images/qris-sekar-space.png",
   "bankAccounts": [
     {
       "bank": "BCA",

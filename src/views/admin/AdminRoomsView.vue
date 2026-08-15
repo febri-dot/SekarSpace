@@ -1,29 +1,51 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
-import { useDataStore, type RoomData } from '../../composables/useDataStore'
+import { useDataStore, type RoomData, type RoomTypeData } from '../../composables/useDataStore'
+import { useAuth } from '../../composables/useAuth'
 
-const { rooms, buildings, getBuildingName, addRoom, updateRoom, deleteRoom } = useDataStore()
+const { 
+  rooms, 
+  roomTypes, 
+  buildings, 
+  getBuildingName, 
+  addRoom, 
+  updateRoom, 
+  deleteRoom, 
+  updateRoomType, 
+  getActiveRentalByRoomId 
+} = useDataStore()
 
+const { getTenantById } = useAuth()
+
+const activeTab = ref<'rooms' | 'types'>('rooms')
 const selectedBuildingFilter = ref<string>('all')
 const isAddRoomModalOpen = ref(false)
+const isEditTypeModalOpen = ref(false)
 const editingRoom = ref<RoomData | null>(null)
+const editingType = ref<RoomTypeData | null>(null)
 const noticeMessage = ref('')
 
-// Form Tambah/Edit Kamar
+// Form Tambah/Edit Kamar Fisik (Harga & Fasilitas otomatis dari Tipe Kamar)
 const formRoom = ref({
   number: 'A15',
   buildingId: 'bld-a',
   floor: 1,
+  typeId: 'km-dalam' as 'km-dalam' | 'km-luar'
+})
+
+// Form Edit Master Tipe Kamar
+const formType = ref({
   typeId: 'km-dalam' as 'km-dalam' | 'km-luar',
   typeName: 'Kamar Mandi Dalam',
-  price: 850000,
+  badge: 'Populer & Favorit',
+  size: '3 × 4 Meter',
+  desc: '',
   price1Month: 850000,
   price3Months: 2000000,
   price6Months: 4000000,
-  price12Months: 8000000,
-  status: 'available' as 'available' | 'occupied',
-  size: '3 x 4 meter'
+  price12Months: 8000000
 })
 
 const filteredRooms = computed(() => {
@@ -31,41 +53,48 @@ const filteredRooms = computed(() => {
   return rooms.value.filter(r => r.buildingId === selectedBuildingFilter.value)
 })
 
+// Helper untuk mengecek relasi penyewa kamar
+const getRoomTenant = (roomId: string) => {
+  const rent = getActiveRentalByRoomId(roomId)
+  if (!rent) return null
+  const tenant = getTenantById(rent.memberId)
+  return tenant || null
+}
+
+const isRoomOccupied = (room: RoomData) => {
+  const rent = getActiveRentalByRoomId(room.id)
+  return !!rent || room.status === 'occupied'
+}
+
+const getRoomPriceForType = (typeId: string, duration: number = 1) => {
+  const t = roomTypes.value.find(item => item.typeId === typeId)
+  if (!t) return typeId === 'km-dalam' ? 850000 : 600000
+  if (duration === 1) return t.price1Month || t.price || 600000
+  if (duration === 3) return t.price3Months || ((t.price1Month || t.price || 600000) * 3)
+  if (duration === 6) return t.price6Months || ((t.price1Month || t.price || 600000) * 6)
+  if (duration === 12) return t.price12Months || ((t.price1Month || t.price || 600000) * 12)
+  return (t.price1Month || t.price || 600000) * duration
+}
+
+// Modal Kamar Fisik
 const openAddModal = () => {
   editingRoom.value = null
   formRoom.value = {
     number: `A${rooms.value.length + 1}`,
     buildingId: 'bld-a',
     floor: 1,
-    typeId: 'km-dalam',
-    typeName: 'Kamar Mandi Dalam',
-    price: 850000,
-    price1Month: 850000,
-    price3Months: 2000000,
-    price6Months: 4000000,
-    price12Months: 8000000,
-    status: 'available',
-    size: '3 x 4 meter'
+    typeId: 'km-dalam'
   }
   isAddRoomModalOpen.value = true
 }
 
 const openEditModal = (room: RoomData) => {
   editingRoom.value = room
-  const base1 = room.price1Month || room.price || 600000
   formRoom.value = {
     number: room.number,
     buildingId: room.buildingId,
     floor: room.floor,
-    typeId: room.typeId,
-    typeName: room.typeName,
-    price: base1,
-    price1Month: base1,
-    price3Months: room.price3Months || (base1 * 3),
-    price6Months: room.price6Months || (base1 * 6),
-    price12Months: room.price12Months || (base1 * 12),
-    status: room.status,
-    size: room.size
+    typeId: room.typeId
   }
   isAddRoomModalOpen.value = true
 }
@@ -76,13 +105,18 @@ const closeRoomModal = () => {
 }
 
 const handleSaveRoom = () => {
-  if (!formRoom.value.number || !formRoom.value.price1Month) {
-    alert('Mohon lengkapi nomor kamar dan tarif sewa.')
+  if (!formRoom.value.number) {
+    alert('Mohon isi nomor kamar.')
     return
   }
 
-  const tName = formRoom.value.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'
-  const p1 = Number(formRoom.value.price1Month)
+  const selectedType = roomTypes.value.find(t => t.typeId === formRoom.value.typeId)
+  const tName = selectedType?.typeName || (formRoom.value.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar')
+  const p1 = selectedType?.price1Month || selectedType?.price || (formRoom.value.typeId === 'km-dalam' ? 850000 : 600000)
+  const p3 = selectedType?.price3Months || (p1 * 3)
+  const p6 = selectedType?.price6Months || (p1 * 6)
+  const p12 = selectedType?.price12Months || (p1 * 12)
+  const roomSize = selectedType?.size || (formRoom.value.typeId === 'km-dalam' ? '3 × 4 Meter' : '3 × 3 Meter')
 
   if (editingRoom.value) {
     updateRoom(editingRoom.value.id, {
@@ -93,11 +127,10 @@ const handleSaveRoom = () => {
       typeName: tName,
       price: p1,
       price1Month: p1,
-      price3Months: Number(formRoom.value.price3Months),
-      price6Months: Number(formRoom.value.price6Months),
-      price12Months: Number(formRoom.value.price12Months),
-      status: formRoom.value.status,
-      size: formRoom.value.size
+      price3Months: p3,
+      price6Months: p6,
+      price12Months: p12,
+      size: roomSize
     })
     noticeMessage.value = `Data Kamar ${formRoom.value.number} berhasil diperbarui!`
   } else {
@@ -109,12 +142,12 @@ const handleSaveRoom = () => {
       typeName: tName,
       price: p1,
       price1Month: p1,
-      price3Months: Number(formRoom.value.price3Months),
-      price6Months: Number(formRoom.value.price6Months),
-      price12Months: Number(formRoom.value.price12Months),
-      status: formRoom.value.status,
-      size: formRoom.value.size,
-      features: ['Kasur Springbed', 'Lemari Pakaian', 'Meja Belajar', 'WiFi 100Mbps']
+      price3Months: p3,
+      price6Months: p6,
+      price12Months: p12,
+      status: 'available',
+      size: roomSize,
+      features: selectedType?.features || ['Kasur Springbed', 'Lemari Pakaian', 'Meja Belajar', 'WiFi 100Mbps']
     })
     noticeMessage.value = `Kamar Baru ${formRoom.value.number} berhasil ditambahkan!`
   }
@@ -125,16 +158,12 @@ const handleSaveRoom = () => {
   }, 4000)
 }
 
-const toggleStatus = (room: RoomData) => {
-  const newStatus = room.status === 'available' ? 'occupied' : 'available'
-  updateRoom(room.id, { status: newStatus })
-  noticeMessage.value = `Status Kamar ${room.number} diubah menjadi ${newStatus === 'available' ? 'Tersedia' : 'Terisi'}`
-  setTimeout(() => {
-    noticeMessage.value = ''
-  }, 3000)
-}
-
 const handleDeleteRoom = (room: RoomData) => {
+  if (isRoomOccupied(room)) {
+    alert(`Kamar ${room.number} sedang terisi oleh penyewa aktif dan tidak dapat dihapus. Silakan alihkan penyewa terlebih dahulu.`)
+    return
+  }
+
   if (confirm(`Hapus Kamar ${room.number} dari master data?`)) {
     deleteRoom(room.id)
     noticeMessage.value = `Kamar ${room.number} telah dihapus.`
@@ -144,7 +173,58 @@ const handleDeleteRoom = (room: RoomData) => {
   }
 }
 
-const formatRupiah = (val: number) => {
+// Modal Edit Master Tipe Kamar
+const openEditTypeModal = (type: RoomTypeData) => {
+  editingType.value = type
+  formType.value = {
+    typeId: type.typeId as any,
+    typeName: type.typeName,
+    badge: type.badge || '',
+    size: type.size || (type.typeId === 'km-dalam' ? '3 × 4 Meter' : '3 × 3 Meter'),
+    desc: type.desc || '',
+    price1Month: type.price1Month || type.price || 600000,
+    price3Months: type.price3Months || 1800000,
+    price6Months: type.price6Months || 3500000,
+    price12Months: type.price12Months || 7000000
+  }
+  isEditTypeModalOpen.value = true
+}
+
+const closeEditTypeModal = () => {
+  isEditTypeModalOpen.value = false
+  editingType.value = null
+}
+
+const handleSaveType = () => {
+  if (!editingType.value) return
+
+  if (!formType.value.price1Month) {
+    alert('Mohon isi tarif 1 bulan.')
+    return
+  }
+
+  updateRoomType(editingType.value.typeId, {
+    typeName: formType.value.typeName,
+    badge: formType.value.badge,
+    size: formType.value.size,
+    desc: formType.value.desc,
+    price: Number(formType.value.price1Month),
+    price1Month: Number(formType.value.price1Month),
+    price3Months: Number(formType.value.price3Months),
+    price6Months: Number(formType.value.price6Months),
+    price12Months: Number(formType.value.price12Months)
+  })
+
+  noticeMessage.value = `Tarif & Spesifikasi Tipe "${formType.value.typeName}" berhasil diperbarui! Seluruh kamar bertipe ini otomatis disinkronkan.`
+  closeEditTypeModal()
+
+  setTimeout(() => {
+    noticeMessage.value = ''
+  }, 5000)
+}
+
+const formatRupiah = (val?: number) => {
+  if (!val) return 'Rp 0'
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
 }
 </script>
@@ -156,13 +236,15 @@ const formatRupiah = (val: number) => {
     <main class="admin-main">
       <header class="admin-header">
         <div>
-          <span class="header-tag">Property & Units Console</span>
-          <h1>Kelola <span class="text-gradient">Data & Status Kamar</span></h1>
-          <p>Atur daftar kamar, gedung hunian, tarif sewa bulanan, dan status ketersediaan.</p>
+          <span class="header-tag">Property & Unit Master</span>
+          <h1>Kelola <span class="text-gradient">Data & Tipe Kamar</span></h1>
+          <p>Atur daftar fisik kamar kost, tarif sewa paket durasi, dan spesifikasi tipe kamar.</p>
         </div>
-        <button class="btn btn-primary" @click="openAddModal">
-          <i class='bx bx-plus-circle'></i> Tambah Kamar Baru
-        </button>
+        <div class="header-actions">
+          <button v-if="activeTab === 'rooms'" class="btn btn-primary" @click="openAddModal">
+            <i class='bx bx-plus-circle'></i> Tambah Kamar Baru
+          </button>
+        </div>
       </header>
 
       <!-- NOTICE ALERT -->
@@ -170,73 +252,190 @@ const formatRupiah = (val: number) => {
         <i class='bx bx-check-circle'></i> {{ noticeMessage }}
       </div>
 
-      <!-- FILTER BAR -->
-      <div class="filter-bar">
-        <div class="building-filter-btns">
-          <button 
-            class="filter-pill"
-            :class="{ active: selectedBuildingFilter === 'all' }"
-            @click="selectedBuildingFilter = 'all'"
-          >
-            Semua Gedung ({{ rooms.length }})
-          </button>
-          <button 
-            v-for="bld in buildings"
-            :key="bld.id"
-            class="filter-pill"
-            :class="{ active: selectedBuildingFilter === bld.id }"
-            @click="selectedBuildingFilter = bld.id"
-          >
-            {{ bld.name }} ({{ rooms.filter(r => r.buildingId === bld.id).length }})
-          </button>
-        </div>
-      </div>
-
-      <!-- ROOMS GRID DISPLAY -->
-      <div class="rooms-grid">
-        <div 
-          v-for="room in filteredRooms" 
-          :key="room.id"
-          class="room-card"
-          :class="room.status"
+      <!-- NAVIGATION TABS -->
+      <div class="rooms-nav-tabs">
+        <button 
+          class="tab-btn" 
+          :class="{ active: activeTab === 'rooms' }"
+          @click="activeTab = 'rooms'"
         >
-          <div class="room-card-header">
-            <span class="room-number-tag">Kamar {{ room.number }}</span>
-            <span class="status-badge" :class="room.status">
-              {{ room.status === 'available' ? 'Tersedia' : 'Terisi' }}
-            </span>
-          </div>
+          <i class='bx bx-bed'></i>
+          Daftar Kamar Kost ({{ rooms.length }})
+        </button>
+        <button 
+          class="tab-btn" 
+          :class="{ active: activeTab === 'types' }"
+          @click="activeTab = 'types'"
+        >
+          <i class='bx bx-customize'></i>
+          Kelola Tipe & Tarif Sewa ({{ roomTypes.length }})
+        </button>
+      </div>
 
-          <div class="room-details">
-            <p class="bld-name"><i class='bx bx-building-house'></i> {{ getBuildingName(room.buildingId) }} (Lantai {{ room.floor }})</p>
-            <p class="type-name">
-              <i :class="room.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open'"></i>
-              {{ room.typeName }} · {{ room.size }}
-            </p>
-            <div class="price-tag">{{ formatRupiah(room.price) }} <small>/ bulan</small></div>
-          </div>
-
-          <div class="room-card-footer">
+      <!-- ================= TAB 1: DAFTAR KAMAR FISIK ================= -->
+      <section v-if="activeTab === 'rooms'" class="tab-content-section">
+        <!-- FILTER BAR -->
+        <div class="filter-bar">
+          <div class="building-filter-btns">
             <button 
-              class="btn-toggle-status" 
-              :class="room.status === 'available' ? 'btn-mark-occ' : 'btn-mark-avail'"
-              @click="toggleStatus(room)"
+              class="filter-pill"
+              :class="{ active: selectedBuildingFilter === 'all' }"
+              @click="selectedBuildingFilter = 'all'"
             >
-              <i :class="room.status === 'available' ? 'bx bx-lock-alt' : 'bx bx-check-circle'"></i>
-              {{ room.status === 'available' ? 'Set Terisi' : 'Set Tersedia' }}
+              Semua Gedung ({{ rooms.length }})
             </button>
-            <button class="btn-icon-action btn-edit" @click="openEditModal(room)" title="Edit Kamar">
-              <i class='bx bx-edit'></i>
-            </button>
-            <button class="btn-icon-action btn-delete" @click="handleDeleteRoom(room)" title="Hapus Kamar">
-              <i class='bx bx-trash'></i>
+            <button 
+              v-for="bld in buildings"
+              :key="bld.id"
+              class="filter-pill"
+              :class="{ active: selectedBuildingFilter === bld.id }"
+              @click="selectedBuildingFilter = bld.id"
+            >
+              {{ bld.name }} ({{ rooms.filter(r => r.buildingId === bld.id).length }})
             </button>
           </div>
         </div>
-      </div>
+
+        <!-- ROOMS GRID DISPLAY -->
+        <div class="rooms-grid">
+          <div 
+            v-for="room in filteredRooms" 
+            :key="room.id"
+            class="room-card"
+            :class="isRoomOccupied(room) ? 'occupied' : 'available'"
+          >
+            <div class="room-card-header">
+              <span class="room-number-tag">Kamar {{ room.number }}</span>
+              <span class="status-badge" :class="isRoomOccupied(room) ? 'occupied' : 'available'">
+                <i :class="isRoomOccupied(room) ? 'bx bx-user-check' : 'bx bx-check-circle'"></i>
+                {{ isRoomOccupied(room) ? 'Terisi' : 'Tersedia' }}
+              </span>
+            </div>
+
+            <div class="room-details">
+              <p class="bld-name">
+                <i class='bx bx-building-house'></i> {{ getBuildingName(room.buildingId) }} · Lantai {{ room.floor }}
+              </p>
+              <p class="type-name">
+                <i :class="room.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open'"></i>
+                {{ room.typeName }}
+              </p>
+
+              <!-- INFO PENYEWA RELASIONAL -->
+              <div v-if="isRoomOccupied(room) && getRoomTenant(room.id)" class="room-tenant-info">
+                <i class='bx bx-user'></i>
+                <span>Penyewa: <strong>{{ getRoomTenant(room.id)?.name }}</strong></span>
+              </div>
+              <div v-else-if="!isRoomOccupied(room)" class="room-available-info">
+                <i class='bx bx-check-shield'></i>
+                <span>Siap untuk disewakan</span>
+              </div>
+
+              <div class="price-tag-wrap">
+                <span class="price-label">Tarif Bulanan:</span>
+                <span class="price-value">{{ formatRupiah(getRoomPriceForType(room.typeId, 1)) }} <small>/bln</small></span>
+              </div>
+            </div>
+
+            <div class="room-card-footer">
+              <button class="btn-action-outline btn-edit" @click="openEditModal(room)">
+                <i class='bx bx-edit'></i> Edit Kamar
+              </button>
+              <button 
+                class="btn-action-outline btn-delete" 
+                :disabled="isRoomOccupied(room)"
+                :title="isRoomOccupied(room) ? 'Kamar terisi tidak bisa dihapus' : 'Hapus Kamar'"
+                @click="handleDeleteRoom(room)"
+              >
+                <i class='bx bx-trash'></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TAB 2: KELOLA TIPE & TARIF SEWA ================= -->
+      <section v-if="activeTab === 'types'" class="tab-content-section">
+        <div class="types-intro-banner">
+          <div class="intro-icon">
+            <i class='bx bx-calculator'></i>
+          </div>
+          <div>
+            <h3>Pusat Pengaturan Tarif & Fasilitas Tipe Kamar</h3>
+            <p>Perubahan tarif sewa di halaman ini akan secara otomatis memperbarui harga seluruh kamar terkait, landing page, dan sistem kalkulasi tagihan.</p>
+          </div>
+        </div>
+
+        <div class="room-types-grid">
+          <div v-for="type in roomTypes" :key="type.typeId" class="room-type-card">
+            <div class="type-card-header">
+              <div>
+                <span class="type-tag-badge">{{ type.typeId === 'km-dalam' ? 'Premium Unit' : 'Standard Unit' }}</span>
+                <h2 class="type-title">{{ type.typeName }}</h2>
+                <p class="type-subtitle">{{ type.badge || 'Kamar Nyaman & Bersih' }}</p>
+              </div>
+              <div class="type-icon-box">
+                <i :class="type.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open'"></i>
+              </div>
+            </div>
+
+            <div class="type-card-body">
+              <div class="type-spec-row">
+                <span class="spec-label"><i class='bx bx-expand'></i> Ukuran Kamar:</span>
+                <strong>{{ type.size || (type.typeId === 'km-dalam' ? '3 × 4 Meter' : '3 × 3 Meter') }}</strong>
+              </div>
+              <div class="type-spec-row">
+                <span class="spec-label"><i class='bx bx-buildings'></i> Total Kamar:</span>
+                <strong>{{ rooms.filter(r => r.typeId === type.typeId).length }} Kamar</strong>
+              </div>
+
+              <!-- PRICING MATRIX DISPLAY -->
+              <div class="pricing-matrix-card">
+                <div class="matrix-header">
+                  <i class='bx bx-money'></i> Matriks Tarif Paket Sewa
+                </div>
+                <div class="matrix-grid">
+                  <div class="matrix-item">
+                    <span class="m-duration">1 Bulan (Dasar)</span>
+                    <strong class="m-price">{{ formatRupiah(type.price1Month || type.price || 600000) }}</strong>
+                  </div>
+                  <div class="matrix-item">
+                    <span class="m-duration">3 Bulan (Triwulan)</span>
+                    <strong class="m-price">{{ formatRupiah(type.price3Months || 1800000) }}</strong>
+                  </div>
+                  <div class="matrix-item">
+                    <span class="m-duration">6 Bulan (Semester)</span>
+                    <strong class="m-price">{{ formatRupiah(type.price6Months || 3500000) }}</strong>
+                  </div>
+                  <div class="matrix-item">
+                    <span class="m-duration">12 Bulan (1 Tahun)</span>
+                    <strong class="m-price">{{ formatRupiah(type.price12Months || 7000000) }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FACILITIES LIST -->
+              <div class="type-facilities-box">
+                <span class="fac-title">Fasilitas Termasuk:</span>
+                <ul class="fac-list">
+                  <li v-for="(fac, idx) in type.features" :key="idx">
+                    <i class='bx bx-check-circle'></i> {{ fac }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="type-card-footer">
+              <button class="btn btn-primary btn-block" @click="openEditTypeModal(type)">
+                <i class='bx bx-edit-alt'></i> Edit Tarif & Spesifikasi Tipe
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
-    <!-- MODAL TAMBAH / EDIT KAMAR -->
+    <!-- MODAL TAMBAH / EDIT KAMAR FISIK -->
     <div v-if="isAddRoomModalOpen" class="modal-backdrop" @click.self="closeRoomModal">
       <div class="modal-box">
         <button class="modal-close" @click="closeRoomModal"><i class='bx bx-x'></i></button>
@@ -246,19 +445,19 @@ const formatRupiah = (val: number) => {
             <i class='bx bx-bed'></i> 
             {{ editingRoom ? `Edit Data Kamar ${editingRoom.number}` : 'Tambah Kamar Baru' }}
           </h2>
-          <p>Lengkapi spesifikasi kamar dan harga sewa bulanan</p>
+          <p>Tentukan nomor kamar, gedung penempatan, dan tipe kamar</p>
         </div>
 
         <form @submit.prevent="handleSaveRoom" class="room-form">
           <div class="form-row">
             <div class="form-group">
-              <label>Nomor Kamar</label>
+              <label>Nomor Kamar <span class="required-star">*</span></label>
               <input type="text" v-model="formRoom.number" placeholder="Contoh: A11, A12, B11" class="form-control" required />
             </div>
 
             <div class="form-group">
-              <label>Lantai Bangunan</label>
-              <select v-model="formRoom.floor" class="form-control" required>
+              <label>Lantai Bangunan <span class="required-star">*</span></label>
+              <select v-model.number="formRoom.floor" class="form-control" required>
                 <option :value="1">Lantai 1</option>
                 <option :value="2">Lantai 2</option>
               </select>
@@ -267,7 +466,7 @@ const formatRupiah = (val: number) => {
 
           <div class="form-row">
             <div class="form-group">
-              <label>Gedung Hunian</label>
+              <label>Gedung Hunian <span class="required-star">*</span></label>
               <select v-model="formRoom.buildingId" class="form-control" required>
                 <option v-for="bld in buildings" :key="bld.id" :value="bld.id">
                   {{ bld.name }}
@@ -276,56 +475,112 @@ const formatRupiah = (val: number) => {
             </div>
 
             <div class="form-group">
-              <label>Tipe Kamar</label>
+              <label>Tipe Kamar <span class="required-star">*</span></label>
               <select v-model="formRoom.typeId" class="form-control" required>
-                <option value="km-dalam">Kamar Mandi Dalam</option>
-                <option value="km-luar">Kamar Mandi Luar</option>
+                <option v-for="t in roomTypes" :key="t.typeId" :value="t.typeId">
+                  {{ t.typeName }}
+                </option>
               </select>
             </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label>Ukuran Ruangan</label>
-              <input type="text" v-model="formRoom.size" placeholder="3 x 4 meter" class="form-control" />
+          <!-- INFO PREVIEW TARIF TIPE KAMAR -->
+          <div class="type-rate-preview-card">
+            <div class="rate-preview-title">
+              <i class='bx bx-info-circle'></i> Tarif Sewa Mengikuti Master Tipe Kamar
             </div>
-            <div class="form-group">
-              <label>Status Ketersediaan</label>
-              <select v-model="formRoom.status" class="form-control" required>
-                <option value="available">Tersedia (Kosong)</option>
-                <option value="occupied">Terisi (Penyewa Aktif)</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="pricing-matrix-box mb-3">
-            <label class="form-label font-bold text-dark mb-2">Matriks Tarif Sewa Kustom Kamar (Rp)</label>
-            <div class="form-row">
-              <div class="form-group">
-                <label>Tarif 1 Bulan (Rp)</label>
-                <input type="number" v-model="formRoom.price1Month" placeholder="600000" class="form-control" required />
+            <div class="rate-preview-rows">
+              <div>
+                <span>Tarif 1 Bulan:</span>
+                <strong>{{ formatRupiah(getRoomPriceForType(formRoom.typeId, 1)) }}</strong>
               </div>
-              <div class="form-group">
-                <label>Tarif 3 Bulan (Rp)</label>
-                <input type="number" v-model="formRoom.price3Months" placeholder="1800000" class="form-control" required />
+              <div>
+                <span>Tarif 3 Bulan:</span>
+                <strong>{{ formatRupiah(getRoomPriceForType(formRoom.typeId, 3)) }}</strong>
+              </div>
+              <div>
+                <span>Tarif 6 Bulan:</span>
+                <strong>{{ formatRupiah(getRoomPriceForType(formRoom.typeId, 6)) }}</strong>
+              </div>
+              <div>
+                <span>Tarif 1 Tahun:</span>
+                <strong>{{ formatRupiah(getRoomPriceForType(formRoom.typeId, 12)) }}</strong>
               </div>
             </div>
-            <div class="form-row mt-2">
-              <div class="form-group">
-                <label>Tarif 6 Bulan (Rp)</label>
-                <input type="number" v-model="formRoom.price6Months" placeholder="3500000" class="form-control" required />
-              </div>
-              <div class="form-group">
-                <label>Tarif 12 Bulan / 1 Tahun (Rp)</label>
-                <input type="number" v-model="formRoom.price12Months" placeholder="7000000" class="form-control" required />
-              </div>
-            </div>
+            <small class="rate-preview-note">*Untuk mengubah harga sewa, silakan ubah pada tab "Kelola Tipe & Tarif Sewa".</small>
           </div>
 
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" @click="closeRoomModal">Batal</button>
             <button type="submit" class="btn btn-primary">
               {{ editingRoom ? 'Simpan Perubahan' : 'Tambah Kamar Baru' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL EDIT MASTER TIPE KAMAR -->
+    <div v-if="isEditTypeModalOpen && editingType" class="modal-backdrop" @click.self="closeEditTypeModal">
+      <div class="modal-box edit-type-modal">
+        <button class="modal-close" @click="closeEditTypeModal"><i class='bx bx-x'></i></button>
+
+        <div class="modal-header">
+          <h2>
+            <i class='bx bx-edit'></i> 
+            Edit Tipe & Tarif: {{ editingType.typeName }}
+          </h2>
+          <p>Ubah tarif sewa paket durasi dan spesifikasi tipe kamar</p>
+        </div>
+
+        <form @submit.prevent="handleSaveType" class="room-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nama Tipe Kamar</label>
+              <input type="text" v-model="formType.typeName" class="form-control" required />
+            </div>
+            <div class="form-group">
+              <label>Ukuran Ruangan</label>
+              <input type="text" v-model="formType.size" placeholder="Contoh: 3 × 4 Meter" class="form-control" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Tagline / Badge Tipe</label>
+            <input type="text" v-model="formType.badge" placeholder="Contoh: Populer & Favorit" class="form-control" />
+          </div>
+
+          <!-- INPUT MATRIKS HARGA -->
+          <div class="pricing-matrix-box">
+            <div class="matrix-box-header">
+              <i class='bx bx-coin-stack'></i> Atur Tarif Paket Sewa (Rp)
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tarif 1 Bulan (Harga Dasar)</label>
+                <input type="number" v-model.number="formType.price1Month" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>Tarif Paket 3 Bulan</label>
+                <input type="number" v-model.number="formType.price3Months" class="form-control" required />
+              </div>
+            </div>
+            <div class="form-row mt-2">
+              <div class="form-group">
+                <label>Tarif Paket 6 Bulan</label>
+                <input type="number" v-model.number="formType.price6Months" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label>Tarif Paket 12 Bulan (1 Tahun)</label>
+                <input type="number" v-model.number="formType.price12Months" class="form-control" required />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" @click="closeEditTypeModal">Batal</button>
+            <button type="submit" class="btn btn-primary">
+              <i class='bx bx-check-circle'></i> Simpan Perubahan Tarif Tipe
             </button>
           </div>
         </form>
@@ -352,7 +607,7 @@ const formatRupiah = (val: number) => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
 }
@@ -388,6 +643,39 @@ const formatRupiah = (val: number) => {
   align-items: center;
   gap: 8px;
   font-weight: 600;
+}
+
+/* TABS */
+.rooms-nav-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  padding: 12px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+  color: var(--primary);
+}
+
+.tab-btn.active {
+  color: #541A1A;
+  border-bottom-color: #541A1A;
 }
 
 /* FILTER PILLS */
@@ -466,10 +754,13 @@ const formatRupiah = (val: number) => {
 }
 
 .status-badge {
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 700;
   padding: 3px 10px;
   border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .status-badge.available {
@@ -484,29 +775,71 @@ const formatRupiah = (val: number) => {
 
 .room-details {
   margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .bld-name {
   font-size: 0.85rem;
   color: var(--text-muted);
-  margin-bottom: 4px;
 }
 
 .type-name {
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--dark);
-  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.price-tag {
-  font-size: 1.15rem;
+.room-tenant-info {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: #991B1B;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.room-available-info {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: #166534;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.price-tag-wrap {
+  margin-top: 6px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-top: 1px dashed var(--border);
+  padding-top: 8px;
+}
+
+.price-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.price-value {
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--primary);
 }
 
-.price-tag small {
-  font-size: 0.75rem;
+.price-value small {
+  font-size: 0.72rem;
   font-weight: 400;
   color: var(--text-muted);
 }
@@ -519,47 +852,292 @@ const formatRupiah = (val: number) => {
   border-top: 1px solid var(--border);
 }
 
-.btn-toggle-status {
-  flex: 1;
-  padding: 8px;
+.btn-action-outline {
+  padding: 8px 12px;
   border-radius: var(--radius-md);
-  border: none;
-  font-size: 0.78rem;
-  font-weight: 700;
+  border: 1px solid var(--border);
+  background: var(--white);
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
+  transition: all 0.2s ease;
 }
 
-.btn-mark-occ {
-  background: #FEF3C7;
-  color: #B45309;
+.btn-action-outline.btn-edit {
+  flex: 1;
+  color: var(--primary);
 }
 
-.btn-mark-avail {
-  background: #DCFCE7;
-  color: #15803D;
+.btn-action-outline.btn-edit:hover {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
 }
 
-.btn-icon-action {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--off-white);
-  cursor: pointer;
+.btn-action-outline.btn-delete {
+  color: #DC2626;
+  width: 36px;
+}
+
+.btn-action-outline.btn-delete:hover:not(:disabled) {
+  background: #DC2626;
+  color: var(--white);
+  border-color: #DC2626;
+}
+
+.btn-action-outline.btn-delete:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ================= TAB 2: TYPES STYLES ================= */
+.types-intro-banner {
+  background: #FFF8F0;
+  border: 1px solid #F97316;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.intro-icon {
+  width: 44px;
+  height: 44px;
+  background: #F97316;
+  color: var(--white);
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.5rem;
+  flex-shrink: 0;
 }
 
-.btn-edit:hover { background: var(--tertiary); color: var(--primary); }
-.btn-delete:hover { background: #FEE2E2; color: #B91C1C; }
+.types-intro-banner h3 {
+  font-size: 1rem;
+  color: #9A3412;
+  margin-bottom: 4px;
+}
 
-/* MODAL */
+.types-intro-banner p {
+  font-size: 0.84rem;
+  color: #C2410C;
+  line-height: 1.4;
+}
+
+.room-types-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+}
+
+.room-type-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.type-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.type-tag-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--tertiary);
+  color: var(--primary);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.type-title {
+  font-size: 1.3rem;
+  color: var(--dark);
+  margin-bottom: 2px;
+}
+
+.type-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.type-icon-box {
+  width: 48px;
+  height: 48px;
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: var(--primary);
+}
+
+.type-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.type-spec-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 8px;
+}
+
+.spec-label {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pricing-matrix-card {
+  background: #FAFAFA;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+
+.matrix-header {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #541A1A;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.matrix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.matrix-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.m-duration {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.m-price {
+  font-size: 0.95rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.type-facilities-box {
+  font-size: 0.82rem;
+}
+
+.fac-title {
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.fac-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fac-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.fac-list li i {
+  color: #16A34A;
+}
+
+.btn-block {
+  width: 100%;
+  justify-content: center;
+}
+
+/* PREVIEW BOX IN MODAL */
+.type-rate-preview-card {
+  background: #FFFDF9;
+  border: 1.5px dashed var(--secondary);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rate-preview-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #541A1A;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rate-preview-rows {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+
+.rate-preview-rows div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 6px;
+  background: var(--white);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.rate-preview-note {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.required-star {
+  color: #DC2626;
+}
+
+/* MODALS */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -580,6 +1158,10 @@ const formatRupiah = (val: number) => {
   padding: 32px;
   position: relative;
   box-shadow: var(--shadow-xl);
+}
+
+.edit-type-modal {
+  max-width: 600px;
 }
 
 .modal-close {
@@ -634,6 +1216,16 @@ const formatRupiah = (val: number) => {
   margin-top: 4px;
 }
 
+.matrix-box-header {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #541A1A;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -643,6 +1235,7 @@ const formatRupiah = (val: number) => {
 
 @media (max-width: 1100px) {
   .rooms-grid { grid-template-columns: repeat(2, 1fr); }
+  .room-types-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 992px) {
@@ -654,7 +1247,6 @@ const formatRupiah = (val: number) => {
   .admin-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
   .admin-header h1 { font-size: 1.4rem; }
   .admin-header button { width: 100%; justify-content: center; }
-  .admin-card { padding: 16px; }
   .building-filter-btns { width: 100%; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .filter-pill { flex-shrink: 0; }
   .form-row { grid-template-columns: 1fr; gap: 12px; }
@@ -671,9 +1263,6 @@ const formatRupiah = (val: number) => {
   .admin-main { padding: 12px; }
   .admin-header h1 { font-size: 1.2rem; }
   .admin-header p { font-size: 0.78rem; }
-  .room-admin-card { padding: 14px 12px; border-radius: var(--radius-md); }
-  .building-filter-btns { -webkit-overflow-scrolling: touch; }
-  .filter-pill { font-size: 0.75rem; padding: 6px 10px; }
   .modal-box { max-width: 96vw; padding: 20px 12px; border-radius: var(--radius-lg); }
 }
 </style>

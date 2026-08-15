@@ -4,13 +4,14 @@ import UserSidebar from '../../components/layout/UserSidebar.vue'
 import { useDataStore, getRoomPriceByDuration, type PaymentData } from '../../composables/useDataStore'
 import { useAuth } from '../../composables/useAuth'
 
-const { payments, addPayment, cmsSettings, getRoomById } = useDataStore()
+const { payments, addPayment, cmsSettings, getRoomById, getActiveRentalByMemberId, getPaymentsByMemberId, getPaymentAmount, isRoomBookedByOthers, getTenantStayStatus, setExtensionIntent } = useDataStore()
 const { currentUser } = useAuth()
 
 const copySuccessMsg = ref('')
 
 const currentRoom = computed(() => {
-  const rId = currentUser.value?.roomId || 'A-13'
+  const rent = currentUser.value?.id ? getActiveRentalByMemberId(currentUser.value.id) : null
+  const rId = rent?.roomId || 'A-13'
   return getRoomById(rId)
 })
 
@@ -21,8 +22,8 @@ const bankAccounts = computed(() => cmsSettings.value.bankAccounts || [
 ])
 
 const userPayments = computed(() => {
-  const memberId = currentUser.value?.id || 'MBR-01'
-  return payments.value.filter(p => p.memberId === memberId)
+  if (!currentUser.value?.id) return []
+  return getPaymentsByMemberId(currentUser.value.id)
 })
 
 const paymentHistory = userPayments
@@ -42,6 +43,18 @@ const calculatedAmount = computed(() => {
 // Modal Invoice State
 const selectedInvoice = ref<PaymentData | null>(null)
 const isInvoiceModalOpen = ref(false)
+const proofImageBase64 = ref('')
+
+const handleFileUpload = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (file) {
+    const reader = new FileReader()
+    reader.onload = () => {
+      proofImageBase64.value = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  }
+}
 
 const copyToClipboard = (text: string) => {
   navigator.clipboard.writeText(text.replace(/\s/g, ''))
@@ -54,27 +67,79 @@ const copyToClipboard = (text: string) => {
 const submitPayment = () => {
   const duration = Number(formDurationMonths.value) || 1
   const periodStr = `Perpanjangan Sewa ${duration} Bulan`
+  const currentRent = currentUser.value?.id ? getActiveRentalByMemberId(currentUser.value.id) : null
 
   addPayment({
-    memberId: currentUser.value?.id || 'MBR-01',
+    rentalId: currentRent?.id || 'RNT-001',
     period: periodStr,
     amount: calculatedAmount.value,
     durationMonths: duration,
     method: `Transfer ${formBank.value}`,
     date: formDate.value,
     status: 'pending',
-    notes: formNotes.value
+    notes: formNotes.value,
+    proofImage: proofImageBase64.value || ''
   })
   isSubmitted.value = true
 }
 
 const viewInvoice = (pay: PaymentData) => {
+  if (pay.status !== 'paid') return
   selectedInvoice.value = pay
   isInvoiceModalOpen.value = true
 }
 
 const closeInvoiceModal = () => {
   isInvoiceModalOpen.value = false
+}
+
+const currentRent = computed(() => {
+  return currentUser.value?.id ? getActiveRentalByMemberId(currentUser.value.id) : null
+})
+
+const stayStatus = computed(() => {
+  if (!currentUser.value?.id) return { hasActiveStay: false, isUpcomingOnly: false, upcomingRental: null }
+  return getTenantStayStatus(currentUser.value.id)
+})
+
+const isUpcomingOnly = computed(() => stayStatus.value.isUpcomingOnly)
+const upcomingRental = computed(() => stayStatus.value.upcomingRental)
+
+const isNotExtending = computed(() => {
+  return currentRent.value?.extensionIntent === 'not_extend'
+})
+
+const isQrisModalOpen = ref(false)
+const openQrisModal = () => {
+  if (cmsSettings.value.qrisImage) {
+    isQrisModalOpen.value = true
+  }
+}
+const closeQrisModal = () => {
+  isQrisModalOpen.value = false
+}
+
+const isRoomAlreadyBooked = computed(() => {
+  if (!currentRent.value?.roomId || !currentRent.value?.endDate) return false
+  return isRoomBookedByOthers(currentRent.value.roomId, currentRent.value.id, currentRent.value.endDate)
+})
+
+const handleUndoNotExtend = () => {
+  if (currentRent.value) {
+    setExtensionIntent(currentRent.value.id, 'pending')
+  }
+}
+
+const formatDateIndo = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return dateStr
+  const monthsIndo = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des']
+  const day = parseInt(dayStr, 10)
+  const monthIdx = parseInt(monthStr, 10) - 1
+  return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
 }
 
 const formatRupiah = (val: number) => {
@@ -107,15 +172,37 @@ const printReceipt = () => {
         <!-- REKENING BANK GRID -->
         <h2 class="section-subtitle"><i class='bx bxs-credit-card'></i> Rekening Pembayaran Resmi</h2>
         <div class="bank-accounts-grid">
-          <div v-for="b in bankAccounts" :key="b.bank" class="bank-card">
+          <div v-for="b in bankAccounts" :key="b.bank" class="bank-card" :class="{ 'card-qris': b.bank === 'QRIS' }">
             <div class="bank-header">
               <span class="bank-logo-badge" :class="b.badgeClass">{{ b.bank }}</span>
-              <button class="copy-btn" @click="copyToClipboard(b.number)">
-                <i class='bx bx-copy'></i> Salin
-              </button>
+
+              <template v-if="b.bank === 'QRIS'">
+                <button v-if="cmsSettings.qrisImage" class="view-qris-btn" @click="openQrisModal">
+                  <i class='bx bx-qr-scan'></i> Tampilkan QRIS
+                </button>
+                <span v-else class="qris-unavailable-badge">
+                  <i class='bx bx-time-five'></i> Belum Tersedia
+                </span>
+              </template>
+              <template v-else>
+                <button class="copy-btn" @click="copyToClipboard(b.number)">
+                  <i class='bx bx-copy'></i> Salin
+                </button>
+              </template>
             </div>
-            <div class="bank-number">{{ b.number }}</div>
-            <div class="bank-holder">{{ b.holder }}</div>
+
+            <template v-if="b.bank === 'QRIS'">
+              <div class="bank-number" :class="{ 'text-unavailable': !cmsSettings.qrisImage }">
+                {{ cmsSettings.qrisImage ? 'Scan QRIS Resmi' : 'Metode Pembayaran Belum Tersedia' }}
+              </div>
+              <div class="bank-holder">
+                {{ cmsSettings.qrisImage ? 'Semua E-Wallet & M-Banking' : 'Pemilik kos belum mengunggah file QRIS' }}
+              </div>
+            </template>
+            <template v-else>
+              <div class="bank-number">{{ b.number }}</div>
+              <div class="bank-holder">{{ b.holder }}</div>
+            </template>
           </div>
         </div>
 
@@ -125,14 +212,56 @@ const printReceipt = () => {
           <div class="payment-box">
             <h2><i class='bx bx-upload'></i> Konfirmasi Pembayaran</h2>
 
-            <div v-if="!isSubmitted">
+            <!-- UPCOMING TENANT LOCKED STATE -->
+            <div v-if="isUpcomingOnly" class="upcoming-locked-box">
+              <div class="locked-icon"><i class='bx bx-calendar-event'></i></div>
+              <div class="alert-body">
+                <h3>Belum Ada Tagihan Baru</h3>
+                <p>
+                  Kontrak sewa awal Anda untuk <strong>Kamar {{ currentRoom?.number }}</strong> dijadwalkan mulai pada <strong>{{ formatDateIndo(upcomingRental?.startDate) }}</strong>. 
+                  Formulir perpanjangan sewa akan aktif secara otomatis menjelang akhir masa sewa Anda.
+                </p>
+              </div>
+            </div>
+
+            <!-- NOT EXTENDING ALERT -->
+            <div v-else-if="isNotExtending" class="not-extending-alert-box" :class="{ 'booked-locked': isRoomAlreadyBooked }">
+              <div class="alert-icon">
+                <i v-if="isRoomAlreadyBooked" class='bx bx-lock-alt' style="color: #DC2626;"></i>
+                <i v-else class='bx bx-calendar-x'></i>
+              </div>
+              <div class="alert-body">
+                <h3 v-if="isRoomAlreadyBooked">Kamar Telah Direservasi Calon Penyewa Baru</h3>
+                <h3 v-else>Pembayaran Perpanjangan Dinonaktifkan</h3>
+                <p v-if="isRoomAlreadyBooked">
+                  Kamar <strong>{{ currentRoom?.number }}</strong> Anda telah direservasi oleh calon penyewa baru untuk periode mulai <strong>{{ formatDateIndo(currentRent?.endDate) }}</strong>. 
+                  Sesuai konfirmasi sebelumnya, masa sewa Anda berakhir pada tanggal tersebut dan perpanjangan sewa tidak dapat dilakukan lagi.
+                </p>
+                <p v-else>
+                  Anda telah mengonfirmasi untuk <strong>TIDAK memperpanjang</strong> masa sewa Kamar {{ currentRoom?.number }}. 
+                  Masa sewa Anda akan berakhir pada <strong>{{ formatDateIndo(currentRent?.endDate) }}</strong> dan kamar telah dijadwalkan untuk checkout.
+                </p>
+                <div class="alert-action-btn">
+                  <button v-if="!isRoomAlreadyBooked" class="btn btn-outline-primary btn-sm" @click="handleUndoNotExtend">
+                    <i class='bx bx-undo'></i> Ingin Perpanjang? Ubah Keputusan
+                  </button>
+                  <span v-else class="locked-text-tag">
+                    <i class='bx bx-lock-alt'></i> Keputusan perpanjangan sewa terkunci (Kamar sudah dibooking)
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div v-else-if="!isSubmitted">
               <form @submit.prevent="submitPayment" class="pay-form">
                 <div class="form-group">
                   <label>Pilih Bank Tujuan</label>
                   <select v-model="formBank">
                     <option value="BCA">Bank BCA (1234 5678 90)</option>
                     <option value="Mandiri">Bank Mandiri (9876 5432 10)</option>
-                    <option value="QRIS">QRIS Sekar Space</option>
+                    <option value="QRIS" :disabled="!cmsSettings.qrisImage">
+                      QRIS Sekar Space {{ !cmsSettings.qrisImage ? '(Metode Belum Tersedia)' : '' }}
+                    </option>
                   </select>
                 </div>
 
@@ -159,7 +288,7 @@ const printReceipt = () => {
                   </div>
                   <div class="form-group">
                     <label>Unggah Bukti Transfer (Gambar / PDF)</label>
-                    <input type="file" accept="image/*,.pdf" />
+                    <input type="file" accept="image/*" @change="handleFileUpload" />
                   </div>
                 </div>
 
@@ -202,16 +331,28 @@ const printReceipt = () => {
                       <strong>{{ p.period }}</strong>
                       <span class="pay-date">{{ p.date }}</span>
                     </td>
-                    <td>{{ formatRupiah(p.amount) }}</td>
+                    <td>{{ formatRupiah(getPaymentAmount(p)) }}</td>
                     <td>
                       <span class="status-pill" :class="p.status === 'paid' ? 'pill-paid' : 'pill-pending'">
                         {{ p.status === 'paid' ? 'Lunas' : 'Verifikasi' }}
                       </span>
                     </td>
                     <td>
-                      <button class="btn-invoice" @click="viewInvoice(p)">
-                        <i class='bx bx-file'></i> Struk
-                      </button>
+                      <template v-if="p.status === 'paid'">
+                        <button class="btn-invoice" @click="viewInvoice(p)" title="Cetak Struk Pembayaran Resmi">
+                          <i class='bx bx-printer'></i> Cetak Struk
+                        </button>
+                      </template>
+                      <template v-else-if="p.status === 'pending'">
+                        <span class="btn-invoice-pending" title="Menunggu persetujuan admin">
+                          <i class='bx bx-time-five'></i> Menunggu Verifikasi
+                        </span>
+                      </template>
+                      <template v-else>
+                        <span class="btn-invoice-rejected" title="Pembayaran ditolak">
+                          <i class='bx bx-x-circle'></i> Ditolak
+                        </span>
+                      </template>
                     </td>
                   </tr>
                 </tbody>
@@ -233,11 +374,23 @@ const printReceipt = () => {
                 <div class="pay-card-body">
                   <div class="pay-amount-box">
                     <span>Nominal:</span>
-                    <strong class="pay-val">{{ formatRupiah(p.amount) }}</strong>
+                    <strong class="pay-val">{{ formatRupiah(getPaymentAmount(p)) }}</strong>
                   </div>
-                  <button class="btn-invoice" @click="viewInvoice(p)">
-                    <i class='bx bx-file'></i> Struk
-                  </button>
+                  <template v-if="p.status === 'paid'">
+                    <button class="btn-invoice" @click="viewInvoice(p)">
+                      <i class='bx bx-printer'></i> Cetak Struk
+                    </button>
+                  </template>
+                  <template v-else-if="p.status === 'pending'">
+                    <span class="btn-invoice-pending">
+                      <i class='bx bx-time-five'></i> Menunggu Verifikasi
+                    </span>
+                  </template>
+                  <template v-else>
+                    <span class="btn-invoice-rejected">
+                      <i class='bx bx-x-circle'></i> Ditolak
+                    </span>
+                  </template>
                 </div>
               </div>
             </div>
@@ -266,11 +419,11 @@ const printReceipt = () => {
             </div>
             <div class="receipt-row">
               <span>Nama Penyewa:</span>
-              <strong>Keyla Asyfa Zahra</strong>
+              <strong>{{ currentUser?.name || 'Penyewa Kost' }}</strong>
             </div>
             <div class="receipt-row">
               <span>Kamar:</span>
-              <strong>Kamar 07 (Deluxe)</strong>
+              <strong>{{ currentRoom ? `Kamar ${currentRoom.number} (${currentRoom.typeName})` : 'Kamar Kost' }}</strong>
             </div>
             <div class="receipt-row">
               <span>Periode Sewa:</span>
@@ -286,7 +439,7 @@ const printReceipt = () => {
             </div>
             <div class="receipt-row total-row">
               <span>Total Bayar:</span>
-              <strong>{{ formatRupiah(selectedInvoice.amount) }}</strong>
+              <strong>{{ formatRupiah(getPaymentAmount(selectedInvoice)) }}</strong>
             </div>
           </div>
 
@@ -297,6 +450,42 @@ const printReceipt = () => {
           <button class="btn btn-primary print-btn" @click="printReceipt">
             <i class='bx bx-printer'></i> Cetak Struk
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QRIS MODAL POPUP -->
+    <div v-if="isQrisModalOpen" class="modal-backdrop" @click.self="closeQrisModal">
+      <div class="modal-box qris-modal-box">
+        <button class="modal-close" @click="closeQrisModal"><i class='bx bx-x'></i></button>
+        
+        <div class="qris-modal-header">
+          <div class="qris-logo-wrap">
+            <i class='bx bx-qr-scan'></i>
+          </div>
+          <h3>QRIS Pembayaran Resmi</h3>
+          <p>Kost Muslimah Sekar Space</p>
+        </div>
+
+        <div class="qris-image-container">
+          <img :src="cmsSettings.qrisImage" alt="QRIS Sekar Space Kost" class="qris-modal-img" />
+        </div>
+
+        <div class="qris-modal-meta">
+          <div class="qris-meta-row">
+            <span>Merchant:</span>
+            <strong>SEKAR SPACE KOST</strong>
+          </div>
+          <div class="qris-meta-row">
+            <span>Mendukung:</span>
+            <span>BCA, Mandiri, BRI, BNI, GoPay, OVO, DANA, ShopeePay, LinkAja</span>
+          </div>
+        </div>
+
+        <div class="qris-modal-actions">
+          <a :href="cmsSettings.qrisImage" download="QRIS-Sekar-Space.png" class="btn btn-primary btn-block">
+            <i class='bx bx-download'></i> Unduh Gambar QRIS
+          </a>
         </div>
       </div>
     </div>
@@ -386,6 +575,44 @@ const printReceipt = () => {
 .bank-mandiri { background: #FFF8E1; color: #F57F17; }
 .bank-qris { background: #F3E5F5; color: #7B1FA2; }
 
+.view-qris-btn {
+  background: #7B1FA2;
+  color: #fff;
+  border: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.view-qris-btn:hover {
+  background: #6A1B9A;
+  transform: translateY(-1px);
+}
+
+.qris-unavailable-badge {
+  background: #FEE2E2;
+  color: #DC2626;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.text-unavailable {
+  font-size: 0.95rem !important;
+  color: #DC2626 !important;
+  font-weight: 600 !important;
+}
+
 .copy-btn {
   background: var(--tertiary);
   color: var(--primary);
@@ -438,6 +665,101 @@ const printReceipt = () => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.not-extending-alert-box {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.upcoming-locked-box {
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.upcoming-locked-box .locked-icon {
+  width: 44px;
+  height: 44px;
+  background: #FDE68A;
+  color: #D97706;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.upcoming-locked-box .alert-body h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #92400E;
+  margin-bottom: 6px;
+}
+
+.upcoming-locked-box .alert-body p {
+  font-size: 0.88rem;
+  color: #78350F;
+  line-height: 1.5;
+}
+
+.not-extending-alert-box .alert-icon {
+  font-size: 2rem;
+  color: #D97706;
+  background: #FEF3C7;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.not-extending-alert-box .alert-body h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #92400E;
+  margin-bottom: 6px;
+}
+
+.not-extending-alert-box.booked-locked {
+  background: #FEF2F2;
+  border-color: #FECACA;
+}
+
+.not-extending-alert-box.booked-locked .alert-icon {
+  background: #FEE2E2;
+}
+
+.not-extending-alert-box.booked-locked .alert-body h3 {
+  color: #991B1B;
+}
+
+.not-extending-alert-box.booked-locked .alert-body p {
+  color: #7F1D1D;
+}
+
+.locked-text-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #DC2626;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #FEE2E2;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
 }
 
 .pay-form {
@@ -532,18 +854,134 @@ const printReceipt = () => {
 .pill-paid { background: var(--success-bg); color: var(--success); }
 .pill-pending { background: var(--warning-bg); color: var(--warning); }
 
+/* QRIS MODAL STYLING */
+.qris-modal-box {
+  max-width: 420px;
+  text-align: center;
+  padding: 28px;
+}
+
+.qris-modal-header {
+  margin-bottom: 20px;
+}
+
+.qris-logo-wrap {
+  width: 52px;
+  height: 52px;
+  background: #F3E5F5;
+  color: #7B1FA2;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.qris-modal-header h3 {
+  font-size: 1.3rem;
+  color: var(--dark);
+  margin-bottom: 4px;
+}
+
+.qris-modal-header p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.qris-image-container {
+  background: white;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 2px dashed #E2E8F0;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.qris-modal-img {
+  max-width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+
+.qris-modal-meta {
+  background: var(--off-white);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.qris-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.qris-meta-row span:first-child {
+  color: var(--text-muted);
+}
+
+.qris-meta-row span:last-child {
+  text-align: right;
+  font-size: 0.8rem;
+}
+
+.btn-block {
+  width: 100%;
+  justify-content: center;
+}
+
 .btn-invoice {
   background: var(--tertiary);
-  border: none;
+  border: 1px solid var(--primary-light, #BFDBFE);
   color: var(--primary);
   padding: 4px 10px;
   border-radius: var(--radius-sm);
   font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-invoice:hover {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.btn-invoice-pending {
+  font-size: 0.75rem;
+  color: #B45309;
+  background: #FEF3C7;
+  border: 1px solid #FDE68A;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.btn-invoice-rejected {
+  font-size: 0.75rem;
+  color: #B91C1C;
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
 }
 
 /* INVOICE MODAL */

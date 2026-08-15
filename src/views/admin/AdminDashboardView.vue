@@ -2,34 +2,38 @@
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
-import { useDataStore, type RoomData, type ComplaintData } from '../../composables/useDataStore'
+import { useDataStore, type RoomData, type ComplaintData, type PaymentData } from '../../composables/useDataStore'
 import { useAuth } from '../../composables/useAuth'
 
-const { rooms, complaints, payments, updateComplaintResponse, getBuildingName, getRoomById } = useDataStore()
+const { rooms, complaints, payments, updateComplaintResponse, getBuildingName, getRoomById, getActiveRentalByMemberId, getRentalsByMemberId, getPaymentsByMemberId, getPaymentsByRentalId, getPaymentAmount, getRentalByPayment } = useDataStore()
 const { tenants: memberTenants, getTenantById } = useAuth()
 
-const getTenantName = (memberId: string) => {
-  const t = getTenantById(memberId)
-  return t ? t.name : 'Penyewa'
+const getTenantName = (pay: PaymentData | string) => {
+  if (typeof pay === 'object') {
+    const rent = getRentalByPayment(pay)
+    const t = rent ? getTenantById(rent.memberId) : null
+    return t ? t.name : 'Penyewa'
+  }
+  const tenant = getTenantById(pay)
+  return tenant ? tenant.name : 'Penyewa'
 }
 
 const getTenantRoomNumber = (tenant: any) => {
-  const rm = getRoomById(tenant.roomId || '')
+  const rent = getActiveRentalByMemberId(tenant.id)
+  const rm = rent ? getRoomById(rent.roomId) : null
   return rm ? `Kamar ${rm.number}` : 'Kamar A13'
 }
 
 const getTenantBuildingName = (tenant: any) => {
-  const rm = getRoomById(tenant.roomId || '')
+  const rent = getActiveRentalByMemberId(tenant.id)
+  const rm = rent ? getRoomById(rent.roomId) : null
   return rm ? getBuildingName(rm.buildingId) : 'Gedung A'
 }
 
 const getComplaintRoomNumber = (c: ComplaintData) => {
-  const t = getTenantById(c.memberId)
-  if (t && t.roomId) {
-    const rm = getRoomById(t.roomId)
-    if (rm) return `Kamar ${rm.number}`
-  }
-  return 'Kamar A13'
+  const rent = getActiveRentalByMemberId(c.memberId)
+  const rm = rent ? getRoomById(rent.roomId) : null
+  return rm ? `Kamar ${rm.number}` : 'Kamar A13'
 }
 
 // KPI Calculations
@@ -40,7 +44,12 @@ const availableRoomsCount = computed(() => rooms.value.filter(r => r.status === 
 const occupancyRate = computed(() => totalRoomsCount.value > 0 ? Math.round((occupiedRoomsCount.value / totalRoomsCount.value) * 100) : 0)
 
 const totalMonthlyRevenue = computed(() => {
-  return memberTenants.value.reduce((acc, tenant) => acc + (tenant.monthlyRent || 700000), 0)
+  return memberTenants.value.reduce((acc: number, tenant: any) => {
+    const rent = getActiveRentalByMemberId(tenant.id)
+    const rm = rent ? getRoomById(rent.roomId) : null
+    const price = rm ? (rm.price1Month || rm.price || 600000) : 600000
+    return acc + price
+  }, 0)
 })
 
 const pendingComplaintsCount = computed(() => {
@@ -102,26 +111,37 @@ const urgentNotifications = computed(() => {
     targetLink: string
   }>()
 
-  // 1. Check Lease Endings / Reminders
-  memberTenants.value.forEach(t => {
-    const isHampirHabis = t.status === 'hampir-habis'
+  // 1. Check Tenants Near Expiration (H-30) yang belum lunas perpanjang
+  memberTenants.value.forEach((t: any) => {
+    const rent = getActiveRentalByMemberId(t.id)
+    
+    // Cek apakah penyewa sudah punya kontrak perpanjangan yang sudah dibayar lunas
+    const memberRents = getRentalsByMemberId(t.id)
+    const hasPaidFutureRental = memberRents.some((r: any) => {
+      if (r.id === rent?.id) return false
+      const isFuture = rent?.endDate ? new Date(r.startDate) >= new Date(rent.endDate) : false
+      if (!isFuture || r.status === 'cancelled') return false
+      const rPayments = getPaymentsByRentalId(r.id)
+      return rPayments.some((p: any) => p.status === 'paid') || r.status === 'active'
+    })
+
     let isEndingSoon = false
-    if (t.endDate) {
-      const endDateVal = new Date(t.endDate).getTime()
+    if (rent && rent.endDate && !hasPaidFutureRental) {
+      const endDateVal = new Date(rent.endDate).getTime()
       const nowVal = new Date('2026-08-14').getTime()
       const daysLeft = Math.ceil((endDateVal - nowVal) / (1000 * 3600 * 24))
       if (daysLeft <= 30) isEndingSoon = true
     }
 
-    if (isHampirHabis || isEndingSoon) {
-      const rm = getRoomById(t.roomId || '')
-      const roomNum = rm ? rm.number : (t.roomId || 'A14')
+    if (isEndingSoon && rent) {
+      const rm = getRoomById(rent.roomId)
+      const roomNum = rm ? rm.number : 'A14'
       map.set(`room-${roomNum}`, {
         id: `rem-${t.id}`,
         roomNumber: roomNum,
         buildingName: rm ? getBuildingName(rm.buildingId) : 'Gedung A',
         tenantName: t.name,
-        dueDate: t.endDate || '01 Agustus 2026',
+        dueDate: rent.endDate || '01 Agustus 2026',
         type: 'reminder',
         typeLabel: 'Jatuh Tempo Sewa',
         targetLink: '/admin/tenants'
@@ -130,12 +150,13 @@ const urgentNotifications = computed(() => {
   })
 
   // 2. Check Unpaid Billings
-  memberTenants.value.forEach(t => {
-    const rm = getRoomById(t.roomId || '')
+  memberTenants.value.forEach((t: any) => {
+    const rent = getActiveRentalByMemberId(t.id)
+    const rm = rent ? getRoomById(rent.roomId) : null
     const roomNum = rm ? rm.number : 'A11'
     if (!map.has(`room-${roomNum}`)) {
-      const hasPaidCurrentMonth = payments.value.some(p => p.memberId === t.id && p.period === 'Agustus 2026' && p.status === 'paid')
-      const pendingPay = payments.value.find(p => p.memberId === t.id && p.status === 'pending')
+      const tenantPayments = getPaymentsByMemberId(t.id)
+      const pendingPay = tenantPayments.find(p => p.status === 'pending')
 
       if (pendingPay) {
         map.set(`room-${roomNum}`, {
@@ -144,17 +165,6 @@ const urgentNotifications = computed(() => {
           buildingName: rm ? getBuildingName(rm.buildingId) : 'Gedung A',
           tenantName: t.name,
           dueDate: pendingPay.dueDate || '05 September 2026',
-          type: 'billing',
-          typeLabel: 'Jatuh Tempo Tagihan',
-          targetLink: '/admin/payments'
-        })
-      } else if (!hasPaidCurrentMonth) {
-        map.set(`room-${roomNum}`, {
-          id: `bill-${t.id}`,
-          roomNumber: roomNum,
-          buildingName: rm ? getBuildingName(rm.buildingId) : 'Gedung A',
-          tenantName: t.name,
-          dueDate: '05 Agustus 2026',
           type: 'billing',
           typeLabel: 'Jatuh Tempo Tagihan',
           targetLink: '/admin/payments'
@@ -397,15 +407,15 @@ const formatRupiah = (val: number) => {
               class="tenant-widget-item"
             >
               <div class="tenant-avatar">
-                {{ tenant.name.split(' ').map(n => n[0]).join('').slice(0, 2) }}
+                {{ tenant.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) }}
               </div>
               <div class="tenant-widget-info">
                 <h4>{{ tenant.name }}</h4>
                 <p>{{ getTenantRoomNumber(tenant) }} · {{ getTenantBuildingName(tenant) }}</p>
                 <small class="tenant-phone"><i class='bx bxl-whatsapp'></i> {{ tenant.phone }}</small>
               </div>
-              <span class="tenant-status-pill" :class="tenant.status">
-                {{ tenant.status === 'aktif' ? 'Aktif' : 'Hampir Habis' }}
+              <span class="tenant-status-pill" :class="getActiveRentalByMemberId(tenant.id)?.status === 'active' ? 'aktif' : 'selesai'">
+                {{ getActiveRentalByMemberId(tenant.id)?.status === 'active' ? 'Aktif' : 'Selesai' }}
               </span>
             </div>
           </div>
@@ -494,12 +504,12 @@ const formatRupiah = (val: number) => {
             <div v-for="pay in payments.slice(0, 4)" :key="pay.id" class="payment-widget-item">
               <div class="pay-icon"><i class='bx bx-receipt'></i></div>
               <div class="pay-info">
-                <h4>{{ getTenantName(pay.memberId) }}</h4>
+                <h4>{{ getTenantName(pay) }}</h4>
                 <p>Periode: {{ pay.period }} ({{ pay.method }})</p>
                 <small>{{ pay.date }}</small>
               </div>
               <div class="pay-amount">
-                <strong>{{ formatRupiah(pay.amount) }}</strong>
+                <strong>{{ formatRupiah(getPaymentAmount(pay)) }}</strong>
                 <span class="pay-status paid">Lunas</span>
               </div>
             </div>

@@ -7,7 +7,7 @@ import { useDataStore, getRoomPriceByDuration, type RoomData, type RoomTypeData 
 import communalFacilitiesData from '../data/communalFacilities.json'
 import roomGalleriesData from '../data/roomGalleries.json'
 
-const { rooms, roomTypes, bookRoom, buildings, cmsSettings } = useDataStore()
+const { rooms, roomTypes, bookRoom, buildings, cmsSettings, getRoomAvailabilityInfo } = useDataStore()
 const route = useRoute()
 
 // Floating button state for Step 2 & Step 3
@@ -67,7 +67,8 @@ const roomTypesData = computed(() => {
 const getAvailableCountForBuilding = (bId: string) => {
   return rooms.value.filter(r => {
     const isThisBuilding = r.buildingId === bId || (bId === 'utama' && r.buildingId === 'bld-a') || (bId === 'timur' && r.buildingId === 'bld-b') || (bId === 'barat' && r.buildingId === 'bld-c')
-    const isAvail = r.status === 'available'
+    const avail = getRoomAvailabilityInfo(r.id)
+    const isAvail = avail.status === 'available' || avail.status === 'upcoming_available'
     const isTypeMatch = !selectedType.value || r.typeId === selectedType.value
     return isThisBuilding && isAvail && isTypeMatch
   }).length
@@ -156,17 +157,31 @@ const buildingFloorPlanNodes = computed(() => {
   const floorNum = activeFloor.value === 'floor1' ? 1 : 2
   const roomNodes = roomsInSelectedBuilding.value
     .filter(r => r.floor === floorNum)
-    .map(r => ({
-      id: r.id,
-      number: r.number,
-      title: `Kamar ${r.number}`,
-      type: r.typeName,
-      typeId: r.typeId,
-      status: r.status === 'available' ? 'Tersedia' : 'Terisi',
-      icon: r.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open',
-      isRoom: true,
-      roomData: r
-    }))
+    .map(r => {
+      const avail = getRoomAvailabilityInfo(r.id)
+      let displayStatus = 'Terisi'
+      if (avail.status === 'available') {
+        displayStatus = 'Tersedia'
+      } else if (avail.status === 'upcoming_available') {
+        displayStatus = `Tersedia (${avail.availableFrom})`
+      }
+      const isSelectable = avail.status === 'available' || avail.status === 'upcoming_available'
+
+      return {
+        id: r.id,
+        number: r.number,
+        title: `Kamar ${r.number}`,
+        type: r.typeName,
+        typeId: r.typeId,
+        status: displayStatus,
+        statusCode: avail.status,
+        availableFrom: avail.availableFrom,
+        isSelectable: isSelectable,
+        icon: r.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open',
+        isRoom: true,
+        roomData: r
+      }
+    })
 
   const key = getBuildingKey(selectedBuildingId.value)
   const communalMap = communalFacilitiesData[key] || communalFacilitiesData['bld-a']
@@ -197,6 +212,8 @@ const calcWaMessage = computed(() => {
   const roomNum = selectedRoom.value.number
   const bldName = currentBuilding.value.name
   const roomType = selectedRoom.value.typeName
+  const avail = getRoomAvailabilityInfo(selectedRoom.value.id)
+
   const addons = []
   if (calcAddonExtraPerson.value) {
     addons.push(`Penghuni Lebih dari 1 Orang (Rp ${(250000 * calcDuration.value).toLocaleString('id-ID')} untuk ${calcDuration.value} bln)`)
@@ -206,12 +223,14 @@ const calcWaMessage = computed(() => {
   }
   const addonStr = addons.length > 0 ? addons.join(', ') : 'Tanpa Layanan Tambahan'
 
+  const upcomingNote = avail.isUpcoming ? `\n- Rencana Mulai Masuk: Setelah ${avail.availableFrom} (Booking Awal Masuk)` : ''
+
   const text = `Halo Admin Sekar Space, saya berminat memesan Kamar ${roomNum} (${bldName} - ${roomType}) dengan rincian:
-- Durasi Sewa: ${calcDuration.value} Bulan
+- Durasi Sewa: ${calcDuration.value} Bulan${upcomingNote}
 - Layanan Tambahan: ${addonStr}
 - Estimasi Total Sewa: Rp ${grandTotalEstimator.value.toLocaleString('id-ID')}
 
-Apakah kamar ini masih siap dihuni? Terima kasih.`
+Apakah kamar ini siap dibooking? Terima kasih.`
 
   return encodeURIComponent(text)
 })
@@ -247,7 +266,7 @@ const scrollToBuildingGrid = () => {
 
 const selectRoomFromFloorPlan = (roomNode: any) => {
   if (!roomNode.isRoom) return
-  if (roomNode.roomData.status === 'occupied') return
+  if (!roomNode.isSelectable) return
   if (selectedType.value && roomNode.typeId !== selectedType.value) {
     alert(`Kamar ini bertipe ${roomNode.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'}. Silakan pilih kamar tipe ${selectedType.value === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'} sesuai pilihan Anda di Langkah 1.`)
     return
@@ -257,7 +276,8 @@ const selectRoomFromFloorPlan = (roomNode: any) => {
 }
 
 const selectRoomDirect = (room: RoomData) => {
-  if (room.status === 'occupied') return
+  const avail = getRoomAvailabilityInfo(room.id)
+  if (avail.status === 'occupied') return
   if (selectedType.value && room.typeId !== selectedType.value) {
     alert(`Kamar ini bertipe ${room.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'}. Silakan pilih kamar tipe ${selectedType.value === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'} sesuai pilihan Anda di Langkah 1.`)
     return
@@ -520,6 +540,9 @@ onUnmounted(() => {
               <span class="legend-dot status-avail"></span> <span>Tersedia</span>
             </div>
             <div class="legend-item">
+              <span class="legend-dot status-upcoming"></span> <span>Tersedia Segera (Booking Awal)</span>
+            </div>
+            <div class="legend-item">
               <span class="legend-dot status-occ"></span> <span>Terisi</span>
             </div>
           </div>
@@ -531,9 +554,9 @@ onUnmounted(() => {
                 :key="node.id"
                 class="floor-node-card"
                 :class="[
-                  node.status.toLowerCase().replace(/\s+/g, '-'),
+                  node.statusCode ? node.statusCode : node.status.toLowerCase().replace(/\s+/g, '-'),
                   node.typeId,
-                  { 'is-clickable': node.isRoom && node.status === 'Tersedia' && node.typeId === selectedType },
+                  { 'is-clickable': node.isRoom && node.isSelectable && node.typeId === selectedType },
                   { 'is-disabled-type': node.isRoom && node.typeId !== selectedType },
                   { 'is-selected': selectedRoomId === node.id }
                 ]"
@@ -548,8 +571,8 @@ onUnmounted(() => {
                 <div class="node-icon"><i :class="node.icon"></i></div>
                 <div class="node-num">{{ node.title }}</div>
                 <div class="node-type">{{ node.type }}</div>
-                <span class="node-badge">{{ node.status }}</span>
-                <span v-if="node.isRoom && node.status === 'Tersedia' && node.typeId === selectedType" class="node-click-hint">Pilih Kamar Ini</span>
+                <span class="node-badge" :class="node.statusCode">{{ node.status }}</span>
+                <span v-if="node.isRoom && node.isSelectable && node.typeId === selectedType" class="node-click-hint">Pilih Kamar Ini</span>
               </div>
             </div>
           </div>
@@ -631,26 +654,38 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Room Number Selector Grid -->
+          <!-- Room Number Selector Grid -->
         <div class="room-number-section">
           <h3><i class='bx bx-key'></i> Pilih Nomor Kamar Kosong di {{ currentBuilding.name }}</h3>
-          <p>Klik salah satu nomor kamar di bawah ini yang siap dihuni:</p>
+          <p>Klik salah satu nomor kamar di bawah ini yang siap dihuni atau siap dibooking:</p>
+
+          <!-- UPCOMING BOOKING ALERT IN STEP 3 -->
+          <div v-if="selectedRoom && getRoomAvailabilityInfo(selectedRoom.id).isUpcoming" class="upcoming-booking-alert">
+            <div class="upcoming-alert-icon">
+              <i class='bx bx-calendar-star'></i>
+            </div>
+            <div class="upcoming-alert-text">
+              <h4>🗓️ Booking Awal: Kamar Siap Ditempati Mulai {{ getRoomAvailabilityInfo(selectedRoom.id).availableFrom }}</h4>
+              <p>Penyewa saat ini dijadwalkan menyelesaikan masa sewa pada <strong>{{ getRoomAvailabilityInfo(selectedRoom.id).availableFrom }}</strong>. Anda dapat melakukan booking sekarang untuk mengamankan slot kamar ini sebelum diambil calon penyewa lain.</p>
+            </div>
+          </div>
+
           <div class="room-number-grid">
             <button 
               v-for="rm in roomsInSelectedBuilding" 
               :key="rm.id"
               class="room-number-pill"
               :class="[
-                rm.status === 'available' ? 'pill-available' : 'pill-occupied',
+                getRoomAvailabilityInfo(rm.id).status === 'available' ? 'pill-available' : getRoomAvailabilityInfo(rm.id).status === 'upcoming_available' ? 'pill-upcoming' : 'pill-occupied',
                 { selected: selectedRoomId === rm.id },
                 { 'pill-disabled': rm.typeId !== selectedType }
               ]"
-              :disabled="rm.status === 'occupied' || rm.typeId !== selectedType"
+              :disabled="getRoomAvailabilityInfo(rm.id).status === 'occupied' || rm.typeId !== selectedType"
               @click="selectRoomDirect(rm)"
             >
-              <i class='bx' :class="rm.status === 'available' ? 'bx-key' : 'bx-lock-alt'"></i>
+              <i class='bx' :class="getRoomAvailabilityInfo(rm.id).status === 'available' ? 'bx-key' : getRoomAvailabilityInfo(rm.id).status === 'upcoming_available' ? 'bx-calendar-star' : 'bx-lock-alt'"></i>
               <span>Kamar {{ rm.number }}</span>
-              <small>{{ rm.status === 'available' ? 'Tersedia' : 'Terisi' }}</small>
+              <small>{{ getRoomAvailabilityInfo(rm.id).status === 'available' ? 'Tersedia' : getRoomAvailabilityInfo(rm.id).status === 'upcoming_available' ? 'Tersedia ' + getRoomAvailabilityInfo(rm.id).availableFrom : 'Terisi' }}</small>
             </button>
           </div>
         </div>
@@ -895,6 +930,67 @@ onUnmounted(() => {
   font-weight: 700;
   font-size: 0.95rem;
   transition: all var(--transition-base);
+}
+
+.room-number-pill.pill-available:hover,
+.room-number-pill.pill-upcoming:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.room-number-pill.pill-upcoming {
+  background: #FFFBEB;
+  border-color: #FCD34D;
+  color: #B45309;
+}
+
+.room-number-pill.pill-upcoming i {
+  color: #D97706;
+}
+
+.room-number-pill.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+}
+
+.room-number-pill.selected span,
+.room-number-pill.selected small,
+.room-number-pill.selected i {
+  color: var(--white);
+}
+
+/* UPCOMING BOOKING ALERT ON STEP 3 */
+.upcoming-booking-alert {
+  background: #FFFBEB;
+  border: 1.5px dashed #F59E0B;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.upcoming-alert-icon {
+  font-size: 1.8rem;
+  color: #D97706;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.upcoming-alert-text h4 {
+  font-size: 0.95rem;
+  color: #92400E;
+  margin-bottom: 4px;
+}
+
+.upcoming-alert-text p {
+  font-size: 0.85rem;
+  color: #78350F;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .step-item.active .step-number {
@@ -1459,6 +1555,10 @@ onUnmounted(() => {
   background: #15803D;
 }
 
+.legend-dot.status-upcoming {
+  background: #D97706;
+}
+
 .legend-dot.status-occ {
   background: #B91C1C;
 }
@@ -1552,6 +1652,13 @@ onUnmounted(() => {
 .floor-node-card.tersedia .node-badge {
   background: #DCFCE7;
   color: #15803D;
+}
+
+.floor-node-card.upcoming_available .node-badge,
+.node-badge.upcoming_available {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
 }
 
 .floor-node-card.terisi .node-badge {

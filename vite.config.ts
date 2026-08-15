@@ -20,7 +20,7 @@ function jsonDbPlugin() {
           req.on('end', () => {
             try {
               const { filename, data } = JSON.parse(body)
-              if (!['users', 'rooms', 'complaints', 'payments', 'cms', 'facilities', 'nearbyPlaces', 'testimonials', 'gallery', 'faqs', 'buildings'].includes(filename)) {
+              if (!['users', 'rooms', 'roomTypes', 'complaints', 'payments', 'cms', 'facilities', 'nearbyPlaces', 'testimonials', 'gallery', 'faqs', 'buildings', 'rentals'].includes(filename)) {
                 res.statusCode = 400
                 res.end(JSON.stringify({ success: false, error: 'Invalid filename' }))
                 return

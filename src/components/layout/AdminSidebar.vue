@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
+import { useDataStore } from '../../composables/useDataStore'
 
 const route = useRoute()
 const router = useRouter()
 const { logout } = useAuth()
+const { roomTransfers } = useDataStore()
+
+const pendingTransfersCount = computed(() => {
+  return roomTransfers.value.filter(t => t.status === 'pending').length
+})
+
 const isMobileSidebarOpen = ref(false)
 
 const toggleSidebar = () => {
@@ -99,6 +106,17 @@ const handleLogout = () => {
         >
           <i class='bx bxs-error-alt'></i>
           <span>Keluhan Penyewa</span>
+        </RouterLink>
+
+        <RouterLink 
+          to="/admin/room-transfers" 
+          class="sidebar-link" 
+          :class="{ active: route.path.startsWith('/admin/room-transfers') }"
+          @click="closeSidebar"
+        >
+          <i class='bx bx-transfer-alt'></i>
+          <span>Pindah Kamar</span>
+          <span v-if="pendingTransfersCount > 0" class="sidebar-badge">{{ pendingTransfersCount }}</span>
         </RouterLink>
 
         <span class="nav-section-title">Pengaturan Website</span>
@@ -366,5 +384,14 @@ const handleLogout = () => {
   .sidebar { transform: translateX(-100%); }
   .sidebar.show { transform: translateX(0); }
   .sidebar-overlay.show { display: block; }
+}
+.sidebar-badge {
+  margin-left: auto;
+  background: #EF4444;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
 }
 </style>
