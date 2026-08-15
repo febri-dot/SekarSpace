@@ -965,7 +965,7 @@ onUnmounted(() => {
             </div>
             <div class="contact-map" id="contactMap">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4096.961547023015!2d110.34968085650138!3d-7.7507099072810774!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a588cdcef73f3%3A0x2c8d90ddb0433c7c!2sKost%20Muslimah%20Sekar%20Wangi!5e0!3m2!1sid!2sid!4v1786543183534!5m2!1sid!2sid"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3953.389105439149!2d110.3535167!3d-7.7484882000000015!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a588cdcef73f3%3A0x2c8d90ddb0433c7c!2sKost%20Muslimah%20Sekar%20Wangi!5e0!3m2!1sen!2sid!4v1786780340244!5m2!1sen!2sid"
                 width="100%"
                 height="100%"
                 style="border:0; border-radius: 16px;"

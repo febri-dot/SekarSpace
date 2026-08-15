@@ -15,6 +15,7 @@ export interface User {
   roomId?: string
   startDate?: string
   endDate?: string
+  durationMonths?: number
   status?: 'aktif' | 'hampir-habis' | 'non-aktif'
   monthlyRent?: number
   password?: string
