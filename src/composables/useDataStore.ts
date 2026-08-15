@@ -93,8 +93,6 @@ export interface CmsSettings {
   contactPhone: string
   contactEmail: string
   contactAddress: string
-  promoActive: boolean
-  promoText: string
   priceKmLuarMonthly: number
   priceKmDalamMonthly: number
   priceKmLuarYearly: number
@@ -118,14 +116,15 @@ export interface NearbyPlaceCategory {
 }
 
 export interface NearbyPlaceData {
-  id: number
+  id?: number
   name: string
   category: string
   distance: string
   time: string
   icon: string
-  badge: string
+  badge?: string
   desc: string
+  popular?: boolean
 }
 
 export interface TestimonialData {
@@ -173,10 +172,10 @@ export interface BuildingData {
 const STORAGE_ROOMS = 'sekar_space_rooms_v10'
 const STORAGE_COMPLAINTS = 'sekar_space_complaints_v6'
 const STORAGE_PAYMENTS = 'sekar_space_payments_v6'
-const STORAGE_CMS = 'sekar_space_cms_v3'
+const STORAGE_CMS = 'sekar_space_cms_v4'
 const STORAGE_FACILITIES = 'sekar_space_facilities_v1'
 const STORAGE_NEARBY = 'sekar_space_nearby_v4'
-const STORAGE_TESTIMONIALS = 'sekar_space_testimonials_v1'
+const STORAGE_TESTIMONIALS = 'sekar_space_testimonials_v3'
 const STORAGE_GALLERY = 'sekar_space_gallery_v1'
 const STORAGE_FAQS = 'sekar_space_faqs_v1'
 const STORAGE_BUILDINGS = 'sekar_space_buildings_v2'
