@@ -77,7 +77,7 @@ const getAvailableCountForBuilding = (bId: string) => {
 // Step Management
 const currentStep = ref<number>(1)
 const selectedType = ref<'km-luar' | 'km-dalam' | null>(null)
-const selectedBuildingId = ref<string>('utama')
+const selectedBuildingId = ref<string | null>(null)
 const selectedRoomId = ref<string | null>(null)
 const activeFloor = ref<'floor1' | 'floor2'>('floor1')
 
@@ -132,7 +132,8 @@ const buildingList = computed(() => buildings.value)
 
 // Selected Building Object
 const currentBuilding = computed(() => {
-  return buildingList.value.find(b => b.id === selectedBuildingId.value) || buildingList.value[0]!
+  if (!selectedBuildingId.value) return null
+  return buildingList.value.find(b => b.id === selectedBuildingId.value) || null
 })
 
 // Rooms filtered by Building & Type
@@ -145,12 +146,42 @@ const availableRoomsInBuilding = computed(() => {
 })
 
 // Helper to map building identifier to standard key
-const getBuildingKey = (bId: string): 'bld-a' | 'bld-b' | 'bld-c' => {
+const getBuildingKey = (
+  bId: string | null
+): 'bld-a' | 'bld-b' | 'bld-c' | null => {
+  if (!bId) return null
+
   if (bId === 'utama' || bId === 'bld-a') return 'bld-a'
   if (bId === 'timur' || bId === 'bld-b') return 'bld-b'
   if (bId === 'barat' || bId === 'bld-c') return 'bld-c'
-  return 'bld-a'
+
+  return null
 }
+
+const currentBuildingName = computed(() => {
+  if (
+    selectedBuildingId.value === 'utama' ||
+    selectedBuildingId.value === 'bld-a'
+  ) {
+    return 'Gedung A'
+  }
+
+  if (
+    selectedBuildingId.value === 'timur' ||
+    selectedBuildingId.value === 'bld-b'
+  ) {
+    return 'Gedung B'
+  }
+
+  if (
+    selectedBuildingId.value === 'barat' ||
+    selectedBuildingId.value === 'bld-c'
+  ) {
+    return 'Gedung C'
+  }
+
+  return 'Belum Dipilih'
+})
 
 // Floor Plan Nodes for Selected Building (Clean JSON lookup, no repetitive if/else)
 const buildingFloorPlanNodes = computed(() => {
@@ -184,6 +215,11 @@ const buildingFloorPlanNodes = computed(() => {
     })
 
   const key = getBuildingKey(selectedBuildingId.value)
+
+  if (!key) {
+    return roomNodes
+  }
+
   const communalMap = communalFacilitiesData[key] || communalFacilitiesData['bld-a']
   const communalNodes = (communalMap as any)[String(floorNum)] || []
 
@@ -198,7 +234,7 @@ const basePriceTotal = computed(() => {
 
 const totalAddonsTotal = computed(() => {
   let addons = 0
-  if (calcAddonExtraPerson.value) addons += 250000 * calcDuration.value
+  if (calcAddonExtraPerson.value) addons += 250000
   if (calcAddonCarParking.value) addons += 50000 * calcDuration.value
   return addons
 })
@@ -210,13 +246,19 @@ const grandTotalEstimator = computed(() => {
 const calcWaMessage = computed(() => {
   if (!selectedRoom.value) return ''
   const roomNum = selectedRoom.value.number
-  const bldName = currentBuilding.value.name
+  const bldName = selectedBuildingId.value === 'bld-a' || selectedBuildingId.value === 'utama'
+    ? 'Gedung A'
+    : selectedBuildingId.value === 'bld-b' || selectedBuildingId.value === 'timur'
+      ? 'Gedung B'
+      : selectedBuildingId.value === 'bld-c' || selectedBuildingId.value === 'barat'
+        ? 'Gedung C'
+        : ''
   const roomType = selectedRoom.value.typeName
   const avail = getRoomAvailabilityInfo(selectedRoom.value.id)
 
   const addons = []
   if (calcAddonExtraPerson.value) {
-    addons.push(`Penghuni Lebih dari 1 Orang (Rp ${(250000 * calcDuration.value).toLocaleString('id-ID')} untuk ${calcDuration.value} bln)`)
+    addons.push(`Penghuni Lebih dari 1 Orang (Rp ${(250000).toLocaleString('id-ID')} untuk ${calcDuration.value} orang)`)
   }
   if (calcAddonCarParking.value) {
     addons.push(`Parkir Mobil (Rp ${(50000 * calcDuration.value).toLocaleString('id-ID')} untuk ${calcDuration.value} bln)`)
@@ -374,7 +416,7 @@ onUnmounted(() => {
         </span>
         <span class="summary-separator">›</span>
         <span class="summary-chip" @click="goToStep(2)">
-          <i class='bx bx-building-house'></i> {{ currentBuilding.name }}
+          <i class='bx bx-building-house'></i> Gedung: {{ currentBuildingName }}
         </span>
         <span v-if="selectedRoom" class="summary-separator">›</span>
         <span v-if="selectedRoom" class="summary-chip active-chip" @click="goToStep(3)">
@@ -504,7 +546,7 @@ onUnmounted(() => {
         <div id="floorPlanSection" class="floor-plan-container">
           <div class="floor-plan-header">
             <div>
-              <h3><i class='bx bx-map-alt'></i> Denah Layout — {{ currentBuilding.name }}</h3>
+              <h3><i class='bx bx-map-alt'></i> Denah Layout — {{ currentBuildingName }}</h3>
               <p>Menampilkan denah ruangan. Klik nomor kamar tipe <strong>{{ selectedType === 'km-dalam' ? 'KM Dalam' : 'KM Luar' }}</strong> yang berwarna hijau untuk memesan.</p>
             </div>
             <div class="floor-switcher">
@@ -609,7 +651,7 @@ onUnmounted(() => {
           <div class="room-specs">
             <div class="room-specs-header">
               <span class="type-badge">{{ selectedRoom.typeName }}</span>
-              <h2>{{ currentBuilding.name }} — Kamar {{ selectedRoom.number }}</h2>
+              <h2>{{ currentBuilding?.name || '' }} — Kamar {{ selectedRoom.number }}</h2>
               <div class="building-name">
                 <i class='bx bxs-map-pin'></i> Kost Muslimah Sekar Wangi, Trini, Mlati, Sleman
               </div>
@@ -656,7 +698,7 @@ onUnmounted(() => {
 
           <!-- Room Number Selector Grid -->
         <div class="room-number-section">
-          <h3><i class='bx bx-key'></i> Pilih Nomor Kamar Kosong di {{ currentBuilding.name }}</h3>
+          <h3><i class='bx bx-key'></i> Pilih Nomor Kamar Kosong di {{ currentBuildingName }}</h3>
           <p>Klik salah satu nomor kamar di bawah ini yang siap dihuni atau siap dibooking:</p>
 
           <!-- UPCOMING BOOKING ALERT IN STEP 3 -->
@@ -728,7 +770,7 @@ onUnmounted(() => {
                     <input type="checkbox" v-model="calcAddonExtraPerson" />
                     <div class="checkbox-text">
                       <strong>Penghuni Lebih dari 1 Orang</strong>
-                      <span>+ Rp 250.000 / bulan</span>
+                      <span>+ Rp 250.000 / orang</span>
                     </div>
                   </label>
                   <label class="checkbox-card" :class="{ checked: calcAddonCarParking }">
@@ -750,8 +792,8 @@ onUnmounted(() => {
                 <strong>{{ formatRupiah(basePriceTotal) }}</strong>
               </div>
               <div v-if="calcAddonExtraPerson" class="summary-row">
-                <span>Tambahan Penghuni ({{ calcDuration }} Bln):</span>
-                <strong>+ {{ formatRupiah(250000 * calcDuration) }}</strong>
+                <span>Tambahan Penghuni:</span>
+                <strong>+ {{ formatRupiah(250000) }}</strong>
               </div>
               <div v-if="calcAddonCarParking" class="summary-row">
                 <span>Parkir Mobil ({{ calcDuration }} Bln):</span>
