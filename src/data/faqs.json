@@ -1,0 +1,78 @@
+[
+  {
+    "number": "01",
+    "question": "Apa saja peraturan utama di Kost Muslimah Sekar Wangi?",
+    "isList": true,
+    "list": [
+      {
+        "label": "Identitas:",
+        "text": "Penyewa wajib seorang muslimah."
+      },
+      {
+        "label": "Jam Malam:",
+        "text": "Aktivitas yang menimbulkan keramaian atau mengganggu waktu istirahat diperbolehkan hingga pukul 22.00. Setelah waktu tersebut, pintu kost akan dikunci demi keamanan dan kenyamanan bersama."
+      },
+      {
+        "label": "Tamu:",
+        "text": "Tidak diperkenankan membawa lawan jenis ke dalam kamar; tamu lawan jenis hanya diperbolehkan di area ruang tamu."
+      },
+      {
+        "label": "Menginap:",
+        "text": "Tamu (sesama wanita) yang menginap lebih dari 2 hari akan dikenakan biaya tambahan Rp 50.000/hari."
+      },
+      {
+        "label": "Kebersihan:",
+        "text": "Wajib menjaga kebersihan fasilitas umum seperti dapur dan kamar mandi bersama."
+      },
+      {
+        "label": "Hewan Peliharaan:",
+        "text": "Dilarang membawa hewan peliharaan jenis apapun."
+      },
+      {
+        "label": "Perizinan:",
+        "text": "Wajib melapor kepada pengelola kost jika meninggalkan kost untuk pulang kampung atau pergi dalam waktu lama."
+      },
+      {
+        "label": "Ketertiban:",
+        "text": "Dilarang keras merokok dan mengonsumsi minuman keras di seluruh area kost, termasuk di dalam kamar."
+      }
+    ]
+  },
+  {
+    "number": "02",
+    "question": "Apakah biaya sewa sudah termasuk listrik, gas, air, dan fasilitas lainnya?",
+    "isList": true,
+    "list": [
+      {
+        "label": "Fasilitas Termasuk:",
+        "text": "Biaya sewa bulanan sudah mencakup pemakaian air bersih dan jaringan Wi-Fi."
+      },
+      {
+        "label": "Listrik & Gas:",
+        "text": "Biaya listrik dan gas di luar (tidak termasuk) biaya sewa kamar. Penyewa mengurus dan membayar sendiri biaya listrik dan gas tersebut."
+      },
+      {
+        "label": "Kapasitas 2 Orang:",
+        "text": "Jika 1 kamar disewa oleh 2 orang, maka akan dikenakan biaya tambahan sebesar Rp 250.000 per bulan."
+      }
+    ]
+  },
+  {
+    "number": "03",
+    "question": "Bagaimana sistem pembayaran sewa kamar kost?",
+    "isList": false,
+    "text": "Pembayaran sewa dapat dilakukan secara bulanan, per 3 bulan, atau tahunan melalui transfer bank ke rekening pengelola. Pembayaran wajib diselesaikan paling lambat pada tanggal jatuh tempo setiap bulannya sesuai kesepakatan awal."
+  },
+  {
+    "number": "04",
+    "question": "Apakah ada jam malam untuk tamu yang berkunjung?",
+    "isList": false,
+    "text": "Tamu hanya diperbolehkan berkunjung di area ruang tamu luar hingga pukul 21.00 WIB. Demi kenyamanan dan privasi penghuni lain, tamu (termasuk keluarga perempuan) tidak diizinkan memasuki area kamar tanpa izin khusus."
+  },
+  {
+    "number": "05",
+    "question": "Bagaimana dengan fasilitas dapur dan laundry?",
+    "isList": false,
+    "text": "Kami menyediakan dapur bersama yang lengkap dengan kompor, kulkas, dan peralatan dasar. Penghuni wajib membersihkan perlengkapan setelah dipakai. Untuk laundry, tersedia mesin cuci yang bisa digunakan bersama atau Anda dapat menggunakan jasa laundry berlangganan di sekitar area kost."
+  }
+]

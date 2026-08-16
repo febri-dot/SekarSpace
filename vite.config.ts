@@ -20,7 +20,7 @@ function jsonDbPlugin() {
           req.on('end', () => {
             try {
               const { filename, data } = JSON.parse(body)
-              if (!['users', 'rooms', 'complaints', 'payments'].includes(filename)) {
+              if (!['users', 'rooms', 'roomTypes', 'complaints', 'payments', 'cms', 'facilities', 'nearbyPlaces', 'testimonials', 'gallery', 'faqs', 'buildings', 'rentals'].includes(filename)) {
                 res.statusCode = 400
                 res.end(JSON.stringify({ success: false, error: 'Invalid filename' }))
                 return
@@ -61,4 +61,18 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    host: true
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules/gsap')) {
+            return 'vendor-gsap'
+          }
+        }
+      }
+    }
+  }
 })

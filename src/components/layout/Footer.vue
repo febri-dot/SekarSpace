@@ -1,5 +1,28 @@
 <script setup lang="ts">
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
+import { useAuth } from '../../composables/useAuth'
+import { useDataStore } from '../../composables/useDataStore'
+
+const router = useRouter()
+const { currentUser } = useAuth()
+const { cmsSettings } = useDataStore()
+
+const handlePortalClick = (targetRole: 'member' | 'admin') => {
+  if (!currentUser.value) {
+    router.push({ path: '/login', query: { redirect: targetRole === 'admin' ? '/admin/dashboard' : '/user/dashboard' } })
+    return
+  }
+
+  if (targetRole === 'admin') {
+    if (currentUser.value.role === 'admin') {
+      router.push('/admin/dashboard')
+    } else {
+      router.push('/login')
+    }
+  } else {
+    router.push('/user/dashboard')
+  }
+}
 </script>
 
 <template>
@@ -12,12 +35,11 @@ import { RouterLink } from 'vue-router'
             <span>Sekar<strong>Space</strong></span>
           </RouterLink>
           <p>Kost Muslimah Sekar Wangi — hunian nyaman, aman, dan terjangkau khusus muslimah dengan fasilitas lengkap dan lokasi strategis.</p>
-          <div class="footer-socials">
-            <a href="#" aria-label="Instagram Sekar Space" id="socialInstagram"><i class='bx bxl-instagram'></i></a>
-            <a href="#" aria-label="Facebook Sekar Space" id="socialFacebook"><i class='bx bxl-facebook'></i></a>
-            <a href="https://wa.me/6281234567890" aria-label="WhatsApp Sekar Space" id="socialWhatsapp" target="_blank" rel="noopener"><i class='bx bxl-whatsapp'></i></a>
-            <a href="#" aria-label="TikTok Sekar Space" id="socialTiktok"><i class='bx bxl-tiktok'></i></a>
-          </div>
+          <ul class="footer-features">
+            <li><i class='bx bxs-check-circle'></i> Khusus Putri / Muslimah</li>
+            <li><i class='bx bxs-check-circle'></i> Lingkungan Aman & Nyaman</li>
+            <li><i class='bx bxs-check-circle'></i> Fasilitas Lengkap & Bersih</li>
+          </ul>
         </div>
 
         <nav class="footer-nav" aria-label="Navigasi Footer - Tautan Cepat">
@@ -35,17 +57,17 @@ import { RouterLink } from 'vue-router'
         <nav class="footer-nav" aria-label="Navigasi Footer - Layanan">
           <h3>Portal & Layanan</h3>
           <ul>
-            <li><RouterLink to="/user">Portal Penyewa</RouterLink></li>
-            <li><RouterLink to="/admin/dashboard">Portal Admin</RouterLink></li>
+            <li><a href="#" @click.prevent="handlePortalClick('member')">Portal Penyewa</a></li>
+            <li><a href="#" @click.prevent="handlePortalClick('admin')">Portal Admin</a></li>
           </ul>
         </nav>
 
         <div class="footer-contact">
           <h3>Kontak Kami</h3>
           <address>
-            <p><i class='bx bxs-map'></i> Kost Muslimah Sekar Wangi, Trini, Sinduadi, Kec. Mlati, Kabupaten Sleman, D.I. Yogyakarta 55284</p>
-            <p><i class='bx bxs-phone'></i> <a href="tel:+62895378020456">+62 895-3780-20456</a></p>
-            <p><i class='bx bxs-envelope'></i> <a href="mailto:info@sekarspace.com">info@sekarspace.com</a></p>
+            <p><i class='bx bxs-map'></i> {{ cmsSettings.contactAddress || 'Kost Muslimah Sekar Wangi, Trini, Sinduadi, Kec. Mlati, Kabupaten Sleman, D.I. Yogyakarta 55284' }}</p>
+            <p><i class='bx bxs-phone'></i> <a :href="'tel:' + (cmsSettings.contactPhone || '+62 895-3780-20456')">{{ cmsSettings.contactPhone || '+62 895-3780-20456' }}</a></p>
+            <p><i class='bx bxs-envelope'></i> <a :href="'mailto:' + (cmsSettings.contactEmail || 'sekarcreative00@gmail.com')">{{ cmsSettings.contactEmail || 'sekarcreative00@gmail.com' }}</a></p>
           </address>
         </div>
       </div>
@@ -63,6 +85,9 @@ import { RouterLink } from 'vue-router'
   color: var(--tertiary-light);
   padding: 64px 0 24px;
   margin-top: auto;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .footer-grid {
@@ -90,27 +115,26 @@ import { RouterLink } from 'vue-router'
   margin-bottom: 20px;
 }
 
-.footer-socials {
+.footer-features {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.footer-socials a {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
+.footer-features li {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: var(--secondary);
-  font-size: 1.2rem;
-  transition: all var(--transition-fast);
+  gap: 8px;
+  color: #A08C7D;
+  font-size: 0.85rem;
 }
 
-.footer-socials a:hover {
-  background: var(--secondary);
-  color: var(--dark);
+.footer-features i {
+  color: var(--secondary);
+  font-size: 1rem;
 }
 
 .footer-nav h3,

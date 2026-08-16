@@ -1,38 +1,35 @@
 [
   {
     "id": "CMP-001",
-    "tenantName": "Keyla Asyfa Zahra",
+    "memberId": "MBR-01",
     "title": "AC Kamar Kurang Dingin",
     "category": "Fasilitas Kamar",
-    "roomNumber": "Kamar 07",
-    "date": "11 Ags 2026",
-    "status": "in-progress",
+    "date": "2026-08-11",
+    "status": "resolved",
     "priority": "high",
     "description": "AC kamar terasa kurang dingin sejak kemarin malam meskipun suhu sudah diatur ke 18 derajat.",
-    "response": "Teknisi AC telah dijadwalkan untuk melakukan servis freon pada jam 14.00 WIB."
+    "response": "Teknisi AC telah melakukan servis penambahan freon dan pembersihan filter pada 12 Agustus 2026. AC sudah kembali dingin normal."
   },
   {
     "id": "CMP-002",
-    "tenantName": "Zulfa Tsaniyatul Fadilah",
-    "title": "Lampu Wastafel Mati",
-    "category": "Fasilitas Kamar",
-    "roomNumber": "Kamar 02",
-    "date": "02 Ags 2026",
-    "status": "resolved",
-    "priority": "low",
-    "description": "Lampu bohlam di atas wastafel kamar mandi mati.",
-    "response": "Bohlam lampu telah diganti baru oleh pengurus kost pada 03 Ags 2026."
+    "memberId": "MBR-03",
+    "title": "Koneksi WiFi di Lantai 1 Agak Lambat",
+    "category": "Jaringan Internet / WiFi",
+    "date": "2026-08-15",
+    "status": "pending",
+    "priority": "medium",
+    "description": "Koneksi WiFi di kamar A12 terasa agak lambat saat jam 19.00 - 21.00 malam.",
+    "response": ""
   },
   {
     "id": "CMP-003",
-    "tenantName": "Zalfa Nadya Alfialini",
-    "title": "WiFi Sering Terputus",
-    "category": "Jaringan Internet / WiFi",
-    "roomNumber": "Kamar 04",
-    "date": "10 Ags 2026",
-    "status": "pending",
+    "memberId": "MBR-06",
+    "title": "Keran Wastafel Kamar Mandi Menetes",
+    "category": "Fasilitas Kamar Mandi",
+    "date": "2026-08-16",
+    "status": "in-progress",
     "priority": "medium",
-    "description": "Koneksi WiFi sering terputus-putus terutama di area balkon lantai 2.",
-    "response": ""
+    "description": "Keran air pada wastafel kamar mandi dalam terus menetes perlahan walau sudah ditutup rapat.",
+    "response": "Petugas maintenance sudah dijadwalkan datang untuk mengganti karet kran besok pagi pukul 09.00 WIB."
   }
 ]

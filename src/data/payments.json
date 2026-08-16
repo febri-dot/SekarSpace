@@ -1,29 +1,98 @@
 [
   {
-    "id": "PAY-2026-08",
-    "tenantName": "Keyla Asyfa Zahra",
-    "period": "Agustus 2026",
-    "amount": 950000,
+    "id": "PAY-001",
+    "rentalId": "RNT-001",
+    "period": "Pembayaran Awal Sewa (12 Bulan)",
+    "amount": 8000000,
+    "durationMonths": 12,
     "method": "Transfer BCA",
-    "date": "01 Ags 2026",
-    "status": "paid"
+    "date": "2025-09-01",
+    "status": "paid",
+    "notes": "Pembayaran sewa 1 tahun telah lunas terverifikasi.",
+    "proofImage": ""
   },
   {
-    "id": "PAY-2026-07",
-    "tenantName": "Keyla Asyfa Zahra",
-    "period": "Juli 2026",
-    "amount": 950000,
+    "id": "PAY-002",
+    "rentalId": "RNT-002",
+    "period": "Perpanjangan Sewa (6 Bulan)",
+    "amount": 4000000,
+    "durationMonths": 6,
     "method": "Transfer BCA",
-    "date": "01 Jul 2026",
-    "status": "paid"
+    "date": "2026-08-01",
+    "status": "paid",
+    "notes": "Perpanjangan sewa 6 bulan telah disetujui & lunas.",
+    "proofImage": ""
   },
   {
-    "id": "PAY-2026-06",
-    "tenantName": "Keyla Asyfa Zahra",
-    "period": "Juni 2026",
-    "amount": 950000,
-    "method": "Transfer Mandiri",
-    "date": "02 Jun 2026",
-    "status": "paid"
+    "id": "PAY-003",
+    "rentalId": "RNT-003",
+    "period": "Pembayaran Awal Sewa (12 Bulan)",
+    "amount": 7000000,
+    "durationMonths": 12,
+    "method": "QRIS",
+    "date": "2025-09-16",
+    "status": "paid",
+    "notes": "Pembayaran sewa 1 tahun telah diverifikasi lunas.",
+    "proofImage": ""
+  },
+  {
+    "id": "PAY-004",
+    "rentalId": "RNT-004",
+    "period": "Pembayaran Awal Sewa (3 Bulan)",
+    "amount": 1800000,
+    "durationMonths": 3,
+    "method": "Transfer BCA",
+    "date": "2026-05-23",
+    "status": "paid",
+    "notes": "Pembayaran sewa 3 bulan telah lunas.",
+    "proofImage": ""
+  },
+  {
+    "id": "PAY-005",
+    "rentalId": "RNT-004",
+    "period": "Perpanjangan Sewa (3 Bulan)",
+    "amount": 1800000,
+    "durationMonths": 3,
+    "method": "Transfer BCA / QRIS",
+    "date": "2026-08-16",
+    "status": "pending",
+    "notes": "Menunggu konfirmasi pembayaran dan upload bukti transfer dari penyewa.",
+    "proofImage": ""
+  },
+  {
+    "id": "PAY-006",
+    "rentalId": "RNT-005",
+    "period": "Pembayaran Awal Sewa (1 Bulan)",
+    "amount": 600000,
+    "durationMonths": 1,
+    "method": "Transfer BCA",
+    "date": "2026-08-15",
+    "status": "paid",
+    "notes": "Pembayaran sewa bulan pertama telah terverifikasi.",
+    "proofImage": ""
+  },
+  {
+    "id": "PAY-007",
+    "rentalId": "RNT-006",
+    "period": "Booking & Pembayaran Awal (6 Bulan)",
+    "amount": 3500000,
+    "durationMonths": 6,
+    "method": "QRIS",
+    "date": "2026-08-15",
+    "status": "paid",
+    "notes": "Reservasi kamar A11 untuk masa sewa 17 Sep 2026 telah lunas.",
+    "proofImage": ""
+  },
+  {
+    "id": "PAY-008",
+    "rentalId": "RNT-007",
+    "period": "Pembayaran Awal Sewa (6 Bulan)",
+    "amount": 4200000,
+    "durationMonths": 6,
+    "method": "Transfer BCA",
+    "date": "2026-07-01",
+    "status": "paid",
+    "notes": "Pembayaran sewa 6 bulan telah terverifikasi lunas.",
+    "proofImage": ""
   }
 ]

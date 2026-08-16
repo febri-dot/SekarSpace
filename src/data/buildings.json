@@ -1,0 +1,47 @@
+[
+  {
+    "id": "bld-a",
+    "name": "Gedung A",
+    "desc": "Memiliki 10 kamar yang terbagi dalam 2 lantai.",
+    "badge": "Favorit",
+    "facilities": [
+      "Garasi Motor",
+      "Wi-Fi & CCTV 24 Jam",
+      "Dapur Umum Lt.1",
+      "Ruang Tamu",
+      "Area Jemur Atas",
+      "Mesin Cuci",
+      "Kulkas & TV",
+      "Token Listrik Bersama"
+    ]
+  },
+  {
+    "id": "bld-b",
+    "name": "Gedung B",
+    "desc": "Memiliki 6 kamar yang terbagi dalam 2 lantai.",
+    "badge": "Tenang",
+    "facilities": [
+      "Garasi Motor",
+      "Wi-Fi & CCTV 24 Jam",
+      "Dapur Umum Lt.2",
+      "Area Jemur Atas",
+      "Kulkas & TV",
+      "Token Listrik Bersama"
+    ]
+  },
+  {
+    "id": "bld-c",
+    "name": "Gedung C",
+    "desc": "Memiliki 8 kamar yang terbagi dalam 2 lantai.",
+    "badge": "Nyaman",
+    "facilities": [
+      "Garasi Motor",
+      "Wi-Fi & CCTV 24 Jam",
+      "Dapur Umum Tiap Lantai",
+      "Ruang Tamu",
+      "Area Jemur Atas",
+      "Kulkas & TV",
+      "Token Listrik Bersama"
+    ]
+  }
+]

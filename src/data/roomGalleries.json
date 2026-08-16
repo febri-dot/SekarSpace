@@ -1,0 +1,74 @@
+{
+  "km-dalam": [
+    {
+      "url": "/assets/images/kamar-km-dalam-1.webp",
+      "title": "Kamar Mandi Dalam 1"
+    },
+    {
+      "url": "/assets/images/kamar-km-dalam-2.webp",
+      "title": "Kamar Mandi Dalam 2"
+    },
+    {
+      "url": "/assets/images/foto-km-dalam.webp",
+      "title": "Kamar Mandi Dalam"
+    },
+    {
+      "url": "/assets/images/fasilitas-dapur.webp",
+      "title": "Dapur Bersama"
+    },
+    {
+      "url": "/assets/images/fasilitas-kulkas.webp",
+      "title": "Kulkas Bersama"
+    },
+    {
+      "url": "/assets/images/fasilitas-jemuran.webp",
+      "title": "Area Jemuran"
+    },
+    {
+      "url": "/assets/images/fasilitas-parkir.webp",
+      "title": "Area Parkir"
+    },
+    {
+      "url": "/assets/images/fasilitas-sofa.webp",
+      "title": "Ruang Tamu & TV"
+    },
+    {
+      "url": "/assets/images/mesin-cuci.webp",
+      "title": "Mesin Cuci"
+    }
+  ],
+  "km-luar": [
+    {
+      "url": "/assets/images/fasilitas-luas-kamar.webp",
+      "title": "Fasilitas Luas Kamar"
+    },
+    {
+      "url": "/assets/images/fasilitas-km-luar.webp",
+      "title": "Kamar Mandi Luar"
+    },
+    {
+      "url": "/assets/images/fasilitas-dapur.webp",
+      "title": "Dapur Bersama"
+    },
+    {
+      "url": "/assets/images/fasilitas-kulkas.webp",
+      "title": "Kulkas Bersama"
+    },
+    {
+      "url": "/assets/images/fasilitas-jemuran.webp",
+      "title": "Area Jemuran"
+    },
+    {
+      "url": "/assets/images/fasilitas-parkir.webp",
+      "title": "Area Parkir"
+    },
+    {
+      "url": "/assets/images/fasilitas-sofa.webp",
+      "title": "Ruang Tamu & TV"
+    },
+    {
+      "url": "/assets/images/mesin-cuci.webp",
+      "title": "Mesin Cuci"
+    }
+  ]
+}

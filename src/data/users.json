@@ -4,7 +4,7 @@
     "username": "admin",
     "password": "admin123",
     "name": "Pengelola Admin",
-    "email": "admin@sekarspace.com",
+    "email": "sekarcreative00@gmail.com",
     "role": "admin"
   },
   {
@@ -15,17 +15,10 @@
     "email": "keyla.asyfa@gmail.com",
     "role": "member",
     "nik": "3401234567890001",
-    "address": "Sleman, Yogyakarta",
+    "address": "Sleman, D.I. Yogyakarta",
     "phone": "081234567890",
     "birthDate": "2004-05-12",
-    "parentPhone": "081298765432",
-    "roomNumber": "Kamar 07",
-    "roomType": "Kamar Mandi Dalam (Deluxe)",
-    "building": "Gedung Utama (Lantai 2)",
-    "startDate": "2025-09-01",
-    "endDate": "2026-09-01",
-    "status": "aktif",
-    "monthlyRent": 950000
+    "parentPhone": "081298765432"
   },
   {
     "id": "MBR-02",
@@ -35,17 +28,10 @@
     "email": "zulfa@gmail.com",
     "role": "member",
     "nik": "3401234567890002",
-    "address": "Bantul, Yogyakarta",
+    "address": "Bantul, D.I. Yogyakarta",
     "phone": "082345678901",
     "birthDate": "2004-03-21",
-    "parentPhone": "081287654321",
-    "roomNumber": "Kamar 02",
-    "roomType": "Kamar Mandi Luar",
-    "building": "Gedung Utama (Lantai 1)",
-    "startDate": "2025-12-01",
-    "endDate": "2026-12-01",
-    "status": "aktif",
-    "monthlyRent": 700000
+    "parentPhone": "081287654321"
   },
   {
     "id": "MBR-03",
@@ -55,36 +41,48 @@
     "email": "zalfa@gmail.com",
     "role": "member",
     "nik": "3401234567890003",
-    "address": "Kulon Progo, Yogyakarta",
+    "address": "Kulon Progo, D.I. Yogyakarta",
     "phone": "083456789012",
     "birthDate": "2004-07-10",
-    "parentPhone": "081276543210",
-    "roomNumber": "Kamar 04",
-    "roomType": "Kamar Mandi Dalam (Deluxe)",
-    "building": "Gedung Utama (Lantai 2)",
-    "startDate": "2025-10-01",
-    "endDate": "2026-08-01",
-    "status": "hampir-habis",
-    "monthlyRent": 950000
+    "parentPhone": "081276543210"
   },
   {
     "id": "MBR-04",
     "username": "febri",
     "password": "123",
-    "name": "Febri",
-    "email": "febriyantip439@gmail.com",
+    "name": "Febriyanti Putri",
+    "email": "febri@sekarspace.com",
     "role": "member",
     "nik": "3401234567890004",
-    "address": "Sleman, Yogyakarta",
+    "address": "Manisrejo, Maguwoharjo, Depok, Sleman",
     "phone": "0895378020456",
-    "birthDate": "2003-02-15",
-    "parentPhone": "0895378020999",
-    "roomNumber": "Kamar 08",
-    "roomType": "Kamar Mandi Dalam (Deluxe)",
-    "building": "Gedung Barat (Lantai 2)",
-    "startDate": "2026-08-12",
-    "endDate": "2027-08-31",
-    "status": "aktif",
-    "monthlyRent": 950000
+    "birthDate": "2005-08-16",
+    "parentPhone": "0895378020456"
+  },
+  {
+    "id": "MBR-05",
+    "username": "nabila",
+    "password": "123",
+    "name": "Nabila Eka Safitri",
+    "email": "nabila@sekarspace.com",
+    "role": "member",
+    "nik": "3401234567890005",
+    "address": "Kota Yogyakarta, D.I. Yogyakarta",
+    "phone": "085678901234",
+    "birthDate": "2005-04-16",
+    "parentPhone": "085678909876"
+  },
+  {
+    "id": "MBR-06",
+    "username": "dinda",
+    "password": "123",
+    "name": "Adinda Rahmawati",
+    "email": "dinda@sekarspace.com",
+    "role": "member",
+    "nik": "3401234567890006",
+    "address": "Klaten, Jawa Tengah",
+    "phone": "087890123456",
+    "birthDate": "2004-11-20",
+    "parentPhone": "087890126543"
   }
 ]

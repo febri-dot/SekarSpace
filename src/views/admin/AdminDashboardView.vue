@@ -2,37 +2,193 @@
 import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
-import { useDataStore, type RoomData, type ComplaintData } from '../../composables/useDataStore'
-import defaultUsers from '../../data/users.json'
+import { useDataStore, type RoomData, type ComplaintData, type PaymentData } from '../../composables/useDataStore'
+import { useAuth } from '../../composables/useAuth'
 
-const { rooms, complaints, payments, bookRoom, updateComplaintResponse } = useDataStore()
+const { rooms, complaints, payments, updateComplaintResponse, getBuildingName, getRoomById, getActiveRentalByMemberId, getRentalsByMemberId, getPaymentsByMemberId, getPaymentsByRentalId, getPaymentAmount, getRentalByPayment } = useDataStore()
+const { tenants: memberTenants, getTenantById } = useAuth()
 
-// State
-const memberTenants = ref(defaultUsers.filter(u => u.role === 'member'))
+const getTenantName = (pay: PaymentData | string) => {
+  if (typeof pay === 'object') {
+    const rent = getRentalByPayment(pay)
+    const t = rent ? getTenantById(rent.memberId) : null
+    return t ? t.name : 'Penyewa'
+  }
+  const tenant = getTenantById(pay)
+  return tenant ? tenant.name : 'Penyewa'
+}
+
+const getTenantRoomNumber = (tenant: any) => {
+  const rent = getActiveRentalByMemberId(tenant.id)
+  const rm = rent ? getRoomById(rent.roomId) : null
+  return rm ? `Kamar ${rm.number}` : 'Kamar A13'
+}
+
+const getTenantBuildingName = (tenant: any) => {
+  const rent = getActiveRentalByMemberId(tenant.id)
+  const rm = rent ? getRoomById(rent.roomId) : null
+  return rm ? getBuildingName(rm.buildingId) : 'Gedung A'
+}
+
+const getComplaintRoomNumber = (c: ComplaintData) => {
+  const rent = getActiveRentalByMemberId(c.memberId)
+  const rm = rent ? getRoomById(rent.roomId) : null
+  return rm ? `Kamar ${rm.number}` : 'Kamar A13'
+}
 
 // KPI Calculations
 const totalTenantsCount = computed(() => memberTenants.value.length)
 const totalRoomsCount = computed(() => rooms.value.length)
 const occupiedRoomsCount = computed(() => rooms.value.filter(r => r.status === 'occupied').length)
 const availableRoomsCount = computed(() => rooms.value.filter(r => r.status === 'available').length)
-const occupancyRate = computed(() => Math.round((occupiedRoomsCount.value / totalRoomsCount.value) * 100))
+const occupancyRate = computed(() => totalRoomsCount.value > 0 ? Math.round((occupiedRoomsCount.value / totalRoomsCount.value) * 100) : 0)
 
 const totalMonthlyRevenue = computed(() => {
-  return memberTenants.value.reduce((acc, tenant) => acc + (tenant.monthlyRent || 700000), 0)
+  return memberTenants.value.reduce((acc: number, tenant: any) => {
+    const rent = getActiveRentalByMemberId(tenant.id)
+    const rm = rent ? getRoomById(rent.roomId) : null
+    const price = rm ? (rm.price1Month || rm.price || 600000) : 600000
+    return acc + price
+  }, 0)
 })
 
 const pendingComplaintsCount = computed(() => {
   return complaints.value.filter(c => c.status === 'pending' || c.status === 'in-progress').length
 })
 
-// Toggle Room Occupancy Status Quick Action
-const toggleRoomStatus = (room: RoomData) => {
-  if (room.status === 'available') {
-    room.status = 'occupied'
-  } else {
-    room.status = 'available'
+// Summary Status Ketersediaan Kamar
+const roomSummary = computed(() => {
+  const total = rooms.value.length
+  const occupied = occupiedRoomsCount.value
+  const available = availableRoomsCount.value
+  const percent = occupancyRate.value
+
+  // Summary Per Gedung
+  const buildingsMap = new Map<string, { id: string; name: string; total: number; occupied: number; available: number }>()
+  rooms.value.forEach(r => {
+    const bName = getBuildingName(r.buildingId)
+    if (!buildingsMap.has(r.buildingId)) {
+      buildingsMap.set(r.buildingId, { id: r.buildingId, name: bName, total: 0, occupied: 0, available: 0 })
+    }
+    const item = buildingsMap.get(r.buildingId)!
+    item.total++
+    if (r.status === 'occupied') item.occupied++
+    else item.available++
+  })
+
+  // Summary Per Tipe Kamar
+  const typeMap = new Map<string, { typeName: string; total: number; occupied: number; available: number }>()
+  rooms.value.forEach(r => {
+    if (!typeMap.has(r.typeId)) {
+      typeMap.set(r.typeId, { typeName: r.typeName, total: 0, occupied: 0, available: 0 })
+    }
+    const item = typeMap.get(r.typeId)!
+    item.total++
+    if (r.status === 'occupied') item.occupied++
+    else item.available++
+  })
+
+  return {
+    total,
+    occupied,
+    available,
+    percent,
+    buildingsList: Array.from(buildingsMap.values()),
+    typesList: Array.from(typeMap.values())
   }
-}
+})
+
+// Deduplicated Single Notification List
+const urgentNotifications = computed(() => {
+  const map = new Map<string, {
+    id: string
+    roomNumber: string
+    buildingName: string
+    tenantName: string
+    dueDate: string
+    type: 'reminder' | 'billing'
+    typeLabel: string
+    targetLink: string
+  }>()
+
+  // 1. Check Tenants Near Expiration (H-30) yang belum lunas perpanjang
+  memberTenants.value.forEach((t: any) => {
+    const rent = getActiveRentalByMemberId(t.id)
+    
+    // Cek apakah penyewa sudah punya kontrak perpanjangan yang sudah dibayar lunas
+    const memberRents = getRentalsByMemberId(t.id)
+    const hasPaidFutureRental = memberRents.some((r: any) => {
+      if (r.id === rent?.id) return false
+      const isFuture = rent?.endDate ? new Date(r.startDate) >= new Date(rent.endDate) : false
+      if (!isFuture || r.status === 'cancelled') return false
+      const rPayments = getPaymentsByRentalId(r.id)
+      return rPayments.some((p: any) => p.status === 'paid') || r.status === 'active'
+    })
+
+    let isEndingSoon = false
+    if (rent && rent.endDate && !hasPaidFutureRental) {
+      const endDateVal = new Date(rent.endDate).getTime()
+      const nowVal = new Date('2026-08-14').getTime()
+      const daysLeft = Math.ceil((endDateVal - nowVal) / (1000 * 3600 * 24))
+      if (daysLeft <= 30) isEndingSoon = true
+    }
+
+    if (isEndingSoon && rent) {
+      const rm = getRoomById(rent.roomId)
+      const roomNum = rm ? rm.number : 'A14'
+      map.set(`room-${roomNum}`, {
+        id: `rem-${t.id}`,
+        roomNumber: roomNum,
+        buildingName: rm ? getBuildingName(rm.buildingId) : 'Gedung A',
+        tenantName: t.name,
+        dueDate: rent.endDate || '01 Agustus 2026',
+        type: 'reminder',
+        typeLabel: 'Jatuh Tempo Sewa',
+        targetLink: '/admin/payments?tab=expiring'
+      })
+    }
+  })
+
+  // 2. Check Unpaid Billings
+  memberTenants.value.forEach((t: any) => {
+    const rent = getActiveRentalByMemberId(t.id)
+    const rm = rent ? getRoomById(rent.roomId) : null
+    const roomNum = rm ? rm.number : 'A11'
+    if (!map.has(`room-${roomNum}`)) {
+      const tenantPayments = getPaymentsByMemberId(t.id)
+      const pendingPay = tenantPayments.find(p => p.status === 'pending')
+
+      if (pendingPay) {
+        map.set(`room-${roomNum}`, {
+          id: `bill-${t.id}`,
+          roomNumber: roomNum,
+          buildingName: rm ? getBuildingName(rm.buildingId) : 'Gedung A',
+          tenantName: t.name,
+          dueDate: pendingPay.dueDate || '05 September 2026',
+          type: 'billing',
+          typeLabel: 'Jatuh Tempo Tagihan',
+          targetLink: '/admin/payments?tab=pending'
+        })
+      }
+    }
+  })
+
+  // Fallback default
+  if (map.size === 0) {
+    map.set('room-A14', {
+      id: 'default-1',
+      roomNumber: 'A14',
+      buildingName: 'Gedung A',
+      tenantName: 'Zalfa Nadya Alfialini',
+      dueDate: '01 Agustus 2026',
+      type: 'reminder',
+      typeLabel: 'Jatuh Tempo Sewa',
+      targetLink: '/admin/payments?tab=expiring'
+    })
+  }
+
+  return Array.from(map.values())
+})
 
 // Quick Reply Modal for Complaints
 const selectedComplaint = ref<ComplaintData | null>(null)
@@ -62,7 +218,7 @@ const formatRupiah = (val: number) => {
 </script>
 
 <template>
-  <div class="admin-layout">
+  <div class="admin-page">
     <AdminSidebar />
 
     <main class="admin-main">
@@ -134,44 +290,104 @@ const formatRupiah = (val: number) => {
         </div>
       </section>
 
-      <!-- 2. QUICK ACTIONS & ROOM OCCUPANCY VISUAL GRID -->
-      <div class="dashboard-content-grid">
-        <!-- Room Occupancy Layout Grid -->
-        <div class="dashboard-card room-status-panel">
-          <div class="card-header">
-            <div>
-              <h3><i class='bx bxs-grid-alt'></i> Status Hunian Kamar Kost</h3>
-              <p>Klik tombol status pada kamar untuk mengubah status ketersediaan (*Tersedia* / *Terisi*).</p>
+      <!-- 2. ROOM AVAILABILITY SUMMARY & NOTIFICATIONS (UNIFIED ALL-IN-ONE CARD) -->
+      <div class="dashboard-columns">
+        <!-- Left Main Panel: 1 Single Unified Card -->
+        <div class="left-dash-column">
+          <div class="dashboard-card unified-room-card">
+            <!-- Sleek Card Header -->
+            <div class="unified-card-header">
+              <div class="header-title-box">
+                <div class="header-icon"><i class='bx bxs-building-house'></i></div>
+                <div>
+                  <h3>Status Ketersediaan & Pengingat Kamar</h3>
+                  <p>Ringkasan hunian kost dan pemberitahuan kamar jatuh tempo sewa/tagihan.</p>
+                </div>
+              </div>
+              <RouterLink to="/admin/rooms" class="btn btn-ghost btn-sm header-action-btn">
+                <i class='bx bx-door-open'></i> Master Kamar ({{ roomSummary.total }})
+              </RouterLink>
             </div>
-            <span class="badge-count">{{ rooms.length }} Kamar Total</span>
-          </div>
 
-          <div class="admin-room-grid">
-            <div 
-              v-for="room in rooms" 
-              :key="room.id"
-              class="admin-room-node"
-              :class="room.status"
-            >
-              <div class="node-top">
-                <span class="room-num">No. {{ room.number }}</span>
-                <span class="bld-tag">{{ room.buildingName }}</span>
+            <!-- SECTION 1: Summary Metrics Bar -->
+            <div class="summary-metric-bar">
+              <div class="metric-item">
+                <span class="metric-label">Total Kapasitas</span>
+                <strong class="metric-val">{{ roomSummary.total }} <small>Kamar</small></strong>
               </div>
-              <div class="node-type-info">
-                <i :class="room.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open'"></i>
-                <span>{{ room.typeName }} (Lantai {{ room.floor }})</span>
+              <div class="metric-divider"></div>
+              <div class="metric-item">
+                <span class="metric-label">Kamar Terisi</span>
+                <strong class="metric-val text-amber">{{ roomSummary.occupied }} <small>Kamar ({{ roomSummary.percent }}%)</small></strong>
               </div>
-              <div class="node-price">{{ formatRupiah(room.price) }}/bln</div>
-              
-              <div class="node-actions">
-                <button 
-                  class="status-toggle-btn"
-                  :class="room.status === 'available' ? 'btn-status-avail' : 'btn-status-occ'"
-                  @click="toggleRoomStatus(room)"
-                >
-                  <i :class="room.status === 'available' ? 'bx bx-check-circle' : 'bx bx-lock-alt'"></i>
-                  <span>{{ room.status === 'available' ? 'Tersedia (Klik Ubah)' : 'Terisi (Klik Ubah)' }}</span>
-                </button>
+              <div class="metric-divider"></div>
+              <div class="metric-item">
+                <span class="metric-label">Kamar Tersedia</span>
+                <strong class="metric-val text-emerald">{{ roomSummary.available }} <small>Kamar</small></strong>
+              </div>
+            </div>
+
+            <!-- Progress Box -->
+            <div class="occupancy-progress-box">
+              <div class="progress-info">
+                <small>Tingkat Keterisian Hunian</small>
+                <strong>{{ roomSummary.percent }}% Terisi</strong>
+              </div>
+              <div class="progress-track-bg">
+                <div class="progress-fill-bar" :style="{ width: roomSummary.percent + '%' }"></div>
+              </div>
+            </div>
+
+            <!-- Breakdown Chips Row -->
+            <div class="summary-chips-row">
+              <div class="chips-group">
+                <span class="chips-group-title"><i class='bx bxs-city'></i> Gedung:</span>
+                <span v-for="b in roomSummary.buildingsList" :key="b.id" class="chip-item">
+                  <strong>{{ b.name }}</strong>: {{ b.occupied }} Terisi / {{ b.available }} Kosong
+                </span>
+              </div>
+              <div class="chips-group">
+                <span class="chips-group-title"><i class='bx bxs-category'></i> Tipe:</span>
+                <span v-for="t in roomSummary.typesList" :key="t.typeName" class="chip-item">
+                  <strong>{{ t.typeName }}</strong>: {{ t.occupied }} Terisi / {{ t.available }} Kosong
+                </span>
+              </div>
+            </div>
+
+            <!-- SECTION 2: Clean Notification Table -->
+            <div class="notif-section-container">
+              <div class="notif-section-header">
+                <div class="section-title">
+                  <i class='bx bxs-bell-ring text-warning'></i>
+                  <span>Pengingat Jatuh Tempo Kamar</span>
+                </div>
+                <span class="notif-count-badge">{{ urgentNotifications.length }} Kamar</span>
+              </div>
+
+              <div class="clean-notif-table">
+                <div v-for="item in urgentNotifications" :key="item.id" class="clean-notif-row">
+                  <div class="row-left">
+                    <span class="room-pill-tag" :class="item.type">
+                      Kamar {{ item.roomNumber }}
+                    </span>
+                    <div class="tenant-meta">
+                      <strong class="t-name">{{ item.tenantName }}</strong>
+                      <span class="t-bld">{{ item.buildingName }}</span>
+                    </div>
+                  </div>
+
+                  <div class="row-middle">
+                    <span class="due-badge" :class="item.type">
+                      <i class='bx bx-calendar-event'></i> {{ item.typeLabel }}: <strong>{{ item.dueDate }}</strong>
+                    </span>
+                  </div>
+
+                  <div class="row-right">
+                    <RouterLink :to="item.targetLink" class="link-detail-btn">
+                      Lihat Detail <i class='bx bx-chevron-right'></i>
+                    </RouterLink>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -191,15 +407,15 @@ const formatRupiah = (val: number) => {
               class="tenant-widget-item"
             >
               <div class="tenant-avatar">
-                {{ tenant.name.split(' ').map(n => n[0]).join('').slice(0, 2) }}
+                {{ tenant.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2) }}
               </div>
               <div class="tenant-widget-info">
                 <h4>{{ tenant.name }}</h4>
-                <p>{{ tenant.roomNumber }} · {{ tenant.building }}</p>
+                <p>{{ getTenantRoomNumber(tenant) }} · {{ getTenantBuildingName(tenant) }}</p>
                 <small class="tenant-phone"><i class='bx bxl-whatsapp'></i> {{ tenant.phone }}</small>
               </div>
-              <span class="tenant-status-pill" :class="tenant.status">
-                {{ tenant.status === 'aktif' ? 'Aktif' : 'Hampir Habis' }}
+              <span class="tenant-status-pill" :class="getActiveRentalByMemberId(tenant.id)?.status === 'active' ? 'aktif' : 'selesai'">
+                {{ getActiveRentalByMemberId(tenant.id)?.status === 'active' ? 'Aktif' : 'Selesai' }}
               </span>
             </div>
           </div>
@@ -232,8 +448,8 @@ const formatRupiah = (val: number) => {
               </thead>
               <tbody>
                 <tr v-for="comp in complaints.slice(0, 5)" :key="comp.id">
-                  <td><strong>{{ comp.tenantName }}</strong></td>
-                  <td><span class="chip-room">{{ comp.roomNumber }}</span></td>
+                  <td><strong>{{ getTenantName(comp.memberId) }}</strong></td>
+                  <td><span class="chip-room">{{ getComplaintRoomNumber(comp) }}</span></td>
                   <td>{{ comp.title }}</td>
                   <td>{{ comp.date }}</td>
                   <td>
@@ -253,6 +469,28 @@ const formatRupiah = (val: number) => {
               </tbody>
             </table>
           </div>
+
+          <!-- MOBILE CARD VIEW FOR DASHBOARD COMPLAINTS -->
+          <div class="mobile-dash-complaint-cards">
+            <div v-for="comp in complaints.slice(0, 5)" :key="'mob-' + comp.id" class="mobile-dash-comp-card">
+              <div class="dash-comp-head">
+                <div>
+                  <strong>{{ getTenantName(comp.memberId) }}</strong>
+                  <span class="chip-room ml-2">{{ getComplaintRoomNumber(comp) }}</span>
+                </div>
+                <span class="status-badge" :class="comp.status">
+                  {{ comp.status === 'pending' ? 'Perlu Respon' : comp.status === 'in-progress' ? 'Diproses' : 'Selesai' }}
+                </span>
+              </div>
+              <h4 class="dash-comp-title">{{ comp.title }}</h4>
+              <div class="dash-comp-foot">
+                <small class="text-muted"><i class='bx bx-calendar'></i> {{ comp.date }}</small>
+                <button class="btn btn-ghost btn-xs" @click="openReplyModal(comp)">
+                  <i class='bx bx-edit'></i> Respon
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Recent Payments Summary -->
@@ -266,12 +504,12 @@ const formatRupiah = (val: number) => {
             <div v-for="pay in payments.slice(0, 4)" :key="pay.id" class="payment-widget-item">
               <div class="pay-icon"><i class='bx bx-receipt'></i></div>
               <div class="pay-info">
-                <h4>{{ pay.tenantName }}</h4>
+                <h4>{{ getTenantName(pay) }}</h4>
                 <p>Periode: {{ pay.period }} ({{ pay.method }})</p>
                 <small>{{ pay.date }}</small>
               </div>
               <div class="pay-amount">
-                <strong>{{ formatRupiah(pay.amount) }}</strong>
+                <strong>{{ formatRupiah(getPaymentAmount(pay)) }}</strong>
                 <span class="pay-status paid">Lunas</span>
               </div>
             </div>
@@ -286,8 +524,8 @@ const formatRupiah = (val: number) => {
         <button class="modal-close" @click="closeReplyModal"><i class='bx bx-x'></i></button>
 
         <div class="modal-header">
-          <h2>Tanggapi Keluhan — {{ selectedComplaint.roomNumber }}</h2>
-          <p>Penyewa: <strong>{{ selectedComplaint.tenantName }}</strong> · {{ selectedComplaint.title }}</p>
+          <h2>Tanggapi Keluhan — {{ getComplaintRoomNumber(selectedComplaint) }}</h2>
+          <p>Penyewa: <strong>{{ getTenantName(selectedComplaint.memberId) }}</strong> · {{ selectedComplaint.title }}</p>
         </div>
 
         <div class="complaint-detail-box mb-4">
@@ -324,7 +562,7 @@ const formatRupiah = (val: number) => {
 </template>
 
 <style scoped>
-.admin-layout {
+.admin-page, .admin-layout {
   display: flex;
   min-height: 100vh;
   background: var(--off-white);
@@ -455,9 +693,16 @@ const formatRupiah = (val: number) => {
 }
 
 /* 2. DASHBOARD CONTENT GRID */
-.dashboard-content-grid {
+.dashboard-columns, .dashboard-content-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.left-dash-column {
+  display: flex;
+  flex-direction: column;
   gap: 24px;
 }
 
@@ -478,134 +723,323 @@ const formatRupiah = (val: number) => {
   gap: 12px;
 }
 
-.card-header h3 {
-  font-size: 1.2rem;
-  color: var(--dark);
+.unified-card-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.card-header h3 i {
+.header-title-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-lg);
+  background: var(--tertiary);
   color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
 }
 
-.card-header p {
-  font-size: 0.85rem;
+.header-title-box h3 {
+  font-size: 1.15rem;
+  color: var(--dark);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.header-title-box p {
+  font-size: 0.82rem;
   color: var(--text-muted);
 }
 
-.badge-count {
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 4px 12px;
-  background: var(--tertiary);
-  color: var(--primary);
-  border-radius: var(--radius-full);
+.header-action-btn {
+  white-space: nowrap;
 }
 
-.view-all-link {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--primary);
-}
-
-/* ADMIN ROOM GRID */
-.admin-room-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-}
-
-.admin-room-node {
-  border: 1px solid var(--border);
+/* SUMMARY METRICS BAR */
+.summary-metric-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
   border-radius: var(--radius-lg);
   padding: 16px;
-  background: var(--off-white);
-  transition: all var(--transition-base);
+  margin-bottom: 16px;
 }
 
-.admin-room-node.available {
-  border-color: #BBF7D0;
-  background: #F0FDF4;
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-.admin-room-node.occupied {
-  border-color: #FECACA;
-  background: #FEF2F2;
+.metric-label {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
 }
 
-.node-top {
+.metric-val {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.metric-val small {
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.text-amber {
+  color: #D97706;
+}
+
+.text-emerald {
+  color: #059669;
+}
+
+.metric-divider {
+  width: 1px;
+  height: 36px;
+  background: #E2E8F0;
+}
+
+/* OCCUPANCY PROGRESS BOX */
+.occupancy-progress-box {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.progress-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 6px;
+  font-size: 0.8rem;
 }
 
-.room-num {
-  font-family: var(--font-heading);
+.progress-info small {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.progress-info strong {
+  color: var(--primary);
+}
+
+.progress-track-bg {
+  width: 100%;
+  height: 8px;
+  background: #F1F5F9;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--secondary) 100%);
+  border-radius: var(--radius-full);
+  transition: width 0.6s ease;
+}
+
+/* CHIPS ROW */
+.summary-chips-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 18px;
+  margin-bottom: 20px;
+  border-bottom: 1px dashed var(--border);
+}
+
+.chips-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chips-group-title {
+  font-size: 0.78rem;
   font-weight: 700;
-  font-size: 1.05rem;
+  color: var(--dark);
+  min-width: 60px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip-item {
+  font-size: 0.76rem;
+  padding: 3px 10px;
+  background: #F1F5F9;
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+
+.chip-item strong {
   color: var(--dark);
 }
 
-.bld-tag {
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: var(--radius-md);
-  background: rgba(0,0,0,0.06);
+/* NOTIFICATION CONTAINER */
+.notif-section-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.node-type-info {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+.notif-section-header {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 6px;
+  justify-content: space-between;
+  margin-bottom: 4px;
 }
 
-.node-price {
-  font-size: 0.85rem;
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-heading);
   font-weight: 700;
-  color: var(--primary);
-  margin-bottom: 12px;
+  font-size: 1rem;
+  color: var(--dark);
 }
 
-.status-toggle-btn {
-  width: 100%;
-  padding: 6px;
-  border-radius: var(--radius-md);
-  border: none;
+.section-title i {
+  font-size: 1.2rem;
+}
+
+.notif-count-badge {
   font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
+  font-weight: 700;
+  padding: 3px 10px;
+  background: #FEF3C7;
+  color: #B45309;
+  border-radius: var(--radius-full);
+}
+
+.clean-notif-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clean-notif-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 14px;
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   transition: all var(--transition-fast);
 }
 
-.btn-status-avail {
-  background: #DCFCE7;
-  color: #15803D;
+.clean-notif-row:hover {
+  background: var(--white);
+  border-color: var(--secondary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.btn-status-avail:hover {
-  background: #16A34A;
-  color: white;
+.row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.btn-status-occ {
+.room-pill-tag {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+}
+
+.room-pill-tag.reminder {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.room-pill-tag.billing {
   background: #FEE2E2;
   color: #B91C1C;
+  border: 1px solid #FCA5A5;
 }
 
-.btn-status-occ:hover {
-  background: #DC2626;
-  color: white;
+.tenant-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.t-name {
+  font-size: 0.88rem;
+  color: var(--dark);
+}
+
+.t-bld {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.row-middle {
+  flex: 1;
+  text-align: right;
+  padding-right: 12px;
+}
+
+.due-badge {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.due-badge strong {
+  color: var(--dark);
+}
+
+.row-right {
+  flex-shrink: 0;
+}
+
+.link-detail-btn {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  transition: all var(--transition-fast);
+}
+
+.link-detail-btn:hover {
+  color: var(--primary-dark);
+  transform: translateX(2px);
 }
 
 /* TENANTS WIDGET */
@@ -621,7 +1055,7 @@ const formatRupiah = (val: number) => {
   gap: 12px;
   padding: 12px;
   background: var(--off-white);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
 }
 
@@ -758,7 +1192,7 @@ const formatRupiah = (val: number) => {
   gap: 12px;
   padding: 12px;
   background: var(--off-white);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   border: 1px solid var(--border);
 }
 
@@ -772,6 +1206,7 @@ const formatRupiah = (val: number) => {
   align-items: center;
   justify-content: center;
   font-size: 1.3rem;
+  flex-shrink: 0;
 }
 
 .pay-info {
@@ -781,6 +1216,7 @@ const formatRupiah = (val: number) => {
 .pay-info h4 {
   font-size: 0.88rem;
   margin-bottom: 2px;
+  color: var(--dark);
 }
 
 .pay-info p {
@@ -885,6 +1321,9 @@ const formatRupiah = (val: number) => {
 
 /* RESPONSIVE MEDIA QUERIES */
 @media (max-width: 1200px) {
+  .dashboard-columns {
+    grid-template-columns: 1fr;
+  }
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -896,6 +1335,105 @@ const formatRupiah = (val: number) => {
 @media (max-width: 992px) {
   .admin-main {
     margin-left: 0;
+    padding: 20px;
+  }
+}
+
+.mobile-dash-complaint-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-dash-comp-card {
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-comp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dash-comp-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.dash-comp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+
+.ml-2 {
+  margin-left: 6px;
+}
+
+@media (max-width: 768px) {
+  .summary-metric-bar {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .metric-divider {
+    width: 100%;
+    height: 1px;
+  }
+  .clean-notif-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .row-middle {
+    text-align: left;
+    padding-right: 0;
+  }
+  .admin-main {
+    padding: 16px;
+  }
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .admin-title-area h1 {
+    font-size: 1.4rem;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .dashboard-card {
+    padding: 18px 14px;
+  }
+  .modal-box {
+    max-width: 92vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 24px 16px;
+  }
+  .modal-footer {
+    flex-direction: column;
+  }
+  .modal-footer button {
+    width: 100%;
+  }
+  .admin-table {
+    display: none;
+  }
+  .mobile-dash-complaint-cards {
+    display: flex;
   }
 }
 
@@ -903,8 +1441,15 @@ const formatRupiah = (val: number) => {
   .kpi-grid {
     grid-template-columns: 1fr;
   }
-  .admin-room-grid {
-    grid-template-columns: 1fr;
-  }
+}
+
+@media (max-width: 480px) {
+  .admin-main { padding: 12px; }
+  .admin-title-area h1 { font-size: 1.2rem; }
+  .admin-title-area p { font-size: 0.78rem; }
+  .kpi-card { padding: 14px 12px; border-radius: var(--radius-md); }
+  .kpi-val { font-size: 1.4rem; }
+  .dashboard-card { padding: 14px 12px; border-radius: var(--radius-md); }
+  .modal-box { max-width: 96vw; padding: 20px 12px; border-radius: var(--radius-lg); }
 }
 </style>

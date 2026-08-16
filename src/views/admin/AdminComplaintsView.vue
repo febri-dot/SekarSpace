@@ -2,8 +2,15 @@
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { RouterLink } from 'vue-router'
 import { useDataStore } from '../../composables/useDataStore'
+import { useAuth } from '../../composables/useAuth'
 
 const { complaints } = useDataStore()
+const { getTenantById } = useAuth()
+
+const getTenantName = (memberId: string) => {
+  const tenant = getTenantById(memberId)
+  return tenant ? tenant.name : 'Penyewa'
+}
 </script>
 
 <template>
@@ -31,7 +38,7 @@ const { complaints } = useDataStore()
               </thead>
               <tbody>
                 <tr v-for="c in complaints" :key="c.id">
-                  <td><strong>{{ c.tenantName }}</strong></td>
+                  <td><strong>{{ getTenantName(c.memberId) }}</strong></td>
                   <td class="desc-cell">{{ c.description }}</td>
                   <td>
                     <RouterLink :to="`/admin/complaints/${c.id}`">
@@ -44,6 +51,20 @@ const { complaints } = useDataStore()
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- MOBILE CARD VIEW FOR ADMIN COMPLAINTS -->
+          <div class="mobile-complaint-admin-cards">
+            <div v-for="c in complaints" :key="'mob-' + c.id" class="mobile-complaint-card">
+              <div class="c-card-top">
+                <strong class="c-tenant-name">{{ getTenantName(c.memberId) }}</strong>
+                <RouterLink :to="`/admin/complaints/${c.id}`">
+                  <button class="btn-detail">Detail</button>
+                </RouterLink>
+              </div>
+              <p class="c-desc">{{ c.description }}</p>
+            </div>
+            <div v-if="complaints.length === 0" class="empty-cell">Belum ada keluhan yang masuk.</div>
           </div>
         </div>
       </div>
@@ -135,7 +156,55 @@ const { complaints } = useDataStore()
   color: var(--text-muted);
 }
 
+.mobile-complaint-admin-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobile-complaint-card {
+  background: var(--off-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.c-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.c-tenant-name {
+  font-size: 1rem;
+  color: var(--dark);
+}
+
+.c-desc {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
 @media (max-width: 992px) {
   .main-content { margin-left: 0; padding: 20px; }
+  .table-responsive { display: none !important; }
+  .mobile-complaint-admin-cards { display: flex; }
+}
+
+@media (max-width: 768px) {
+  .main-content { padding: 16px; }
+  .top-header h1 { font-size: 1.4rem; }
+  .table-card { padding: 16px 12px; }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 12px; }
+  .top-header h1 { font-size: 1.2rem; }
+  .top-header p { font-size: 0.78rem; }
+  .table-card { padding: 12px 8px; border-radius: var(--radius-md); }
 }
 </style>

@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "Zulfa Tsaniyatul Fadilah",
+    "role": "Mahasiswi UTY - Informatika",
+    "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    "rating": 5,
+    "tag": "Penyewa Kamar A-11",
+    "comment": "Tinggal di Sekar Space dekat banget ke kampus UTY, aksesnya gampang dan aman. WiFi kenceng dan stabil buat nugas coding serta kuliah daring. Suasananya tenang khusus muslimah jadi enak buat fokus belajar!"
+  },
+  {
+    "id": 2,
+    "name": "Keyla Asyfa Zahra",
+    "role": "Karyawan Swasta Sleman",
+    "avatar": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
+    "rating": 5,
+    "tag": "Penyewa Kamar A-13",
+    "comment": "Setelah seharian bekerja di kantor, pulang ke Sekar Space rasanya nyaman dan tenang banget. Fasilitas bersama seperti dapur, kulkas, dan jemuran sangat terawat dan bersih. Pengelolanya juga ramah dan tanggap!"
+  }
+]

@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import { useAuth } from '../composables/useAuth'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,7 @@ const router = createRouter({
     },
     {
       path: '/user',
+      alias: '/user/dashboard',
       name: 'user-dashboard',
       component: () => import('../views/user/UserDashboardView.vue')
     },
@@ -74,6 +76,11 @@ const router = createRouter({
       component: () => import('../views/admin/AdminComplaintDetailView.vue')
     },
     {
+      path: '/admin/room-transfers',
+      name: 'admin-room-transfers',
+      component: () => import('../views/admin/AdminRoomTransfersView.vue')
+    },
+    {
       path: '/admin/cms',
       name: 'admin-cms',
       component: () => import('../views/admin/AdminCmsView.vue')
@@ -82,12 +89,32 @@ const router = createRouter({
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
       return savedPosition
-    } else if (to.hash) {
-      return { el: to.hash, behavior: 'smooth' }
-    } else {
-      return { top: 0 }
     }
+    if (to.hash) {
+      // Biarkan komponen target (HomeView) melakukan smooth scroll dengan timing yang tepat
+      return false
+    }
+    return { top: 0 }
   }
 })
 
+router.beforeEach((to, from, next) => {
+  const { currentUser } = useAuth()
+
+  if (to.path.startsWith('/admin')) {
+    if (!currentUser.value || currentUser.value.role !== 'admin') {
+      return next('/login')
+    }
+  }
+
+  if (to.path.startsWith('/user')) {
+    if (!currentUser.value) {
+      return next('/login')
+    }
+  }
+
+  next()
+})
+
 export default router
+

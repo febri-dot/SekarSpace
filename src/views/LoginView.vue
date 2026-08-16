@@ -36,17 +36,7 @@ const handleLogin = () => {
   }, 400)
 }
 
-const quickLoginAdmin = () => {
-  username.value = 'admin'
-  password.value = 'admin123'
-  handleLogin()
-}
 
-const quickLoginMember = () => {
-  username.value = 'keyla'
-  password.value = 'user123'
-  handleLogin()
-}
 </script>
 
 <template>
@@ -103,17 +93,7 @@ const quickLoginMember = () => {
           </button>
         </form>
 
-        <div class="quick-demo-box">
-          <span class="demo-title">Atau Gunakan Quick Demo Login:</span>
-          <div class="demo-buttons">
-            <button class="demo-btn admin-demo" @click="quickLoginAdmin">
-              <i class='bx bxs-shield'></i> Login Admin
-            </button>
-            <button class="demo-btn member-demo" @click="quickLoginMember">
-              <i class='bx bxs-user-badge'></i> Login Member (Keyla)
-            </button>
-          </div>
-        </div>
+
 
         <div class="login-footer-info">
           <p><i class='bx bx-info-circle'></i> Ingin mendaftar akun baru? Pendaftaran akun member baru hanya dapat dibuat langsung oleh <strong>Admin Pengelola Kost Sekar Space</strong>.</p>
@@ -328,5 +308,45 @@ const quickLoginMember = () => {
   color: var(--text-muted);
   line-height: 1.5;
   text-align: center;
+}
+
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px 12px;
+  }
+  .login-card {
+    padding: 28px 20px;
+    border-radius: var(--radius-lg);
+  }
+  .brand-header h2 {
+    font-size: 1.25rem;
+  }
+  .brand-header p {
+    font-size: 0.82rem;
+  }
+  .login-logo {
+    font-size: 1.4rem;
+  }
+  .back-home-btn {
+    top: 14px;
+    left: 14px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+  }
+  .demo-buttons {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .demo-btn {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+  .login-footer-info {
+    font-size: 0.75rem;
+  }
+  .input-icon-wrapper input {
+    padding: 11px 12px 11px 38px;
+    font-size: 0.88rem;
+  }
 }
 </style>

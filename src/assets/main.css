@@ -31,8 +31,8 @@
   --info-bg: #e0f7fa;
 
   /* Typography */
-  --font-heading: 'Outfit', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 
   /* Spacing */
   --section-padding: 80px 0;
@@ -70,6 +70,9 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 body {
@@ -81,6 +84,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  position: relative;
+}
+
+#app {
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -266,4 +281,31 @@ textarea::placeholder {
 /* ========== Page Transitions ========== */
 .page-body {
   animation: fadeInUp 0.4s ease-out;
+}
+
+/* ========== Global Responsive Adjustments ========== */
+@media (max-width: 768px) {
+  :root {
+    --section-padding: 56px 0;
+    --container-padding: 0 16px;
+  }
+
+  body {
+    font-size: 15px;
+  }
+
+  .floating-wa {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --section-padding: 44px 0;
+    --container-padding: 0 14px;
+  }
 }

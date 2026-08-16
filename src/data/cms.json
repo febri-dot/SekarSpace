@@ -1,0 +1,37 @@
+{
+  "announcementBarText": "",
+  "heroBadgeText": "Hunian Khusus Muslimah di Jogja",
+  "heroHeadline": "Kost Muslimah Sekar Wangi",
+  "heroDescription": "Hunian eksklusif, aman, nyaman, dan strategis dekat Kampus UTY & MMTC Jogja dengan fasilitas lengkap.",
+  "contactPhone": "+62 895-3780-20456",
+  "contactEmail": "sekarcreative00@gmail.com",
+  "contactAddress": "Kost Muslimah Sekar Wangi, Trini, Sinduadi, Kec. Mlati, Kabupaten Sleman, D.I. Yogyakarta 55284",
+  "priceKmLuarMonthly": 700000,
+  "priceKmDalamMonthly": 950000,
+  "priceKmLuarYearly": 650000,
+  "priceKmDalamYearly": 880000,
+  "heroImage1": "/assets/images/hero-gedung-depan.webp",
+  "heroImage2": "/assets/images/hero-kamar.webp",
+  "heroImage3": "/assets/images/hero-dapur.webp",
+  "qrisImage": "/assets/images/qris-sekar-space.webp",
+  "bankAccounts": [
+    {
+      "bank": "BCA",
+      "number": "1234 5678 90",
+      "holder": "a.n. Sekar Space Kost",
+      "badgeClass": "bank-bca"
+    },
+    {
+      "bank": "Mandiri",
+      "number": "9876 5432 10",
+      "holder": "a.n. Sekar Space Kost",
+      "badgeClass": "bank-mandiri"
+    },
+    {
+      "bank": "QRIS",
+      "number": "SEKAR SPACE QRIS",
+      "holder": "Scan via All E-Wallet",
+      "badgeClass": "bank-qris"
+    }
+  ]
+}

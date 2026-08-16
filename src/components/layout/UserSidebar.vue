@@ -2,10 +2,12 @@
 import { ref, computed } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../../composables/useAuth'
+import { useDataStore } from '../../composables/useDataStore'
 
 const route = useRoute()
 const router = useRouter()
 const { currentUser, logout } = useAuth()
+const { getRoomById, getActiveRentalByMemberId } = useDataStore()
 const isMobileSidebarOpen = ref(false)
 
 const toggleSidebar = () => {
@@ -27,33 +29,46 @@ const userInitials = computed(() => {
   const name = currentUser.value?.name || 'Keyla Asyfa'
   return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
 })
+
+const userRoomText = computed(() => {
+  const rent = currentUser.value?.id ? getActiveRentalByMemberId(currentUser.value.id) : null
+  const rId = rent?.roomId || 'A-13'
+  const rm = getRoomById(rId)
+  return rm ? `Kamar ${rm.number} · ${rm.typeName}` : 'Kamar A13'
+})
 </script>
 
 <template>
   <div>
-    <!-- Mobile Toggle Header -->
-    <div class="mobile-dashboard-header">
-      <button class="mobile-toggle" @click="toggleSidebar" aria-label="Toggle Navigation">
-        <i class='bx bx-menu'></i>
-      </button>
-      <span class="mobile-brand">Sekar<strong>Space</strong></span>
-    </div>
+    <!-- Floating Trigger Button for Mobile -->
+    <button 
+      class="floating-sidebar-trigger" 
+      :class="{ 'hide': isMobileSidebarOpen }" 
+      @click="toggleSidebar" 
+      title="Buka Sidebar Navigasi"
+      aria-label="Buka Navigasi"
+    >
+      <i class='bx bx-right-arrow-alt'></i>
+    </button>
 
     <!-- Sidebar Aside -->
-    <aside class="sidebar" :class="{ 'show': isMobileSidebarOpen }">
-      <div class="sidebar-header">
+    <aside class="sidebar user-sidebar" :class="{ 'show': isMobileSidebarOpen, 'is-open': isMobileSidebarOpen }">
+      <div class="sidebar-header sidebar-brand">
         <RouterLink to="/" class="sidebar-logo">
           <i class='bx bxs-home-heart'></i>
           <span>Sekar<strong>Space</strong></span>
         </RouterLink>
+        <button class="mobile-sidebar-close" @click="closeSidebar" aria-label="Tutup Navigasi" title="Tutup Sidebar">
+          <i class='bx bx-left-arrow-alt'></i>
+        </button>
       </div>
 
-      <nav class="sidebar-nav" aria-label="Menu Dashboard">
+      <nav class="sidebar-nav">
         <span class="nav-section-title">Menu Utama</span>
         <RouterLink 
           to="/user" 
           class="sidebar-link" 
-          :class="{ active: route.path === '/user' }"
+          :class="{ active: route.path === '/user' || route.path === '/user/dashboard' }"
           @click="closeSidebar"
         >
           <i class='bx bxs-dashboard'></i>
@@ -67,8 +82,7 @@ const userInitials = computed(() => {
           @click="closeSidebar"
         >
           <i class='bx bxs-message-square-error'></i>
-          <span>Keluhan</span>
-          <span class="badge-count">2</span>
+          <span>Keluhan Saya</span>
         </RouterLink>
 
         <RouterLink 
@@ -78,17 +92,13 @@ const userInitials = computed(() => {
           @click="closeSidebar"
         >
           <i class='bx bxs-wallet'></i>
-          <span>Pembayaran</span>
+          <span>Tagihan & Bayar</span>
         </RouterLink>
 
-        <span class="nav-section-title">Portal Lain</span>
+        <span class="nav-section-title">Navigasi Utama</span>
         <RouterLink to="/" class="sidebar-link" @click="closeSidebar">
           <i class='bx bx-globe'></i>
           <span>Website Utama</span>
-        </RouterLink>
-        <RouterLink to="/admin/tenants" class="sidebar-link" @click="closeSidebar">
-          <i class='bx bxs-user-badge'></i>
-          <span>Portal Admin</span>
         </RouterLink>
       </nav>
 
@@ -96,7 +106,7 @@ const userInitials = computed(() => {
         <div class="profile-avatar">{{ userInitials }}</div>
         <div class="profile-info">
           <h4>{{ currentUser?.name || 'Keyla Asyfa' }}</h4>
-          <span>{{ currentUser?.roomNumber || 'Kamar 07' }} · Deluxe</span>
+          <span>{{ userRoomText }}</span>
         </div>
         <button class="logout-btn" title="Keluar" @click="handleLogout">
           <i class='bx bx-log-out'></i>
@@ -127,11 +137,60 @@ const userInitials = computed(() => {
 }
 
 .mobile-toggle {
-  background: none;
-  border: none;
-  font-size: 1.6rem;
-  color: var(--dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--tertiary-light);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  font-weight: 700;
   cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mobile-toggle i {
+  font-size: 1.4rem;
+  transition: transform var(--transition-fast);
+}
+
+.mobile-toggle:hover i {
+  transform: translateX(3px);
+}
+
+.floating-sidebar-trigger {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  z-index: 890;
+  background: var(--primary);
+  color: var(--white);
+  border: none;
+  border-radius: 0 10px 10px 0;
+  padding: 12px 10px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all var(--transition-smooth);
+}
+
+.floating-sidebar-trigger i {
+  animation: pulseArrow 1.5s infinite ease-in-out;
+}
+
+.floating-sidebar-trigger.hide {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) translateX(-100%);
+}
+
+@keyframes pulseArrow {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
 }
 
 .mobile-brand {
@@ -158,6 +217,18 @@ const userInitials = computed(() => {
 .sidebar-header {
   padding: 24px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-sidebar-close {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--text-muted);
+  cursor: pointer;
 }
 
 .sidebar-logo {
@@ -297,7 +368,8 @@ const userInitials = computed(() => {
 }
 
 @media (max-width: 992px) {
-  .mobile-dashboard-header { display: flex; }
+  .mobile-sidebar-close { display: block; }
+  .floating-sidebar-trigger { display: flex; align-items: center; justify-content: center; }
   .sidebar { transform: translateX(-100%); }
   .sidebar.show { transform: translateX(0); }
   .sidebar-overlay.show { display: block; }

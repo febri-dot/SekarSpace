@@ -1,42 +1,221 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useAuth } from '../../composables/useAuth'
+import { useDataStore, getRoomPriceByDuration } from '../../composables/useDataStore'
 
 const route = useRoute()
 const { getTenantById } = useAuth()
+const { rooms, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, updateRental, getRentalsByMemberId, getRentalContractStatus } = useDataStore()
 
 const tenantId = String(route.params.id)
 
 const tenant = computed(() => {
   return getTenantById(tenantId) || {
     id: tenantId,
-    name: 'Keyla Asyfa Zahra',
-    username: 'keyla01',
-    nik: '3401234567890001',
-    address: 'Sleman, Yogyakarta',
-    phone: '081234567890',
-    birthDate: '12 Mei 2004',
-    parentPhone: '081298765432',
-    roomNumber: 'Kamar 07 (A01)',
-    roomType: 'Kamar Mandi Dalam (Deluxe)',
-    building: 'Gedung Utama (Gedung A)',
-    monthlyRent: 950000,
-    startDate: '01 September 2025',
-    endDate: '01 September 2026',
-    status: 'aktif'
+    name: 'Penyewa',
+    username: 'penyewa',
+    nik: '-',
+    address: '-',
+    phone: '-',
+    birthDate: '',
+    parentPhone: ''
   }
 })
 
-const getInitials = (name: string) => {
-  return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+const activeRental = computed(() => {
+  return getActiveRentalByMemberId(tenantId)
+})
+
+const memberRentals = computed(() => {
+  return getRentalsByMemberId(tenantId)
+})
+
+const room = computed(() => {
+  const rId = activeRental.value?.roomId
+  return rId ? getRoomById(rId) : undefined
+})
+
+const roomNumber = computed(() => room.value ? `Kamar ${room.value.number}` : 'Belum Ada Kamar')
+const roomType = computed(() => room.value?.typeName || '-')
+const buildingName = computed(() => room.value ? getBuildingName(room.value.buildingId) : '-')
+
+const tenantMonthlyRent = computed(() => {
+  if (!room.value) return 600000
+  return getRoomPriceByDuration(room.value, 1)
+})
+
+const tenantTotalRent = computed(() => {
+  if (activeRental.value?.totalAmount) return activeRental.value.totalAmount
+  if (!room.value) return 600000
+  const d = activeRental.value?.durationMonths || 12
+  return getRoomPriceByDuration(room.value, d)
+})
+
+// Days remaining calculation
+const daysRemaining = computed(() => {
+  if (!activeRental.value?.endDate) return 0
+  const end = new Date(activeRental.value.endDate).getTime()
+  const now = new Date().getTime()
+  const diff = end - now
+  return diff > 0 ? Math.ceil(diff / (1000 * 60 * 60 * 24)) : 0
+})
+
+// Date format helper
+const formatDateIndo = (dateStr?: string) => {
+  if (!dateStr) return '-'
+  const parts = dateStr.split('-')
+  if (parts.length !== 3) return dateStr
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return dateStr
+  const monthsIndo = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+  const day = parseInt(dayStr, 10)
+  const monthIdx = parseInt(monthStr, 10) - 1
+  return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
 }
 
 const formatRupiah = (val?: number) => {
   if (!val) return 'Rp 0'
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
 }
+
+const getInitials = (name: string) => {
+  if (!name) return 'PN'
+  return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase()
+}
+
+// Helper computeEndDate
+const computeEndDate = (startDateStr: string, months: number): string => {
+  if (!startDateStr || !months) return ''
+  const parts = startDateStr.split('-')
+  if (parts.length !== 3) return ''
+  const [yearStr, monthStr, dayStr] = parts
+  if (!yearStr || !monthStr || !dayStr) return ''
+  const year = parseInt(yearStr, 10)
+  const month = parseInt(monthStr, 10)
+  const day = parseInt(dayStr, 10)
+  if (isNaN(year) || isNaN(month) || isNaN(day)) return ''
+
+  const targetDate = new Date(year, month - 1 + Number(months), day)
+  const expectedMonth = (month - 1 + Number(months)) % 12
+  const normalizedExpectedMonth = expectedMonth < 0 ? expectedMonth + 12 : expectedMonth
+  if (targetDate.getMonth() !== normalizedExpectedMonth) {
+    targetDate.setDate(0)
+  }
+
+  const yyyy = targetDate.getFullYear()
+  const mm = String(targetDate.getMonth() + 1).padStart(2, '0')
+  const dd = String(targetDate.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+// Edit Modal State
+const isEditModalOpen = ref(false)
+const noticeMessage = ref('')
+
+const editForm = ref({
+  roomId: 'A-13',
+  durationMonths: 12,
+  startDate: '2025-09-01',
+  endDate: '2026-09-01',
+  status: 'active' as 'active' | 'completed' | 'cancelled'
+})
+
+const onEditFormChange = () => {
+  if (editForm.value.startDate && editForm.value.durationMonths) {
+    editForm.value.endDate = computeEndDate(editForm.value.startDate, editForm.value.durationMonths)
+  }
+}
+
+const openEditModal = () => {
+  const r = activeRental.value
+  const dMonths = r?.durationMonths || 12
+  const sDate = r?.startDate || '2025-09-01'
+  const eDate = r?.endDate || computeEndDate(sDate, dMonths)
+
+  editForm.value = {
+    roomId: r?.roomId || 'A-13',
+    durationMonths: dMonths,
+    startDate: sDate,
+    endDate: eDate,
+    status: r?.status || 'active'
+  }
+  isEditModalOpen.value = true
+}
+
+const closeEditModal = () => {
+  isEditModalOpen.value = false
+}
+
+const handleSaveTenantRoom = () => {
+  const oldRoomId = activeRental.value?.roomId
+  const newRoomId = editForm.value.roomId
+
+  if (oldRoomId && oldRoomId !== newRoomId) {
+    updateRoom(oldRoomId, { status: 'available' })
+    updateRoom(newRoomId, { status: 'occupied' })
+  }
+
+  if (activeRental.value) {
+    const selectedRoom = getRoomById(editForm.value.roomId)
+    const basePrice = selectedRoom ? getRoomPriceByDuration(selectedRoom, editForm.value.durationMonths) : 0
+    const addonPrice = activeRental.value.addonPrice || 0
+
+    updateRental(activeRental.value.id, {
+      roomId: editForm.value.roomId,
+      durationMonths: Number(editForm.value.durationMonths),
+      startDate: editForm.value.startDate,
+      endDate: editForm.value.endDate,
+      basePrice: basePrice,
+      totalAmount: basePrice + addonPrice,
+      status: editForm.value.status
+    })
+  }
+
+  noticeMessage.value = 'Data kamar & sewa penyewa berhasil diperbarui!'
+  closeEditModal()
+  setTimeout(() => {
+    noticeMessage.value = ''
+  }, 4000)
+}
+
+const formatWaPhone = (phone?: string) => {
+  if (!phone) return '62895378020456'
+  let clean = phone.replace(/[^0-9]/g, '')
+  if (!clean) return '62895378020456'
+  if (clean.startsWith('0')) {
+    clean = '62' + clean.slice(1)
+  } else if (!clean.startsWith('62')) {
+    clean = '62' + clean
+  }
+  return clean
+}
+
+// Generate WhatsApp Bill Link
+const waBillUrl = computed(() => {
+  const phone = formatWaPhone(tenant.value.phone)
+  const endDateStr = activeRental.value?.endDate ? formatDateIndo(activeRental.value.endDate) : '-'
+  const rm = activeRental.value?.roomId ? getRoomById(activeRental.value.roomId) : null
+  const p1 = formatRupiah(getRoomPriceByDuration(rm, 1))
+  const p3 = formatRupiah(getRoomPriceByDuration(rm, 3))
+  const p6 = formatRupiah(getRoomPriceByDuration(rm, 6))
+  const p12 = formatRupiah(getRoomPriceByDuration(rm, 12))
+  
+  const text = `Halo Kak ${tenant.value.name}, 👋
+
+Mengingatkan bahwa masa sewa ${roomNumber.value} (${buildingName.value}) Kakak akan berakhir pada ${endDateStr}.
+
+📌 Berikut rincian tarif perpanjangan sewa:
+• Paket 1 Bulan: ${p1}
+• Paket 3 Bulan: ${p3}
+• Paket 6 Bulan: ${p6}
+• Paket 12 Bulan: ${p12}
+
+Silakan konfirmasi paket durasi yang ingin Kakak ambil atau lakukan konfirmasi langsung melalui Portal Penyewa Sekar Space. Terima kasih! 🙏`
+
+  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
+})
 </script>
 
 <template>
@@ -44,80 +223,330 @@ const formatRupiah = (val?: number) => {
     <AdminSidebar />
 
     <main class="main-content">
+      <!-- HEADER -->
       <header class="top-header">
         <div>
           <RouterLink to="/admin/tenants" class="back-link">
             <i class='bx bx-left-arrow-alt'></i> Kembali ke Daftar Penyewa
           </RouterLink>
-          <h1>Detail Penyewa</h1>
+          <h1>Detail Profil Penyewa</h1>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-outline-primary" @click="openEditModal">
+            <i class='bx bx-edit'></i> Edit Kamar & Sewa
+          </button>
+          <a :href="waBillUrl" target="_blank" rel="noopener" class="btn btn-whatsapp-bill">
+            <i class='bx bxl-whatsapp'></i> Kirim Pesan / Tagihan WA
+          </a>
         </div>
       </header>
 
       <div class="page-body">
-        <div class="detail-card">
-          <div class="profile-banner">
+        <div v-if="noticeMessage" class="alert-notice">
+          <i class='bx bx-check-circle'></i> {{ noticeMessage }}
+        </div>
+
+        <!-- HERO PROFILE CARD BANNER -->
+        <div class="profile-hero-card">
+          <div class="hero-main-info">
             <div class="avatar-circle">{{ getInitials(tenant.name) }}</div>
-            <div>
+            <div class="user-titles">
+              <div class="user-tag-row">
+                <span class="username-tag">@{{ tenant.username }}</span>
+                <span class="status-pill" :class="activeRental?.status === 'active' ? 'pill-active' : 'pill-warning'">
+                  <i class='bx bx-check-circle'></i> Status: {{ activeRental?.status === 'active' ? 'Aktif Terisi' : 'Selesai / Non-aktif' }}
+                </span>
+              </div>
               <h2>{{ tenant.name }}</h2>
-              <span class="status-badge"><i class='bx bx-check-circle'></i> Status: {{ tenant.status === 'aktif' ? 'Aktif (Terisi)' : 'Hampir Habis' }}</span>
+              <p class="user-sub"><i class='bx bx-id-card'></i> NIK: {{ tenant.nik || '-' }} · <i class='bx bx-map-pin'></i> {{ tenant.address || '-' }}</p>
             </div>
           </div>
 
-          <!-- Section 1: Informasi Penyewa -->
-          <div class="section-box">
-            <h2>Informasi Penyewa</h2>
-            <div class="info-list">
-              <p class="info"><span class="label">Username:</span> {{ tenant.username }}</p>
-              <p class="info"><span class="label">Nama Lengkap:</span> {{ tenant.name }}</p>
-              <p class="info"><span class="label">NIK:</span> {{ tenant.nik || '3401234567890001' }}</p>
-              <p class="info"><span class="label">Alamat:</span> {{ tenant.address || 'Sleman, Yogyakarta' }}</p>
-              <p class="info">
-                <span class="label">No Telepon:</span> 
-                <a :href="`https://wa.me/${(tenant.phone || '081234567890').replace(/[^0-9]/g, '')}`" target="_blank" class="wa-link">
-                  <i class='bx bxl-whatsapp'></i> {{ tenant.phone || '081234567890' }}
-                </a>
-              </p>
-              <p class="info"><span class="label">Tanggal Lahir:</span> {{ tenant.birthDate || '12 Mei 2004' }}</p>
-              <p class="info"><span class="label">No Telepon Orang Tua:</span> {{ tenant.parentPhone || '081298765432' }}</p>
+          <!-- HIGHLIGHT METRICS BAR -->
+          <div class="hero-metrics-bar">
+            <div class="metric-item">
+              <i class='bx bxs-home-heart metric-icon'></i>
+              <div>
+                <span class="metric-label">Penempatan Kamar</span>
+                <strong>{{ roomNumber }}</strong>
+                <span class="metric-sub">{{ buildingName }} · {{ roomType }}</span>
+              </div>
             </div>
-          </div>
 
-          <!-- Section 2: Informasi Kamar -->
-          <div class="section-box">
-            <h2>Informasi Kamar</h2>
-            <div class="info-list">
-              <p class="info"><span class="label">Nomor Kamar:</span> {{ tenant.roomNumber || 'Kamar 07' }}</p>
-              <p class="info"><span class="label">Tipe Kamar:</span> {{ tenant.roomType || 'Kamar Mandi Dalam' }}</p>
-              <p class="info"><span class="label">Gedung:</span> {{ tenant.building || 'Gedung Utama' }}</p>
-              <p class="info"><span class="label">Status:</span> {{ tenant.status === 'aktif' ? 'Terisi' : 'Hampir Habis' }}</p>
+            <div class="metric-item">
+              <i class='bx bx-calendar-check metric-icon'></i>
+              <div>
+                <span class="metric-label">Durasi Kontrak</span>
+                <strong>{{ activeRental?.durationMonths || 12 }} Bulan</strong>
+                <span class="metric-sub">{{ daysRemaining }} Hari Tersisa</span>
+              </div>
             </div>
-          </div>
 
-          <!-- Section 3: Informasi Sewa -->
-          <div class="section-box">
-            <h2>Informasi Sewa</h2>
-            <div class="info-list">
-              <p class="info"><span class="label">Mulai Sewa:</span> {{ tenant.startDate || '01 September 2025' }}</p>
-              <p class="info"><span class="label">Selesai Sewa:</span> {{ tenant.endDate || '01 September 2026' }}</p>
+            <div class="metric-item">
+              <i class='bx bx-wallet metric-icon'></i>
+              <div>
+                <span class="metric-label">Harga Sewa Bulanan</span>
+                <strong>{{ formatRupiah(tenantMonthlyRent) }}</strong>
+                <span class="metric-sub">Lunas di Awal</span>
+              </div>
             </div>
-          </div>
-
-          <!-- Section 4: Informasi Pembayaran -->
-          <div class="section-box">
-            <h2>Informasi Pembayaran</h2>
-            <div class="info-list">
-              <p class="info"><span class="label">Status Pembayaran:</span> <strong class="text-success">Lunas</strong></p>
-              <p class="info"><span class="label">Total Pembayaran:</span> {{ formatRupiah(tenant.monthlyRent || 950000) }} / bulan</p>
-              <p class="info"><span class="label">Tenggat Pembayaran:</span> {{ tenant.endDate || '01 September 2026' }}</p>
-            </div>
-          </div>
-
-          <div class="action-footer">
-            <RouterLink to="/admin/tenants" class="btn btn-primary">Kembali ke Daftar Penyewa</RouterLink>
           </div>
         </div>
+
+        <!-- TWO COLUMN DETAILS GRID -->
+        <div class="details-grid">
+          
+          <!-- LEFT COLUMN: IDENTITAS & KONTAK -->
+          <div class="card-detail-section">
+            <div class="card-section-header">
+              <i class='bx bx-user'></i>
+              <h3>Identitas & Kontak Pribadi</h3>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bx-user-circle'></i> Nama Lengkap</span>
+                <strong class="cell-value">{{ tenant.name }}</strong>
+              </div>
+
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bx-at'></i> Username Login</span>
+                <strong class="cell-value">@{{ tenant.username }}</strong>
+              </div>
+
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bx-id-card'></i> NIK KTP</span>
+                <span class="cell-value">{{ tenant.nik || '-' }}</span>
+              </div>
+
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bx-cake'></i> Tanggal Lahir</span>
+                <span class="cell-value">{{ formatDateIndo(tenant.birthDate) }}</span>
+              </div>
+
+              <div class="info-cell cell-full">
+                <span class="cell-label"><i class='bx bx-map'></i> Alamat Asal</span>
+                <span class="cell-value">{{ tenant.address || '-' }}</span>
+              </div>
+
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bxs-phone'></i> No WhatsApp Penyewa</span>
+                <a :href="`https://wa.me/${formatWaPhone(tenant.phone)}`" target="_blank" class="wa-link-btn">
+                  <i class='bx bxl-whatsapp'></i> {{ tenant.phone || '-' }}
+                </a>
+              </div>
+
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bx-phone-call'></i> Telepon Orang Tua / Wali</span>
+                <span class="cell-value">{{ tenant.parentPhone || '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: INFORMASI KAMAR & KONTRAK SEWA -->
+          <div class="card-detail-section">
+            <div class="card-section-header">
+              <i class='bx bxs-key'></i>
+              <h3>Detail Kamar & Kontrak Sewa</h3>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bxs-door-open'></i> Nomor Kamar</span>
+                <strong class="cell-value text-primary">{{ roomNumber }}</strong>
+              </div>
+
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bx-building-house'></i> Gedung & Tipe</span>
+                <span class="cell-value">{{ buildingName }} ({{ roomType }})</span>
+              </div>
+
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bx-calendar-event'></i> Tanggal Mulai Sewa</span>
+                <span class="cell-value">{{ formatDateIndo(activeRental?.startDate) }}</span>
+              </div>
+
+              <div class="info-cell">
+                <span class="cell-label"><i class='bx bx-calendar-check'></i> Tanggal Selesai Sewa</span>
+                <span class="cell-value text-accent">{{ formatDateIndo(activeRental?.endDate) }}</span>
+              </div>
+
+              <div class="info-cell cell-full">
+                <span class="cell-label"><i class='bx bx-time'></i> Sisa Masa Kontrak</span>
+                <div class="progress-remaining-box">
+                  <div class="remaining-bar-wrapper">
+                    <div class="remaining-bar-fill" :style="{ width: Math.min(100, Math.max(5, (daysRemaining / 365) * 100)) + '%' }"></div>
+                  </div>
+                  <span class="remaining-text">Sisa {{ daysRemaining }} Hari</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- PAYMENT STATUS HIGHLIGHT CARD -->
+            <div class="payment-summary-box">
+              <div class="pay-summary-left">
+                <i class='bx bx-check-shield pay-shield-icon'></i>
+                <div>
+                  <span class="pay-box-label">Status Tagihan & Pembayaran</span>
+                  <strong class="pay-box-status"><i class='bx bx-check-circle'></i> LUNAS TERVERIFIKASI</strong>
+                </div>
+              </div>
+              <div class="pay-summary-right">
+                <span class="pay-box-amount">{{ formatRupiah(tenantTotalRent) }}</span>
+                <span class="pay-box-sub">Total {{ activeRental?.durationMonths || 12 }} Bulan Kontrak</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- TABEL RIWAYAT KONTRAK SEWA LENGKAP -->
+        <div class="card-detail-section rental-history-section">
+          <div class="card-section-header">
+            <i class='bx bx-history'></i>
+            <h3>Riwayat Kontrak & Perpanjangan Sewa (Total: {{ memberRentals.length }} Kontrak)</h3>
+          </div>
+
+          <div class="table-responsive">
+            <table class="admin-history-table">
+              <thead>
+                <tr>
+                  <th>No. Kontrak</th>
+                  <th>Kamar Kost</th>
+                  <th>Periode Kontrak</th>
+                  <th>Durasi</th>
+                  <th>Total Biaya</th>
+                  <th>Status Kontrak</th>
+                  <th>Rencana Perpanjangan</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(r, idx) in memberRentals" :key="r.id">
+                  <td>
+                    <strong>{{ r.id }}</strong>
+                    <div class="sub-text">{{ idx === 0 && r.status === 'active' ? 'Kontrak Aktif' : 'Kontrak Sewa' }}</div>
+                  </td>
+                  <td>
+                    <strong>Kamar {{ getRoomById(r.roomId)?.number || r.roomId }}</strong>
+                    <div class="sub-text">{{ getBuildingName(getRoomById(r.roomId)?.buildingId || '') }} · {{ getRoomById(r.roomId)?.typeName }}</div>
+                  </td>
+                  <td>
+                    <strong>{{ formatDateIndo(r.startDate) }} s.d. {{ formatDateIndo(r.endDate) }}</strong>
+                  </td>
+                  <td>{{ r.durationMonths }} Bulan</td>
+                  <td><strong class="price-text">{{ formatRupiah(r.totalAmount || r.basePrice) }}</strong></td>
+                  <td>
+                    <span 
+                      class="status-pill" 
+                      :class="{
+                        'pill-active': getRentalContractStatus(r) === 'active',
+                        'pill-upcoming-contract': getRentalContractStatus(r) === 'upcoming',
+                        'pill-completed': getRentalContractStatus(r) === 'completed'
+                      }"
+                    >
+                      {{ getRentalContractStatus(r) === 'active' ? 'Aktif Berjalan' : getRentalContractStatus(r) === 'upcoming' ? 'Perpanjangan Terdaftar' : 'Selesai' }}
+                    </span>
+                  </td>
+                  <td>
+                    <span v-if="r.extensionIntent === 'extend'" class="intent-pill intent-extend">
+                      <i class='bx bx-check'></i> Ingin Perpanjang
+                    </span>
+                    <span v-else-if="r.extensionIntent === 'not_extend'" class="intent-pill intent-not-extend">
+                      <i class='bx bx-log-out'></i> Tidak Perpanjang
+                    </span>
+                    <span v-else class="intent-pill intent-pending">
+                      Belum Memilih
+                    </span>
+                  </td>
+                </tr>
+                <tr v-if="memberRentals.length === 0">
+                  <td colspan="7" class="empty-cell">Belum ada riwayat kontrak sewa untuk penyewa ini.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </main>
+
+    <!-- MODAL EDIT KAMAR & SEWA PENYEWA -->
+    <div v-if="isEditModalOpen" class="modal-backdrop" @click.self="closeEditModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div>
+            <h2><i class='bx bx-edit-alt'></i> Edit Kamar & Status Sewa</h2>
+            <p>Ubah penempatan kamar dan periode sewa untuk <strong>{{ tenant.name }}</strong></p>
+          </div>
+          <button class="modal-close" @click="closeEditModal" title="Tutup Modal"><i class='bx bx-x'></i></button>
+        </div>
+
+        <form @submit.prevent="handleSaveTenantRoom" class="edit-tenant-form">
+          <div class="modal-body-scroll">
+            <div class="form-section-card">
+              <div class="section-card-title">
+                <i class='bx bxs-home-heart'></i> Penempatan Kamar
+              </div>
+              <div class="form-group">
+                <label>Pilih Kamar Terbuka</label>
+                <select v-model="editForm.roomId" class="form-control" required>
+                  <option v-for="r in rooms" :key="r.id" :value="r.id">
+                    Kamar {{ r.number }} ({{ getBuildingName(r.buildingId) }} - {{ r.typeName }}) {{ r.status === 'occupied' && r.id !== activeRental?.roomId ? '· Terisi' : '· Tersedia' }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-section-card">
+              <div class="section-card-title">
+                <i class='bx bx-calendar-check'></i> Periode & Durasi Sewa
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Mulai Sewa</label>
+                  <input type="date" v-model="editForm.startDate" @change="onEditFormChange" class="form-control" required />
+                </div>
+                <div class="form-group">
+                  <label>Durasi Sewa (Bulan)</label>
+                  <select v-model.number="editForm.durationMonths" @change="onEditFormChange" class="form-control" required>
+                    <option :value="1">1 Bulan</option>
+                    <option :value="3">3 Bulan</option>
+                    <option :value="6">6 Bulan</option>
+                    <option :value="12">12 Bulan (1 Tahun)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Selesai Sewa (Otomatis)</label>
+                  <input type="date" v-model="editForm.endDate" class="form-control" required />
+                </div>
+                <div class="form-group">
+                  <label>Harga Paket Kamar</label>
+                  <input type="text" :value="formatRupiah(tenantTotalRent)" readonly class="form-control" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Status Masa Sewa</label>
+                <select v-model="editForm.status" class="form-control">
+                  <option value="active">Aktif</option>
+                  <option value="completed">Selesai</option>
+                  <option value="cancelled">Dibatalkan</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" @click="closeEditModal">Batal</button>
+            <button type="submit" class="btn btn-primary"><i class='bx bx-check-circle'></i> Simpan Perubahan</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -143,6 +572,18 @@ const formatRupiah = (val?: number) => {
   color: var(--primary);
   font-weight: 600;
   margin-bottom: 8px;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
 }
 
 .top-header h1 {
@@ -150,96 +591,633 @@ const formatRupiah = (val?: number) => {
   color: var(--dark);
 }
 
-.detail-card {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 32px;
-  max-width: 850px;
-  box-shadow: var(--shadow-sm);
-}
-
-.profile-banner {
+.header-actions {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 24px;
+  gap: 12px;
 }
 
-.avatar-circle {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: #541A1A;
-  color: white;
-  display: flex;
+.btn-whatsapp-bill {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 1.3rem;
-}
-
-.profile-banner h2 {
-  font-size: 1.5rem;
-  margin-bottom: 4px;
-  color: #541A1A;
-}
-
-.status-badge {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: #16A34A;
-}
-
-.section-box {
-  margin-bottom: 24px;
-}
-
-.section-box h2 {
-  color: #541A1A;
-  font-size: 1.15rem;
-  border-bottom: 2px solid #DCC3AA;
-  padding-bottom: 6px;
-  margin-bottom: 12px;
-}
-
-.info-list {
-  display: flex;
-  flex-direction: column;
   gap: 8px;
+  background: #25D366;
+  color: #fff;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  font-size: 0.88rem;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+  transition: all 0.2s ease;
 }
 
-.info {
-  font-size: 0.95rem;
-  color: var(--dark);
+.btn-whatsapp-bill:hover {
+  background: #1EBE5D;
+  transform: translateY(-2px);
+  color: #fff;
 }
 
-.label {
-  font-weight: bold;
-  color: #541A1A;
-  display: inline-block;
-  min-width: 170px;
-}
-
-.wa-link {
-  color: #25D366;
+.alert-notice {
+  background: #DCFCE7;
+  color: #15803D;
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
 }
 
-.text-success {
-  color: #16A34A;
+/* HERO PROFILE CARD */
+.profile-hero-card {
+  background: linear-gradient(135deg, #541A1A 0%, #3B1212 100%);
+  color: #fff;
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+  margin-bottom: 28px;
+  box-shadow: 0 10px 25px -5px rgba(84, 26, 26, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.action-footer {
-  margin-top: 28px;
-  padding-top: 20px;
+.hero-main-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.user-titles h2 {
+  font-size: 1.65rem;
+  color: #fff;
+  margin: 4px 0;
+}
+
+.user-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.username-tag {
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.18);
+  padding: 2px 10px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.status-pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pill-active { background: rgba(34, 197, 94, 0.25); color: #86EFAC; border: 1px solid rgba(34, 197, 94, 0.4); }
+.pill-warning { background: rgba(245, 158, 11, 0.25); color: #FDE68A; border: 1px solid rgba(245, 158, 11, 0.4); }
+
+.user-sub {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.78);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-metrics-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  padding: 16px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.metric-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.metric-icon {
+  font-size: 1.8rem;
+  color: #DCC3AA;
+}
+
+.metric-label {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-item strong {
+  font-size: 1.1rem;
+  color: #fff;
+  display: block;
+}
+
+.metric-sub {
+  font-size: 0.78rem;
+  color: #F7EBE1;
+}
+
+/* DETAILS GRID */
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.rental-history-section {
+  margin-top: 24px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.admin-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  text-align: left;
+}
+
+.admin-history-table th {
+  background: #FAFAFA;
+  padding: 12px 16px;
+  font-weight: 700;
+  color: var(--dark);
+  border-bottom: 1.5px solid var(--border);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.admin-history-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.admin-history-table tbody tr:hover {
+  background: #FFFDF9;
+}
+
+.sub-text {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.price-text {
+  color: #541A1A;
+  font-weight: 700;
+}
+
+.pill-completed {
+  background: #F3F4F6;
+  color: #4B5563;
+  border: 1px solid #E5E7EB;
+}
+
+.pill-upcoming-contract {
+  background: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #BFDBFE;
+}
+
+.intent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.intent-extend {
+  background: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+}
+
+.intent-not-extend {
+  background: #FFF7ED;
+  color: #C2410C;
+  border: 1px solid #FED7AA;
+}
+
+.intent-pending {
+  background: #F3F4F6;
+  color: #6B7280;
+  border: 1px solid #E5E7EB;
+}
+
+.empty-cell {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.card-detail-section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #F3EAE1;
+}
+
+.card-section-header i {
+  font-size: 1.4rem;
+  color: #541A1A;
+}
+
+.card-section-header h3 {
+  font-size: 1.15rem;
+  color: #541A1A;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.info-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cell-full {
+  grid-column: span 2;
+}
+
+.cell-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cell-label i {
+  color: #541A1A;
+}
+
+.cell-value {
+  font-size: 0.95rem;
+  color: var(--dark);
+  font-weight: 500;
+}
+
+.text-primary {
+  color: #541A1A;
+  font-size: 1.1rem;
+}
+
+.text-accent {
+  color: #C2410C;
+  font-weight: 700;
+}
+
+.wa-link-btn {
+  color: #25D366;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+
+.wa-link-btn:hover {
+  text-decoration: underline;
+}
+
+/* PROGRESS BAR FOR LEASE REMAINING */
+.progress-remaining-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.remaining-bar-wrapper {
+  flex: 1;
+  height: 10px;
+  background: #F1F5F9;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.remaining-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #10B981, #059669);
+  border-radius: var(--radius-full);
+  transition: width 0.4s ease;
+}
+
+.remaining-text {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+/* PAYMENT SUMMARY BOX */
+.payment-summary-box {
+  background: #ECFDF5;
+  border: 1.5px solid #A7F3D0;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.pay-summary-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pay-shield-icon {
+  font-size: 2rem;
+  color: #059669;
+}
+
+.pay-box-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #047857;
+}
+
+.pay-box-status {
+  font-size: 0.92rem;
+  color: #065F46;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pay-summary-right {
+  text-align: right;
+}
+
+.pay-box-amount {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #065F46;
+}
+
+.pay-box-sub {
+  font-size: 0.75rem;
+  color: #047857;
+}
+
+/* MODAL STYLES & SCROLLING */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modal-box {
+  background: var(--white);
+  border-radius: var(--radius-xl);
+  max-width: 650px;
+  width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FAF7F2;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  color: #541A1A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.modal-header p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.modal-close {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--dark);
+  font-size: 1.25rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.modal-close:hover {
+  background: #FEE2E2;
+  color: #DC2626;
+  border-color: #FCA5A5;
+  transform: rotate(90deg);
+}
+
+.edit-tenant-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.modal-body-scroll {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: calc(88vh - 130px);
+}
+
+.modal-body-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-body-scroll::-webkit-scrollbar-track {
+  background: #F1F1F1;
+  border-radius: 4px;
+}
+.modal-body-scroll::-webkit-scrollbar-thumb {
+  background: #DCC3AA;
+  border-radius: 4px;
+}
+.modal-body-scroll::-webkit-scrollbar-thumb:hover {
+  background: #541A1A;
+}
+
+.form-section-card {
+  background: #FAFAFA;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.section-card-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #541A1A;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.form-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--dark);
+  display: block;
+  margin-bottom: 5px;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  font-size: 0.88rem;
+  background: var(--white);
+  color: var(--dark);
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #541A1A;
+  box-shadow: 0 0 0 3px rgba(84, 26, 26, 0.12);
+}
+
+.modal-footer {
+  padding: 16px 24px;
   border-top: 1px solid var(--border);
+  background: #FAF7F2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
 }
 
 @media (max-width: 992px) {
   .main-content { margin-left: 0; padding: 20px; }
-  .label { min-width: auto; display: block; margin-bottom: 2px; }
+  .details-grid { grid-template-columns: 1fr; }
+  .hero-metrics-bar { grid-template-columns: 1fr; }
+  .top-header { flex-direction: column; align-items: flex-start; gap: 14px; }
+}
+
+@media (max-width: 768px) {
+  .main-content { padding: 16px; }
+  .profile-hero-card { padding: 20px 16px; }
+  .hero-main-info { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .user-titles h2 { font-size: 1.35rem; }
+  .info-grid { grid-template-columns: 1fr; }
+  .cell-full { grid-column: span 1; }
+  .header-actions { width: 100%; flex-direction: column; }
+  .header-actions button, .header-actions a { width: 100%; justify-content: center; }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 12px; }
+  .top-header h1 { font-size: 1.3rem; }
+  .card-detail-section { padding: 16px; }
 }
 </style>

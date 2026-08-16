@@ -12,18 +12,11 @@ export interface User {
   phone?: string
   birthDate?: string
   parentPhone?: string
-  roomNumber?: string
-  roomType?: string
-  building?: string
-  startDate?: string
-  endDate?: string
-  status?: 'aktif' | 'hampir-habis' | 'non-aktif'
-  monthlyRent?: number
   password?: string
 }
 
-const STORAGE_USERS_KEY = 'sekar_space_users_v3'
-const STORAGE_CURRENT_USER_KEY = 'sekar_space_current_user_v3'
+const STORAGE_USERS_KEY = 'sekar_space_users_v11'
+const STORAGE_CURRENT_USER_KEY = 'sekar_space_current_user_v10'
 
 // Load users from localStorage or JSON file data
 const loadUsers = (): User[] => {
@@ -45,7 +38,8 @@ const loadCurrentUser = (): User | null => {
   const saved = localStorage.getItem(STORAGE_CURRENT_USER_KEY)
   if (saved) {
     try {
-      return JSON.parse(saved)
+      const parsed = JSON.parse(saved)
+      if (parsed) return parsed
     } catch (e) {
       console.error('Failed to parse saved current user', e)
     }
@@ -106,12 +100,23 @@ export function useAuth() {
     const member: User = {
       ...newMemberData,
       id,
-      role: 'member',
-      status: newMemberData.status || 'aktif'
+      role: 'member'
     }
     users.value.push(member)
     saveUsers()
     return member
+  }
+
+  const updateMember = (id: string, updatedFields: Partial<User>) => {
+    const targetUser = users.value.find(u => u.id === id || u.username === id)
+    if (targetUser) {
+      Object.assign(targetUser, updatedFields)
+      if (currentUser.value && currentUser.value.id === targetUser.id) {
+        Object.assign(currentUser.value, updatedFields)
+        saveCurrentUser()
+      }
+      saveUsers()
+    }
   }
 
   const deleteMember = (id: string) => {
@@ -141,6 +146,7 @@ export function useAuth() {
     login,
     logout,
     addMember,
+    updateMember,
     deleteMember,
     getTenantById,
     resetUsersToJSON

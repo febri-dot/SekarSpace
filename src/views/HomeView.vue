@@ -1,33 +1,35 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import Navbar from '../components/layout/Navbar.vue'
 import Footer from '../components/layout/Footer.vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { useDataStore } from '../composables/useDataStore'
+import { useDataStore, getRoomPriceByDuration } from '../composables/useDataStore'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const { cmsSettings } = useDataStore()
+const route = useRoute()
+const { cmsSettings, facilities, nearbyPlacesData, testimonials, galleryData, faqs, rooms, roomTypes } = useDataStore()
 
 // Interactive State
-const activeFaq = ref<number | null>(0)
+const activeFaq = ref<number | null>(null)
 const selectedCategory = ref('all')
 const activeLightboxItem = ref<any | null>(null)
 const selectedFacilityModal = ref<any | null>(null)
 const scrollProgress = ref(0)
 const showBackToTop = ref(false)
-const roomPricingPeriod = ref<'monthly' | 'quarterly' | 'yearly'>('monthly')
+const roomPricingPeriod = ref<'monthly' | 'quarterly' | 'semi-annual' | 'yearly'>('monthly')
 
 // Hero Background Slideshow State
 const activeHeroSlide = ref(0)
+const heroSlidesReady = ref(false)
 let heroTimer: any = null
 
 const heroSlides = computed(() => [
   {
     id: 1,
-    image: cmsSettings.value.heroImage1 || '/assets/images/hero-bg.png',
+    image: cmsSettings.value.heroImage1 || '/assets/images/hero-gedung-depan.webp',
     tag: cmsSettings.value.heroBadgeText || 'Kost Muslimah Terpercaya',
     titleMain: cmsSettings.value.heroHeadline || 'Kost Muslimah Sekar Wangi',
     titleGradient: 'Nyaman & Aman',
@@ -35,26 +37,26 @@ const heroSlides = computed(() => [
   },
   {
     id: 2,
-    image: cmsSettings.value.heroImage2 || '/assets/images/room-deluxe.png',
-    tag: 'Kamar Mandi Dalam Premium',
-    titleMain: 'Privasi & Ketenangan',
-    titleGradient: 'Maksimal Setiap Hari',
-    desc: 'Nikmati interior kamar eksklusif dengan cermin, lemari pakaian, kasur empuk, serta sirkulasi udara dan cahaya alami yang sehat.'
+    image: cmsSettings.value.heroImage2 || '/assets/images/hero-kamar.webp',
+    tag: 'Tipe Kamar Mandi Luar',
+    titleMain: 'Kamar Nyaman',
+    titleGradient: 'Harga Terjangkau',
+    desc: 'Pilihan kamar dengan kamar mandi luar yang bersih dan terawat. Cocok untuk Anda yang menginginkan hunian nyaman dengan budget hemat.'
   },
   {
     id: 3,
-    image: cmsSettings.value.heroImage3 || '/assets/images/room-single.png',
-    tag: 'Dapur Bersama Lengkap',
-    titleMain: 'Memasak Lebih Praktis',
-    titleGradient: '& Selalu Bersih',
-    desc: 'Dilengkapi kompor gas, kulkas bersama, kabinet penyimpanan, serta dispenser air minum untuk menunjang harian Anda.'
+    image: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.webp',
+    tag: 'Tipe Kamar Mandi Dalam',
+    titleMain: 'Privasi & Kenyamanan',
+    titleGradient: 'Maksimal Setiap Hari',
+    desc: 'Nikmati kamar eksklusif dengan kamar mandi dalam pribadi. Privasi lebih terjaga untuk kenyamanan dan ketenangan Anda.'
   }
 ])
 
 const currentHeroSlide = computed(() => {
   return heroSlides.value[activeHeroSlide.value] || heroSlides.value[0] || {
     id: 1,
-    image: '/assets/images/hero-bg.png',
+    image: '/assets/images/hero-gedung-depan.webp',
     tag: 'Kost Muslimah Terpercaya',
     titleMain: 'Kost Muslimah Sekar Wangi',
     titleGradient: 'Nyaman & Aman',
@@ -93,13 +95,9 @@ const calcAddonParking = ref<boolean>(false)
 const calcAddonLaundry = ref<boolean>(false)
 
 const calcBasePrice = computed(() => {
-  const isKmDalam = calcRoomType.value === 'km-dalam'
-  if (calcDuration.value >= 12) {
-    return isKmDalam ? 880000 : 650000
-  } else if (calcDuration.value >= 3) {
-    return isKmDalam ? 910000 : 675000
-  }
-  return isKmDalam ? 950000 : 700000
+  const sampleRoom = rooms.value.find(r => r.typeId === calcRoomType.value)
+  const total = getRoomPriceByDuration(sampleRoom, calcDuration.value)
+  return Math.round(total / (calcDuration.value || 1))
 })
 
 const calcTotalPerMonth = computed(() => {
@@ -133,190 +131,94 @@ Apakah kamar ini masih tersedia? Terima kasih.`
 // 2. ACCESSIBILITY / NEARBY PLACES STATE
 const activePlaceCategory = ref('all')
 
-const placeCategories = [
-  { id: 'all', label: 'Semua Tempat' },
-  { id: 'campus', label: 'Kampus & Pendidikan' },
-  { id: 'shopping', label: 'Perbelanjaan & Publik' },
-  { id: 'health', label: 'Fasilitas Kesehatan' },
-  { id: 'worship', label: 'Tempat Ibadah' }
-]
-
-const nearbyPlaces = [
-  {
-    id: 1,
-    name: 'Universitas Gadjah Mada (UGM)',
-    category: 'campus',
-    distance: '2.5 km',
-    time: '5–7 menit (motor)',
-    icon: 'bx bxs-school',
-    badge: 'Kampus Utama',
-    desc: 'Akses cepat melalui Jl. Monjali / Jl. Ringroad Utara tanpa macet.'
-  },
-  {
-    id: 2,
-    name: 'Universitas Negeri Yogyakarta (UNY)',
-    category: 'campus',
-    distance: '3.8 km',
-    time: '10 menit (motor)',
-    icon: 'bx bxs-graduation',
-    badge: 'Kampus',
-    desc: 'Rute mudah & nyaman menuju area Colombo dan Gejayan.'
-  },
-  {
-    id: 3,
-    name: 'Sleman City Hall (SCH)',
-    category: 'shopping',
-    distance: '3.0 km',
-    time: '7 menit (motor)',
-    icon: 'bx bxs-shopping-bag',
-    badge: 'Pusat Perbelanjaan',
-    desc: 'Mall terbesar di Sleman dengan bioskop, supermarket, dan culinary hub.'
-  },
-  {
-    id: 4,
-    name: 'RSUP Dr. Sardjito',
-    category: 'health',
-    distance: '2.8 km',
-    time: '7 menit (motor)',
-    icon: 'bx bxs-first-aid',
-    badge: 'Rumah Sakit Rujukan',
-    desc: 'Fasilitas medis terdekat untuk kebutuhan kesehatan darurat maupun medis umum.'
-  },
-  {
-    id: 5,
-    name: 'Indomaret / Alfamart Trini',
-    category: 'shopping',
-    distance: '300 meter',
-    time: '3 menit (jalan kaki)',
-    icon: 'bx bxs-store-alt',
-    badge: 'Minimarket 24h',
-    desc: 'Sangat dekat untuk membeli kebutuhan harian, cemilan, dan saldo e-money.'
-  },
-  {
-    id: 6,
-    name: 'Masjid Al-Ikhlas Trini',
-    category: 'worship',
-    distance: '150 meter',
-    time: '2 menit (jalan kaki)',
-    icon: 'bx bxs-institution',
-    badge: 'Tempat Ibadah',
-    desc: 'Masjid warga yang bersih dan aktif dengan jamaah muslimah sekitar.'
-  }
-]
+const placeCategories = computed(() => nearbyPlacesData.value.categories)
+const nearbyPlaces = computed(() => nearbyPlacesData.value.places)
 
 const filteredPlaces = computed(() => {
-  if (activePlaceCategory.value === 'all') return nearbyPlaces
-  return nearbyPlaces.filter(p => p.category === activePlaceCategory.value)
+  if (activePlaceCategory.value === 'all') return nearbyPlaces.value
+  return nearbyPlaces.value.filter(p => p.category === activePlaceCategory.value)
 })
 
 // 3. TESTIMONIAL CAROUSEL STATE
 const activeTestimonial = ref(0)
+let testiTimer: any = null
+const touchStartX = ref(0)
+const touchEndX = ref(0)
 
-const testimonials = [
-  {
+const currentTestimonial = computed(() => {
+  return testimonials.value[activeTestimonial.value] || testimonials.value[0] || {
     id: 1,
-    name: 'Anisa Rahmawati',
-    role: 'Mahasiswi UGM - Fak. Hukum',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    name: 'Zulfa Tsaniyatul Fadilah',
+    role: 'Mahasiswi UTY - Informatika',
+    avatar: '',
     rating: 5,
-    tag: 'Penyewa 2 Tahun',
-    comment: 'Tinggal di Sekar Space bikin fokus belajar banget. Lingkungannya tenang khusus muslimah, akses kunci aman, dan kamarnya bersih banget pas pertama masuk. Pokoknya recommended!'
-  },
-  {
-    id: 2,
-    name: 'Siti Nurhaliza',
-    role: 'Alumni UNY - Software Engineer',
-    avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    rating: 5,
-    tag: 'Penyewa 1.5 Tahun',
-    comment: 'Fasilitas dapur bersama dan WiFi-nya kenceng banget! Sangat membantu aku yang sering kerja WFH / remote job. Pengelolanya juga ramah dan responnya cepat kalau ada kendala.'
-  },
-  {
-    id: 3,
-    name: 'Dwi Kartika Sari',
-    role: 'Karyawan Swasta Sleman',
-    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-    rating: 5,
-    tag: 'Penyewa 1 Tahun',
-    comment: 'Suka banget sama lokasinya yang dekat UGM dan RS Sardjito. Parkirannya aman terlindung hujan dan ada CCTV 24 jam. Biaya sewanya juga sangat worth it!'
+    tag: 'Penyewa Kamar A-11',
+    comment: 'Tinggal di Sekar Space dekat banget ke kampus UTY, aksesnya gampang dan aman.'
   }
-]
-
-const currentTestimonial = computed<{
-  id: number
-  name: string
-  role: string
-  avatar: string
-  rating: number
-  tag: string
-  comment: string
-}>(() => testimonials[activeTestimonial.value] ?? testimonials[0]!)
+})
 
 const nextTestimonial = () => {
-  activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.length
+  if (!testimonials.value || testimonials.value.length === 0) return
+  activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.value.length
 }
 
 const prevTestimonial = () => {
-  activeTestimonial.value = (activeTestimonial.value - 1 + testimonials.length) % testimonials.length
+  if (!testimonials.value || testimonials.value.length === 0) return
+  activeTestimonial.value = (activeTestimonial.value - 1 + testimonials.value.length) % testimonials.value.length
 }
 
-const facilities = [
-  { 
-    icon: 'bx bx-wifi', 
-    title: 'WiFi Cepat', 
-    desc: 'Internet berkecepatan tinggi tersedia 24 jam untuk kebutuhan belajar dan bekerja.',
-    details: 'Internet berkecepatan tinggi tersedia selama 24 jam tanpa biaya tambahan. Koneksi ini mendukung berbagai kebutuhan, seperti mengerjakan tugas kuliah, mengikuti kelas online, hingga menyelesaikan pekerjaan dengan nyaman.'
-  },
-  { 
-    icon: 'bx bx-shield-quarter', 
-    title: 'Keamanan 24 Jam', 
-    desc: 'Sistem keamanan terpadu dengan CCTV dan akses terbatas untuk kenyamanan Anda.',
-    details: 'CCTV beroperasi selama 24 jam untuk memantau area sekitar pintu utama. Sistem pengawasan ini membantu menjaga keamanan sekaligus memberikan rasa aman, privasi, dan kenyamanan bagi penghuni.'
-  },
-  { 
-    icon: 'bx bxs-car-garage', 
-    title: 'Parkir Luas', 
-    desc: 'Area parkir yang memadai untuk motor dan sepeda, aman dan terlindung.',
-    details: 'Area parkir indoor yang luas dan memadai untuk motor dan sepeda. Parkir terlindung dari panas dan hujan serta membantu menjaga kendaraan tetap aman selama ditinggalkan.'
-  },
-  { 
-    icon: 'bx bx-fridge', 
-    title: 'Dapur Bersama', 
-    desc: 'Dapur lengkap dengan peralatan memasak yang bisa digunakan bersama.',
-    details: 'Dapur bersama dilengkapi kompor gas, kulkas, serta berbagai peralatan memasak yang dapat digunakan bersama. Cocok untuk kebutuhan memasak sehari-hari.'
-  },
-  { 
-    icon: 'bx bxs-tv', 
-    title: 'TV Bersama', 
-    desc: 'Tersedia fasilitas televisi sebagai sarana hiburan untuk bersantai dan menikmati waktu bersama.',
-    details: 'Tersedia ruang bersama yang dilengkapi TV, kursi, dan karpet untuk bersantai.  Dilengkapi koneksi Smart TV untuk menonton tayangan favorit dan menikmati waktu luang bersama.'
-  },
-  { 
-    icon: 'bx bxs-group', 
-    title: 'Ruang Tamu', 
-    desc: 'Tersedia ruang tamu yang nyaman untuk menerima tamu, bersantai, dan berkumpul bersama.',
-    details: 'Ruang tamu yang nyaman dan tertata, dilengkapi sofa dan meja untuk menerima tamu, bersantai, atau berkumpul bersama. Cocok untuk menciptakan suasana yang hangat dan nyaman.'
+const setTestimonial = (index: number) => {
+  activeTestimonial.value = index
+  resetTestiTimer()
+}
+
+const startTestiTimer = () => {
+  if (testiTimer) clearInterval(testiTimer)
+  testiTimer = setInterval(() => {
+    nextTestimonial()
+  }, 5000)
+}
+
+const stopTestiTimer = () => {
+  if (testiTimer) {
+    clearInterval(testiTimer)
+    testiTimer = null
   }
-]
+}
 
-// 4. FLOOR PLAN STATE
-const activeFloor = ref<'floor1' | 'floor2'>('floor1')
+const resetTestiTimer = () => {
+  stopTestiTimer()
+  startTestiTimer()
+}
 
-const floor1Rooms = [
-  { id: '101', type: 'Kamar Mandi Dalam', status: 'Terisi', icon: 'bx bx-bed' },
-  { id: '102', type: 'Kamar Mandi Luar', status: 'Tersedia', icon: 'bx bx-door-open' },
-  { id: '103', type: 'Kamar Mandi Dalam', status: 'Terisi', icon: 'bx bx-bath' },
-  { id: '104', type: 'Ruang Tamu Utama', status: 'Fasilitas Umum', icon: 'bx bxs-group' },
-  { id: '105', type: 'Dapur Bersama', status: 'Fasilitas Umum', icon: 'bx bx-fridge' }
-]
+const handleTestiTouchStart = (e: TouchEvent) => {
+  if (e.touches && e.touches[0]) {
+    touchStartX.value = e.touches[0].clientX
+    touchEndX.value = e.touches[0].clientX
+  }
+  stopTestiTimer()
+}
 
-const floor2Rooms = [
-  { id: '201', type: 'Kamar Mandi Dalam', status: 'Tersedia', icon: 'bx bxs-star' },
-  { id: '202', type: 'Kamar Mandi Luar', status: 'Tersedia', icon: 'bx bx-bed' },
-  { id: '203', type: 'Kamar Mandi Luar', status: 'Terisi', icon: 'bx bx-door-open' },
-  { id: '204', type: 'Balkon & Area Santai', status: 'Fasilitas Umum', icon: 'bx bxs-sun' },
-  { id: '205', type: 'Area Jemuran', status: 'Fasilitas Umum', icon: 'bx bx-closet' }
-]
+const handleTestiTouchMove = (e: TouchEvent) => {
+  if (e.touches && e.touches[0]) {
+    touchEndX.value = e.touches[0].clientX
+  }
+}
+
+const handleTestiTouchEnd = () => {
+  const diffX = touchStartX.value - touchEndX.value
+  const threshold = 40 // min swipe distance in px
+  if (Math.abs(diffX) > threshold && touchEndX.value !== 0) {
+    if (diffX > 0) {
+      nextTestimonial()
+    } else {
+      prevTestimonial()
+    }
+  }
+  touchStartX.value = 0
+  touchEndX.value = 0
+  resetTestiTimer()
+}
 
 const toggleFaq = (index: number) => {
   if (activeFaq.value === index) {
@@ -351,201 +253,49 @@ const scrollToTop = () => {
 }
 
 // Data Collections
-const galleryCategories = [
-  { id: 'all', label: 'Semuanya' },
-  { id: 'rooms', label: 'Kamar' },
-  { id: 'facilities', label: 'Fasilitas' },
-  { id: 'environment', label: 'Suasana' }
-]
-
-const galleryRow1All = [
-  {
-    id: 101,
-    title: 'Ruang Tamu & Bersantai',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/gallery-livingroom.png',
-    sizeClass: 'card-wide',
-    desc: 'Ruang tamu nyaman dengan sofa dan meja, cocok untuk menerima tamu dan bersantai bersama.'
-  },
-  {
-    id: 102,
-    title: 'Kamar Mandi Luar',
-    category: 'rooms',
-    categoryLabel: 'Kamar Standard',
-    image: '/assets/images/room-single.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur, bantal, guling, lemari, cermin, rak buku dan meja belajar.'
-  },
-  {
-    id: 103,
-    title: 'Dapur Bersama Bersih',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/gallery-kitchen.png',
-    sizeClass: 'card-tall',
-    desc: 'Dapur lengkap dengan kompor, peralatan memasak, dan rak penyimpanan yang tertata rapi serta terawat.'
-  },
-  {
-    id: 104,
-    title: 'Kamar Mandi Dalam',
-    category: 'rooms',
-    categoryLabel: 'Kamar Premium',
-    image: '/assets/images/room-deluxe.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar mandi dalam untuk kamar premium, dilengkapi perlengkapan mandi dan interior modern minimalis yang bersih dan nyaman.'
-  },
-  {
-    id: 105,
-    title: 'Tampak Depan & Halaman',
-    category: 'environment',
-    categoryLabel: 'Suasana Kost',
-    image: '/assets/images/hero-bg.png',
-    sizeClass: 'card-large',
-    desc: 'Lingkungan kost yang asri, tenang, dan aman, khusus muslimah dengan area tertutup untuk menjaga privasi.'
-  },
-  {
-    id: 106,
-    title: 'Kamar Double / Shared',
-    category: 'rooms',
-    categoryLabel: 'Kamar Kapasitas 2',
-    image: '/assets/images/room-double.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar luas dengan kapasitas maksimal 2 orang, dilengkapi kasur, lemari, bantal, guling, dan rak buku yang dapat digunakan bersama.'
-  }
-]
-
-const galleryRow2All = [
-  {
-    id: 201,
-    title: 'Kamar Mandi Dalam',
-    category: 'rooms',
-    categoryLabel: 'Kamar Premium',
-    image: '/assets/images/room-deluxe.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar mandi dalam untuk kamar premium, dilengkapi perlengkapan mandi dan interior modern minimalis yang bersih dan nyaman.'
-  },
-  {
-    id: 202,
-    title: 'Dapur Bersama Bersih',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/gallery-kitchen.png',
-    sizeClass: 'card-large',
-    desc: 'Dapur lengkap dengan kompor, peralatan memasak, dan rak penyimpanan yang tertata rapi serta terawat.'
-  },
-  {
-    id: 203,
-    title: 'Kamar Double / Shared',
-    category: 'rooms',
-    categoryLabel: 'Kamar Kapasitas 2',
-    image: '/assets/images/room-double.png',
-    sizeClass: 'card-tall',
-    desc: 'Kamar luas dengan kapasitas maksimal 2 orang, dilengkapi kasur, lemari, bantal, guling, dan rak buku yang dapat digunakan bersama.'
-  },
-  {
-    id: 204,
-    title: 'Ruang Tamu & Santai',
-    category: 'facilities',
-    categoryLabel: 'Fasilitas Umum',
-    image: '/assets/images/gallery-livingroom.png',
-    sizeClass: 'card-wide',
-    desc: 'Ruang tamu nyaman dengan sofa dan meja, cocok untuk menerima tamu dan bersantai bersama.'
-  },
-  {
-    id: 205,
-    title: 'Kamar Mandi Luar',
-    category: 'rooms',
-    categoryLabel: 'Kamar Standard',
-    image: '/assets/images/room-single.png',
-    sizeClass: 'card-standard',
-    desc: 'Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur, bantal, guling, lemari, cermin, rak buku dan meja belajar.'
-  },
-  {
-    id: 206,
-    title: 'Tampak Depan & Halaman',
-    category: 'environment',
-    categoryLabel: 'Suasana Kost',
-    image: '/assets/images/hero-bg.png',
-    sizeClass: 'card-large',
-    desc: 'Lingkungan kost yang asri, tenang, dan aman, khusus muslimah dengan area tertutup untuk menjaga privasi.'
-  }
-]
+const galleryCategories = computed(() => galleryData.value.categories)
+const galleryRow1All = computed(() => galleryData.value.row1)
+const galleryRow2All = computed(() => galleryData.value.row2)
 
 const filteredRow1 = computed(() => {
-  if (selectedCategory.value === 'all') return galleryRow1All
-  return galleryRow1All.filter(item => item.category === selectedCategory.value)
+  if (selectedCategory.value === 'all') return galleryRow1All.value
+  return galleryRow1All.value.filter(item => item.category === selectedCategory.value)
 })
 
 const filteredRow2 = computed(() => {
-  if (selectedCategory.value === 'all') return galleryRow2All
-  return galleryRow2All.filter(item => item.category === selectedCategory.value)
+  if (selectedCategory.value === 'all') return galleryRow2All.value
+  return galleryRow2All.value.filter(item => item.category === selectedCategory.value)
 })
 
 const selectGalleryCategory = (catId: string) => {
   selectedCategory.value = catId
 }
 
-const faqs = [
-  {
-    number: '01',
-    question: 'Apa saja peraturan utama di Kost Muslimah Sekar Wangi?',
-    isList: true,
-    list: [
-      { label: 'Identitas:', text: 'Penyewa wajib seorang muslimah.' },
-      { label: 'Jam Malam:', text: 'Aktivitas yang menimbulkan keramaian atau mengganggu waktu istirahat diperbolehkan hingga pukul 22.00. Setelah waktu tersebut, pintu kost akan dikunci demi keamanan dan kenyamanan bersama.' },
-      { label: 'Tamu:', text: 'Tidak diperkenankan membawa lawan jenis ke dalam kamar; tamu lawan jenis hanya diperbolehkan di area ruang tamu.' },
-      { label: 'Menginap:', text: 'Tamu (sesama wanita) yang menginap lebih dari 2 hari akan dikenakan biaya tambahan Rp 50.000/hari.' },
-      { label: 'Kebersihan:', text: 'Wajib menjaga kebersihan fasilitas umum seperti dapur dan kamar mandi bersama.' },
-      { label: 'Hewan Peliharaan:', text: 'Dilarang membawa hewan peliharaan jenis apapun.' },
-      { label: 'Perizinan:', text: 'Wajib melapor kepada pengelola kost jika meninggalkan kost untuk pulang kampung atau pergi dalam waktu lama.' },
-      { label: 'Ketertiban:', text: 'Dilarang keras merokok dan mengonsumsi minuman keras di seluruh area kost, termasuk di dalam kamar.' }
-    ]
-  },
-  {
-    number: '02',
-    question: 'Apakah biaya sewa sudah termasuk Wi-Fi dan air?',
-    isList: false,
-    text: 'Ya, biaya sewa bulanan sudah mencakup penggunaan air bersih dan Wi-Fi untuk kebutuhan sehari-hari. Biaya listrik belum termasuk dalam biaya sewa dan akan dibayarkan secara terpisah sesuai pemakaian.'
-  },
-  {
-    number: '03',
-    question: 'Bagaimana sistem pembayaran sewa kamar kost?',
-    isList: false,
-    text: 'Pembayaran sewa dapat dilakukan secara bulanan, per 3 bulan, atau tahunan melalui transfer bank ke rekening pengelola. Pembayaran wajib diselesaikan paling lambat pada tanggal jatuh tempo setiap bulannya sesuai kesepakatan awal.'
-  },
-  {
-    number: '04',
-    question: 'Apakah ada jam malam untuk tamu yang berkunjung?',
-    isList: false,
-    text: 'Tamu hanya diperbolehkan berkunjung di area ruang tamu luar hingga pukul 21.00 WIB. Demi kenyamanan dan privasi penghuni lain, tamu (termasuk keluarga perempuan) tidak diizinkan memasuki area kamar tanpa izin khusus.'
-  },
-  {
-    number: '05',
-    question: 'Bagaimana dengan fasilitas dapur dan laundry?',
-    isList: false,
-    text: 'Kami menyediakan dapur bersama yang lengkap dengan kompor, kulkas, dan peralatan dasar. Penghuni wajib membersihkan perlengkapan setelah dipakai. Untuk laundry, tersedia mesin cuci yang bisa digunakan bersama atau Anda dapat menggunakan jasa laundry berlangganan di sekitar area kost.'
-  }
-]
-
 const formatRupiah = (val: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
 }
+const sampleKmLuarRoom = computed(() => rooms.value.find(r => r.typeId === 'km-luar'))
+const sampleKmDalamRoom = computed(() => rooms.value.find(r => r.typeId === 'km-dalam'))
 
-// Dynamic Pricing Calculator using CMS settings
+const getDurationFromPeriod = (period: string): number => {
+  if (period === 'quarterly') return 3
+  if (period === 'semi-annual') return 6
+  if (period === 'yearly') return 12
+  return 1
+}
+
 const getPriceKmLuar = computed(() => {
-  const base = cmsSettings.value.priceKmLuarMonthly || 700000
-  if (roomPricingPeriod.value === 'quarterly') return formatRupiah(Math.round(base * 0.95))
-  if (roomPricingPeriod.value === 'yearly') return formatRupiah(cmsSettings.value.priceKmLuarYearly || 650000)
-  return formatRupiah(base)
+  const duration = getDurationFromPeriod(roomPricingPeriod.value)
+  return formatRupiah(getRoomPriceByDuration(sampleKmLuarRoom.value, duration))
 })
 
 const getPriceKmDalam = computed(() => {
-  const base = cmsSettings.value.priceKmDalamMonthly || 950000
-  if (roomPricingPeriod.value === 'quarterly') return formatRupiah(Math.round(base * 0.95))
-  if (roomPricingPeriod.value === 'yearly') return formatRupiah(cmsSettings.value.priceKmDalamYearly || 880000)
-  return formatRupiah(base)
+  const duration = getDurationFromPeriod(roomPricingPeriod.value)
+  return formatRupiah(getRoomPriceByDuration(sampleKmDalamRoom.value, duration))
 })
+
+const roomTypeKmLuar = computed(() => roomTypes.value.find(t => t.typeId === 'km-luar'))
+const roomTypeKmDalam = computed(() => roomTypes.value.find(t => t.typeId === 'km-dalam'))
 
 // Scroll Progress
 const handleWindowScroll = () => {
@@ -559,30 +309,30 @@ let gsapCtx: gsap.Context | null = null
 
 const initGsapAnimations = () => {
   gsapCtx = gsap.context(() => {
-    // 1. HERO ANIMATIONS
+    // 1. HERO ANIMATIONS (Optimized for instant LCP - no opacity blocking)
     gsap.fromTo('.hero-badge', 
-      { scale: 0, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 1, ease: 'back.out(1.8)', clearProps: 'all' }
+      { scale: 0.9, opacity: 0.6 },
+      { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.5)', clearProps: 'all' }
     )
 
     gsap.fromTo('#heroHeading', 
-      { y: 50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 1, delay: 0.15, ease: 'power3.out', clearProps: 'all' }
+      { y: 15 },
+      { y: 0, duration: 0.5, ease: 'power2.out', clearProps: 'all' }
     )
 
     gsap.fromTo('.hero-desc', 
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, delay: 0.3, ease: 'power2.out', clearProps: 'all' }
+      { y: 12 },
+      { y: 0, duration: 0.5, delay: 0.05, ease: 'power2.out', clearProps: 'all' }
     )
 
     gsap.fromTo('.hero-actions .btn', 
-      { y: 30, scale: 0.9, opacity: 0 },
-      { y: 0, scale: 1, opacity: 1, stagger: 0.15, duration: 0.8, delay: 0.45, ease: 'back.out(1.5)', clearProps: 'all' }
+      { y: 15, opacity: 0.7 },
+      { y: 0, opacity: 1, stagger: 0.08, duration: 0.5, delay: 0.1, ease: 'power2.out', clearProps: 'all' }
     )
 
     gsap.fromTo('.hero-stats', 
-      { y: 40, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.9, delay: 0.6, ease: 'power3.out', clearProps: 'all' }
+      { y: 15, opacity: 0.7 },
+      { y: 0, opacity: 1, duration: 0.5, delay: 0.15, ease: 'power2.out', clearProps: 'all' }
     )
 
     // 2. FACILITIES SECTION
@@ -636,7 +386,16 @@ const initGsapAnimations = () => {
       }
     )
 
-    // 5. TESTIMONIALS SECTION
+    // 5. GALLERY SECTION
+    gsap.fromTo('.gallery-double-row-wrapper', 
+      { y: 45, opacity: 0 },
+      { 
+        y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'all',
+        scrollTrigger: { trigger: '#gallery', start: 'top 85%', once: true }
+      }
+    )
+
+    // 6. TESTIMONIALS SECTION
     gsap.fromTo('.testimonial-card', 
       { scale: 0.9, opacity: 0 },
       { 
@@ -645,11 +404,11 @@ const initGsapAnimations = () => {
       }
     )
 
-    // 8. FAQ SECTION
+    // 7. FAQ SECTION
     gsap.fromTo('.faq-intro', 
       { x: -40, opacity: 0 },
       { 
-        x: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'all',
+        y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'all',
         scrollTrigger: { trigger: '#faq', start: 'top 85%', once: true }
       }
     )
@@ -662,16 +421,16 @@ const initGsapAnimations = () => {
       }
     )
 
-    // 9. GALLERY SECTION
-    gsap.fromTo('.gallery-double-row-wrapper', 
-      { y: 45, opacity: 0 },
+    // 8. BANNER CLOSING CTA SECTION
+    gsap.fromTo('.closing-cta-card', 
+      { scale: 0.94, opacity: 0, y: 30 },
       { 
-        y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', clearProps: 'all',
-        scrollTrigger: { trigger: '#gallery', start: 'top 85%', once: true }
+        scale: 1, opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', clearProps: 'all',
+        scrollTrigger: { trigger: '#closingCta', start: 'top 85%', once: true }
       }
     )
 
-    // 10. CONTACT SECTION
+    // 9. CONTACT SECTION
     gsap.fromTo('.contact-item', 
       { x: -40, opacity: 0 },
       { 
@@ -694,17 +453,69 @@ const initGsapAnimations = () => {
   }, 200)
 }
 
+const pendingHash = ref('')
+
+const scrollToHash = (hash: string) => {
+  if (!hash) return
+  const doScroll = () => {
+    const el = document.querySelector(hash)
+    if (el) {
+      // Gunakan scrollTo manual dengan offset navbar
+      const rect = el.getBoundingClientRect()
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const targetY = rect.top + scrollTop - 80
+      window.scrollTo({ top: targetY, behavior: 'smooth' })
+    }
+  }
+  // Retry beberapa kali dengan jeda, karena layout bisa belum final
+  let attempts = 0
+  const tryScroll = () => {
+    attempts++
+    const el = document.querySelector(hash)
+    if (el) {
+      // Tunggu 2 frame render agar posisi elemen sudah final
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          doScroll()
+        })
+      })
+    } else if (attempts < 10) {
+      setTimeout(tryScroll, 100)
+    }
+  }
+  tryScroll()
+}
+
+watch(() => route.hash, (newHash) => {
+  if (newHash) {
+    // Jika komponen sudah mounted, langsung scroll
+    scrollToHash(newHash)
+  }
+})
+
 onMounted(() => {
   window.addEventListener('scroll', handleWindowScroll)
   startHeroTimer()
+  startTestiTimer()
+  setTimeout(() => {
+    heroSlidesReady.value = true
+  }, 800)
   nextTick(() => {
     initGsapAnimations()
+    // Setelah GSAP init + ScrollTrigger.refresh selesai, baru scroll ke hash
+    if (route.hash) {
+      // Tunggu 500ms agar GSAP animations clearProps selesai dan layout final
+      setTimeout(() => {
+        scrollToHash(route.hash)
+      }, 500)
+    }
   })
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleWindowScroll)
   if (heroTimer) clearInterval(heroTimer)
+  if (testiTimer) clearInterval(testiTimer)
   if (gsapCtx) {
     gsapCtx.revert()
   }
@@ -732,7 +543,7 @@ onUnmounted(() => {
             :key="slide.id"
             class="hero-bg-slide"
             :class="{ active: activeHeroSlide === index }"
-            :style="{ backgroundImage: `url(${slide.image})` }"
+            :style="{ backgroundImage: (index === 0 || heroSlidesReady || activeHeroSlide === index) ? `url(${slide.image})` : 'none' }"
           ></div>
         </div>
 
@@ -802,7 +613,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- FACILITIES SECTION -->
+      <!-- 2. FACILITIES SECTION -->
       <section id="facilities" class="section facilities" aria-labelledby="facilitiesHeading">
         <div class="container">
           <header class="section-header">
@@ -832,7 +643,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- ROOMS PREVIEW SECTION WITH DYNAMIC PRICING TOGGLE -->
+      <!-- 3. ROOMS PREVIEW SECTION WITH DYNAMIC PRICING TOGGLE -->
       <section id="rooms" class="section rooms" aria-labelledby="roomsHeading">
         <div class="container">
           <header class="section-header">
@@ -847,50 +658,56 @@ onUnmounted(() => {
                 :class="{ active: roomPricingPeriod === 'monthly' }"
                 @click="roomPricingPeriod = 'monthly'"
               >
-                Bulanan
+                1 Bulan
               </button>
               <button 
                 class="period-btn" 
                 :class="{ active: roomPricingPeriod === 'quarterly' }"
                 @click="roomPricingPeriod = 'quarterly'"
               >
-                3 Bulan <span class="discount-badge">Diskon 5%</span>
+                3 Bulan
+              </button>
+              <button 
+                class="period-btn" 
+                :class="{ active: roomPricingPeriod === 'semi-annual' }"
+                @click="roomPricingPeriod = 'semi-annual'"
+              >
+                6 Bulan
               </button>
               <button 
                 class="period-btn" 
                 :class="{ active: roomPricingPeriod === 'yearly' }"
                 @click="roomPricingPeriod = 'yearly'"
               >
-                Tahunan <span class="discount-badge badge-best">Hemat S/d 1 Juta!</span>
+                12 Bulan
               </button>
             </div>
           </header>
 
           <div class="room-comparison">
             <!-- Kamar Mandi Luar -->
-            <RouterLink to="/rooms?tipe=km-luar" class="room-type-card" id="roomKmLuar">
+            <RouterLink v-if="roomTypeKmLuar" to="/rooms?tipe=km-luar" class="room-type-card" id="roomKmLuar">
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/room-single.png" alt="Tipe Kamar Mandi Luar Sekar Space" class="room-type-img">
+                <img :src="roomTypeKmLuar.image || '/assets/images/fasilitas-luas-kamar.webp'" :alt="`Tipe ${roomTypeKmLuar.typeName} Sekar Space`" class="room-type-img" loading="lazy" decoding="async">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
-                  <i class='bx bx-door-open'></i>
+                  <i :class="roomTypeKmLuar.icon || 'bx bx-door-open'"></i>
                 </div>
               </div>
               <div class="room-type-content">
-                <span class="room-type-tag">Terjangkau</span>
-                <h3>Kamar Mandi Luar</h3>
-                <p class="room-type-desc">Kamar nyaman dengan akses kamar mandi bersama yang selalu bersih dan terawat.</p>
+                <span class="room-type-tag">{{ roomTypeKmLuar.tag || 'Standard' }}</span>
+                <h3>{{ roomTypeKmLuar.typeName }}</h3>
+                <p class="room-type-desc">{{ roomTypeKmLuar.desc }}</p>
                 <ul class="room-type-features">
-                  <li><i class='bx bx-check-circle'></i> Ukuran 3 × 3 meter</li>
-                  <li><i class='bx bx-check-circle'></i> Kasur & Lemari</li>
-                  <li><i class='bx bx-check-circle'></i> Cermin</li>
-                  <li><i class='bx bx-check-circle'></i> WiFi 24 Jam</li>
+                  <li v-for="(feat, idx) in roomTypeKmLuar.features" :key="idx">
+                    <i class='bx bx-check-circle'></i> {{ feat }}
+                  </li>
                 </ul>
                 <div class="room-type-price">
                   <span class="price-from">
-                    {{ roomPricingPeriod === 'monthly' ? 'Mulai dari' : roomPricingPeriod === 'quarterly' ? 'Harga Per Bulan (Sewa 3 Bln)' : 'Harga Per Bulan (Sewa 1 Thn)' }}
+                    {{ roomPricingPeriod === 'monthly' ? 'Tarif 1 Bulan' : roomPricingPeriod === 'quarterly' ? 'Total Sewa 3 Bulan' : roomPricingPeriod === 'semi-annual' ? 'Total Sewa 6 Bulan' : 'Total Sewa 12 Bulan' }}
                   </span>
-                  <strong>{{ getPriceKmLuar }}<span>/bulan</span></strong>
+                  <strong>{{ getPriceKmLuar }}</strong>
                 </div>
                 <div class="room-type-cta">
                   <span>Lihat Kamar Tersedia</span>
@@ -905,32 +722,31 @@ onUnmounted(() => {
             </div>
 
             <!-- Kamar Mandi Dalam -->
-            <RouterLink to="/rooms?tipe=km-dalam" class="room-type-card room-type-premium" id="roomKmDalam">
+            <RouterLink v-if="roomTypeKmDalam" to="/rooms?tipe=km-dalam" class="room-type-card room-type-premium" id="roomKmDalam">
               <div class="room-type-badge-float">
-                <i class='bx bxs-star'></i> Populer
+                <i class='bx bxs-star'></i> {{ roomTypeKmDalam.badge || 'Populer' }}
               </div>
               <div class="room-type-image-wrapper">
-                <img src="/assets/images/room-deluxe.png" alt="Tipe Kamar Mandi Dalam Sekar Space" class="room-type-img">
+                <img :src="roomTypeKmDalam.image || '/assets/images/kamar-km-dalam-1.webp'" :alt="`Tipe ${roomTypeKmDalam.typeName} Sekar Space`" class="room-type-img" loading="lazy" decoding="async">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
-                  <i class='bx bx-bath'></i>
+                  <i :class="roomTypeKmDalam.icon || 'bx bx-bath'"></i>
                 </div>
               </div>
               <div class="room-type-content">
-                <span class="room-type-tag tag-premium">Premium</span>
-                <h3>Kamar Mandi Dalam</h3>
-                <p class="room-type-desc">Privasi lebih dengan kamar mandi dalam yang nyaman. Lebih leluasa dan eksklusif.</p>
+                <span class="room-type-tag tag-premium">{{ roomTypeKmDalam.tag || 'Premium' }}</span>
+                <h3>{{ roomTypeKmDalam.typeName }}</h3>
+                <p class="room-type-desc">{{ roomTypeKmDalam.desc }}</p>
                 <ul class="room-type-features">
-                  <li><i class='bx bx-check-circle'></i> Ukuran 3 × 3 meter</li>
-                  <li><i class='bx bx-check-circle'></i> Kasur & Lemari</li>
-                  <li><i class='bx bx-check-circle'></i> Cermin</li>
-                  <li><i class='bx bx-check-circle'></i> WiFi 24 Jam</li>
+                  <li v-for="(feat, idx) in roomTypeKmDalam.features" :key="idx">
+                    <i class='bx bx-check-circle'></i> {{ feat }}
+                  </li>
                 </ul>
                 <div class="room-type-price">
                   <span class="price-from">
-                    {{ roomPricingPeriod === 'monthly' ? 'Mulai dari' : roomPricingPeriod === 'quarterly' ? 'Harga Per Bulan (Sewa 3 Bln)' : 'Harga Per Bulan (Sewa 1 Thn)' }}
+                    {{ roomPricingPeriod === 'monthly' ? 'Tarif 1 Bulan' : roomPricingPeriod === 'quarterly' ? 'Total Sewa 3 Bulan' : roomPricingPeriod === 'semi-annual' ? 'Total Sewa 6 Bulan' : 'Total Sewa 12 Bulan' }}
                   </span>
-                  <strong>{{ getPriceKmDalam }}<span>/bulan</span></strong>
+                  <strong>{{ getPriceKmDalam }}</strong>
                 </div>
                 <div class="room-type-cta">
                   <span>Lihat Kamar Tersedia</span>
@@ -942,9 +758,7 @@ onUnmounted(() => {
         </div>
       </section>
 
-
-
-      <!-- NEW SECTION 2: ACCESSIBILITY & NEARBY PLACES -->
+      <!-- 4. ACCESSIBILITY & NEARBY PLACES -->
       <section id="accessibility" class="section accessibility-section">
         <div class="container">
           <header class="section-header">
@@ -990,7 +804,130 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- NEW SECTION 3: TESTIMONIAL CAROUSEL -->
+      <!-- 5. GALLERY SECTION (2-ROW DYNAMIC BENTO GRID WITH 100% GAPLESS INFINITY MARQUEE) -->
+      <section id="gallery" class="section gallery" aria-labelledby="galleryHeading">
+        <div class="container">
+          <header class="section-header">
+            <span class="section-tag">Suasana Kost</span>
+            <h2 id="galleryHeading">Galeri <span class="text-gradient">Hunian</span></h2>
+            <p>Lihat lebih dekat kenyamanan lingkungan, tipe kamar, dan fasilitas di Kost Muslimah Sekar Wangi. Hover pada galeri untuk menjeda pergerakan.</p>
+
+            <!-- Gallery Filter Tabs -->
+            <div class="gallery-filters justify-center">
+              <button 
+                v-for="cat in galleryCategories" 
+                :key="cat.id"
+                class="filter-btn"
+                :class="{ active: selectedCategory === cat.id }"
+                @click="selectGalleryCategory(cat.id)"
+              >
+                {{ cat.label }}
+              </button>
+            </div>
+          </header>
+        </div>
+
+        <!-- 2-ROW INFINITE HORIZONTAL MARQUEE -->
+        <div class="gallery-double-row-wrapper">
+          <!-- Row 1: Left Infinite Loop -->
+          <div class="gallery-marquee-row row-left">
+            <div class="gallery-marquee-track">
+              <div 
+                v-for="(item, idx) in filteredRow1" 
+                :key="`r1-a-${item.id}-${idx}`"
+                class="gallery-card"
+                :class="item.sizeClass"
+                role="button"
+                tabindex="0"
+                :aria-label="`Buka foto ukuran penuh: ${item.title}`"
+                @click="openLightbox(item)"
+                @keydown.enter.prevent="openLightbox(item)"
+                @keydown.space.prevent="openLightbox(item)"
+              >
+                <div class="gallery-img-wrapper">
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" decoding="async" />
+                  <div class="gallery-overlay">
+                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Duplicate for seamless math 100% infinite loop -->
+              <div 
+                v-for="(item, idx) in filteredRow1" 
+                :key="`r1-b-${item.id}-${idx}`"
+                class="gallery-card"
+                :class="item.sizeClass"
+                role="button"
+                tabindex="0"
+                :aria-label="`Buka foto ukuran penuh: ${item.title}`"
+                @click="openLightbox(item)"
+                @keydown.enter.prevent="openLightbox(item)"
+                @keydown.space.prevent="openLightbox(item)"
+              >
+                <div class="gallery-img-wrapper">
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" decoding="async" />
+                  <div class="gallery-overlay">
+                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Row 2: Right Infinite Loop -->
+          <div class="gallery-marquee-row row-right">
+            <div class="gallery-marquee-track">
+              <div 
+                v-for="(item, idx) in filteredRow2" 
+                :key="`r2-a-${item.id}-${idx}`"
+                class="gallery-card"
+                :class="item.sizeClass"
+                role="button"
+                tabindex="0"
+                :aria-label="`Buka foto ukuran penuh: ${item.title}`"
+                @click="openLightbox(item)"
+                @keydown.enter.prevent="openLightbox(item)"
+                @keydown.space.prevent="openLightbox(item)"
+              >
+                <div class="gallery-img-wrapper">
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" decoding="async" />
+                  <div class="gallery-overlay">
+                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Duplicate for seamless math 100% infinite loop -->
+              <div 
+                v-for="(item, idx) in filteredRow2" 
+                :key="`r2-b-${item.id}-${idx}`"
+                class="gallery-card"
+                :class="item.sizeClass"
+                role="button"
+                tabindex="0"
+                :aria-label="`Buka foto ukuran penuh: ${item.title}`"
+                @click="openLightbox(item)"
+                @keydown.enter.prevent="openLightbox(item)"
+                @keydown.space.prevent="openLightbox(item)"
+              >
+                <div class="gallery-img-wrapper">
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" decoding="async" />
+                  <div class="gallery-overlay">
+                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
+                    <h3>{{ item.title }}</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. TESTIMONIAL CAROUSEL -->
       <section id="testimonials" class="section testimonials-section">
         <div class="container">
           <header class="section-header">
@@ -999,36 +936,78 @@ onUnmounted(() => {
             <p>Dengarkan langsung ulasan dan pengalaman dari mahasiswi dan pekerja muslimah yang tinggal di kost kami.</p>
           </header>
 
-          <div class="testimonial-slider-box">
-            <button class="testi-arrow arrow-left" @click="prevTestimonial" aria-label="Ulasan sebelumnya">
+          <div 
+            class="testimonial-slider-box"
+            @mouseenter="stopTestiTimer"
+            @mouseleave="startTestiTimer"
+            @touchstart.passive="handleTestiTouchStart"
+            @touchmove.passive="handleTestiTouchMove"
+            @touchend="handleTestiTouchEnd"
+          >
+            <!-- Desktop Side Floating Arrows -->
+            <button class="testi-arrow arrow-left" @click="prevTestimonial(); resetTestiTimer()" aria-label="Ulasan sebelumnya">
               <i class='bx bx-chevron-left'></i>
             </button>
-            <button class="testi-arrow arrow-right" @click="nextTestimonial" aria-label="Ulasan berikutnya">
+            <button class="testi-arrow arrow-right" @click="nextTestimonial(); resetTestiTimer()" aria-label="Ulasan berikutnya">
               <i class='bx bx-chevron-right'></i>
             </button>
 
             <div class="testimonial-card">
-              <div class="testi-stars">
-                <i v-for="s in currentTestimonial.rating" :key="s" class='bx bxs-star'></i>
-              </div>
-              <blockquote class="testi-quote">
-                "{{ currentTestimonial.comment }}"
-              </blockquote>
-              <div class="testi-user">
-                <img :src="currentTestimonial.avatar" :alt="currentTestimonial.name" class="testi-avatar" />
-                <div>
-                  <h4>{{ currentTestimonial.name }}</h4>
-                  <p>{{ currentTestimonial.role }} • <span class="text-primary">{{ currentTestimonial.tag }}</span></p>
+              <Transition name="testi-slide-fade" mode="out-in">
+                <div :key="activeTestimonial" class="testi-card-inner">
+                  <div class="testi-stars">
+                    <i v-for="s in currentTestimonial.rating" :key="s" class='bx bxs-star'></i>
+                  </div>
+                  <blockquote class="testi-quote">
+                    "{{ currentTestimonial.comment }}"
+                  </blockquote>
+                  <div class="testi-user">
+                    <img :src="currentTestimonial.avatar" :alt="currentTestimonial.name" class="testi-avatar" />
+                    <div>
+                      <h4>{{ currentTestimonial.name }}</h4>
+                      <p>{{ currentTestimonial.role }} • <span class="text-primary">{{ currentTestimonial.tag }}</span></p>
+                    </div>
+                  </div>
                 </div>
+              </Transition>
+            </div>
+
+            <!-- Controls (Arrows + Dots) for Mobile & Desktop Navigation -->
+            <div class="testi-controls">
+              <button 
+                class="testi-nav-btn testi-nav-prev" 
+                @click="prevTestimonial(); resetTestiTimer()" 
+                aria-label="Ulasan sebelumnya"
+              >
+                <i class='bx bx-chevron-left'></i>
+              </button>
+
+              <div class="testi-dots" role="tablist" aria-label="Pilih ulasan">
+                <button 
+                  v-for="(item, idx) in testimonials" 
+                  :key="item.id || idx" 
+                  class="testi-dot" 
+                  :class="{ active: activeTestimonial === idx }"
+                  @click="setTestimonial(idx)"
+                  :aria-label="`Ulasan ${idx + 1}`"
+                  :aria-selected="activeTestimonial === idx"
+                  role="tab"
+                ></button>
               </div>
+
+              <button 
+                class="testi-nav-btn testi-nav-next" 
+                @click="nextTestimonial(); resetTestiTimer()" 
+                aria-label="Ulasan berikutnya"
+              >
+                <i class='bx bx-chevron-right'></i>
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-
-
-      <!-- FAQ SECTION -->
+      <!-- 7. FAQ SECTION -->
       <section id="faq" class="section faq" aria-labelledby="faqHeading">
         <div class="container">
           <div class="faq-grid">
@@ -1083,122 +1062,48 @@ onUnmounted(() => {
         </div>
       </section>
 
-      <!-- GALLERY SECTION (2-ROW DYNAMIC BENTO GRID WITH 100% GAPLESS INFINITY MARQUEE) -->
-      <section id="gallery" class="section gallery" aria-labelledby="galleryHeading">
+      <!-- 8. BANNER CLOSING CTA SECTION -->
+      <section id="closingCta" class="section closing-cta-section" aria-label="Aksi Pemesanan Kamar">
         <div class="container">
-          <header class="section-header">
-            <span class="section-tag">Suasana Kost</span>
-            <h2 id="galleryHeading">Galeri <span class="text-gradient">Hunian</span></h2>
-            <p>Lihat lebih dekat kenyamanan lingkungan, tipe kamar, dan fasilitas di Kost Muslimah Sekar Wangi. Hover pada galeri untuk menjeda pergerakan.</p>
-
-            <!-- Gallery Filter Tabs -->
-            <div class="gallery-filters justify-center">
-              <button 
-                v-for="cat in galleryCategories" 
-                :key="cat.id"
-                class="filter-btn"
-                :class="{ active: selectedCategory === cat.id }"
-                @click="selectGalleryCategory(cat.id)"
-              >
-                {{ cat.label }}
-              </button>
-            </div>
-          </header>
-        </div>
-
-        <!-- 2-ROW INFINITE HORIZONTAL MARQUEE -->
-        <div class="gallery-double-row-wrapper">
-          <!-- Row 1: Left Infinite Loop -->
-          <div class="gallery-marquee-row row-left">
-            <div class="gallery-marquee-track">
-              <div 
-                v-for="(item, idx) in filteredRow1" 
-                :key="`r1-a-${item.id}-${idx}`"
-                class="gallery-card"
-                :class="item.sizeClass"
-                @click="openLightbox(item)"
-              >
-                <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
-                  <div class="gallery-overlay">
-                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <div class="gallery-zoom-icon">
-                      <i class='bx bx-search-plus'></i>
-                    </div>
-                  </div>
-                </div>
+          <div class="closing-cta-card">
+            <div class="closing-cta-glow glow-1"></div>
+            <div class="closing-cta-glow glow-2"></div>
+            <div class="closing-cta-content">
+              <span class="closing-cta-badge">
+                <i class='bx bxs-hot'></i> Kuota Kamar Cepat Terisi
+              </span>
+              <h2>Siap Menikmati Hunian Nyaman & Syar'i di <br class="cta-br"><span class="text-gradient-gold">Sekar Space?</span></h2>
+              <p>Dapatkan kamar idaman dengan fasilitas lengkap, lingkungan aman & bersih, serta lokasi super strategis di Mlati, Sleman.</p>
+              
+              <div class="closing-cta-actions">
+                <RouterLink to="/rooms" class="btn btn-closing-primary" id="btnClosingBook">
+                  <i class='bx bx-door-open'></i>
+                  <span>Pesan Kamar Sekarang</span>
+                </RouterLink>
+                <a 
+                  href="https://wa.me/62895378020456?text=Halo%20Admin%20Sekar%20Space%2C%20saya%20ingin%20jadwalkan%20survei%20kamar%20kost." 
+                  class="btn btn-closing-secondary" 
+                  id="btnClosingSurvey"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <i class='bx bxl-whatsapp'></i>
+                  <span>Jadwalkan Survei via WA</span>
+                </a>
               </div>
 
-              <!-- Duplicate for seamless math 100% infinite loop -->
-              <div 
-                v-for="(item, idx) in filteredRow1" 
-                :key="`r1-b-${item.id}-${idx}`"
-                class="gallery-card"
-                :class="item.sizeClass"
-                @click="openLightbox(item)"
-              >
-                <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
-                  <div class="gallery-overlay">
-                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <div class="gallery-zoom-icon">
-                      <i class='bx bx-search-plus'></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Row 2: Right Infinite Loop -->
-          <div class="gallery-marquee-row row-right">
-            <div class="gallery-marquee-track">
-              <div 
-                v-for="(item, idx) in filteredRow2" 
-                :key="`r2-a-${item.id}-${idx}`"
-                class="gallery-card"
-                :class="item.sizeClass"
-                @click="openLightbox(item)"
-              >
-                <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
-                  <div class="gallery-overlay">
-                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <div class="gallery-zoom-icon">
-                      <i class='bx bx-search-plus'></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Duplicate for seamless math 100% infinite loop -->
-              <div 
-                v-for="(item, idx) in filteredRow2" 
-                :key="`r2-b-${item.id}-${idx}`"
-                class="gallery-card"
-                :class="item.sizeClass"
-                @click="openLightbox(item)"
-              >
-                <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
-                  <div class="gallery-overlay">
-                    <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
-                    <h3>{{ item.title }}</h3>
-                    <div class="gallery-zoom-icon">
-                      <i class='bx bx-search-plus'></i>
-                    </div>
-                  </div>
-                </div>
+              <div class="closing-cta-perks">
+                <span class="perk-item"><i class='bx bx-check-shield'></i> 100% Khusus Muslimah</span>
+                <span class="perk-item"><i class='bx bx-check-shield'></i> Tanpa Biaya Tersembunyi</span>
+                <span class="perk-item"><i class='bx bx-check-shield'></i> Free Wi-Fi 24 Jam</span>
+                <span class="perk-item"><i class='bx bx-check-shield'></i> Akses Kunci & CCTV Aman</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- CONTACT SECTION -->
+      <!-- 9. CONTACT SECTION -->
       <section id="contact" class="section contact" aria-labelledby="contactHeading">
         <div class="container">
           <header class="section-header">
@@ -1233,7 +1138,7 @@ onUnmounted(() => {
                   </div>
                   <div>
                     <h3>Email</h3>
-                    <p><a href="mailto:info@sekarspace.com">info@sekarspace.com</a></p>
+                    <p><a :href="'mailto:' + (cmsSettings.contactEmail || 'sekarcreative00@gmail.com')">{{ cmsSettings.contactEmail || 'sekarcreative00@gmail.com' }}</a></p>
                   </div>
                 </div>
                 <div class="contact-item" id="contactHours">
@@ -1247,6 +1152,10 @@ onUnmounted(() => {
                 </div>
               </address>
               <div class="contact-cta-group">
+                <RouterLink to="/rooms" class="contact-cta-btn cta-rooms-btn" id="ctaRoomsContact">
+                  <i class='bx bx-door-open'></i>
+                  <span>Pilih Kamar Tersedia</span>
+                </RouterLink>
                 <a 
                   href="https://wa.me/62895378020456?text=Halo%20Sekar%20Space%2C%20saya%20ingin%20bertanya%20tentang%20ketersediaan%20kamar." 
                   class="contact-cta-btn cta-wa" 
@@ -1271,7 +1180,7 @@ onUnmounted(() => {
             </div>
             <div class="contact-map" id="contactMap">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4096.961547023015!2d110.34968085650138!3d-7.7507099072810774!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a588cdcef73f3%3A0x2c8d90ddb0433c7c!2sKost%20Muslimah%20Sekar%20Wangi!5e0!3m2!1sid!2sid!4v1786543183534!5m2!1sid!2sid"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3953.389105439149!2d110.3535167!3d-7.7484882000000015!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e7a588cdcef73f3%3A0x2c8d90ddb0433c7c!2sKost%20Muslimah%20Sekar%20Wangi!5e0!3m2!1sen!2sid!4v1786780340244!5m2!1sen!2sid"
                 width="100%"
                 height="100%"
                 style="border:0; border-radius: 16px;"
@@ -1389,10 +1298,16 @@ onUnmounted(() => {
   flex-direction: column;
   min-height: 100vh;
   position: relative;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .main-body {
   flex: 1;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 /* Scroll Progress Bar */
@@ -1576,8 +1491,36 @@ onUnmounted(() => {
 }
 
 .hero-actions .btn {
-  padding: 14px 28px;
-  font-size: 0.95rem;
+  padding: 15px 32px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.hero-actions .btn-primary {
+  background: var(--white);
+  color: var(--primary);
+  box-shadow: 0 4px 20px rgba(255, 255, 255, 0.2);
+}
+
+.hero-actions .btn-primary:hover {
+  background: var(--secondary);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(255, 255, 255, 0.25);
+}
+
+.hero-actions .btn-ghost {
+  background: transparent;
+  color: var(--white);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.hero-actions .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--white);
+  color: var(--white);
+  transform: translateY(-2px);
 }
 
 .hero-stats {
@@ -1671,6 +1614,9 @@ onUnmounted(() => {
 .section {
   padding: var(--section-padding);
   position: relative;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
 }
 
 .section-header {
@@ -1823,8 +1769,13 @@ onUnmounted(() => {
 
 /* ROOMS & PRICING SWITCHER */
 .rooms {
-  background: var(--off-white);
+  background: var(--bg-light);
   overflow: hidden;
+  padding: 80px 0;
+}
+
+.rooms .section-header {
+  margin: 0 auto 36px;
 }
 
 .pricing-period-selector {
@@ -1844,7 +1795,7 @@ onUnmounted(() => {
   border: none;
   background: transparent;
   border-radius: var(--radius-full);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
@@ -1860,23 +1811,13 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px rgba(84, 26, 26, 0.25);
 }
 
-.discount-badge {
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  background: #25D366;
-  color: white;
-  border-radius: var(--radius-full);
-}
-
-.discount-badge.badge-best {
-  background: #E8A838;
-}
-
 .room-comparison {
   display: flex;
   align-items: stretch;
   gap: 24px;
   width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
 }
 
 .room-type-card {
@@ -1885,7 +1826,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 16px 16px 28px;
+  padding: 20px 20px 26px;
   background: var(--white);
   border: 2px solid var(--border);
   border-radius: var(--radius-xl);
@@ -1897,7 +1838,7 @@ onUnmounted(() => {
 }
 
 .room-type-card:hover {
-  transform: translateY(-8px) scale(1.01);
+  transform: translateY(-6px) scale(1.01);
   border-color: var(--secondary);
   box-shadow: var(--shadow-xl);
 }
@@ -1909,20 +1850,20 @@ onUnmounted(() => {
 
 .room-type-premium:hover {
   border-color: var(--primary);
-  box-shadow: 0 16px 48px rgba(84, 26, 26, 0.18);
+  box-shadow: 0 16px 48px rgba(84, 26, 26, 0.16);
 }
 
 .room-type-badge-float {
   position: absolute;
-  top: 26px;
-  right: 26px;
+  top: 16px;
+  right: 16px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px 14px;
+  padding: 4px 12px;
   background: linear-gradient(135deg, #E8A838, #D4912A);
   color: var(--white);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   border-radius: var(--radius-full);
   z-index: 3;
@@ -1936,13 +1877,15 @@ onUnmounted(() => {
   position: relative;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  background: var(--off-white);
 }
 
 .room-type-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center bottom;
   transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.4s ease;
 }
 
@@ -1954,18 +1897,18 @@ onUnmounted(() => {
 
 .room-type-icon-badge {
   position: absolute;
-  bottom: 12px;
-  right: 12px;
-  width: 42px;
-  height: 42px;
+  bottom: 10px;
+  right: 10px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(8px);
   border-radius: var(--radius-md);
   color: var(--primary);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.4s ease;
   z-index: 2;
@@ -1993,7 +1936,7 @@ onUnmounted(() => {
 
 .room-type-tag {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 3px 12px;
   background: var(--tertiary);
   color: var(--primary);
   font-size: 0.72rem;
@@ -2001,7 +1944,7 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin: 0 auto 12px;
+  margin: 0 auto 10px;
 }
 
 .tag-premium {
@@ -2010,62 +1953,65 @@ onUnmounted(() => {
 }
 
 .room-type-content h3 {
-  font-size: 1.25rem;
-  margin-bottom: 8px;
+  font-size: 1.22rem;
+  margin-bottom: 6px;
   color: var(--dark);
 }
 
 .room-type-desc {
-  font-size: 0.88rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
-  line-height: 1.5;
-  margin-bottom: 16px;
+  line-height: 1.45;
+  margin-bottom: 14px;
 }
 
 .room-type-features {
   text-align: left;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .room-type-features li {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 0.88rem;
+  gap: 8px;
+  font-size: 0.85rem;
   color: var(--text);
-  padding: 6px 0;
+  padding: 2px 0;
 }
 
 .room-type-features li i {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   color: #16A34A;
   flex-shrink: 0;
 }
 
 .room-type-price {
   margin-top: auto;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .price-from {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   margin-bottom: 2px;
 }
 
 .room-type-price strong {
   font-family: var(--font-heading);
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--primary);
   transition: all var(--transition-base);
 }
 
 .room-type-price strong span {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 400;
   color: var(--text-muted);
 }
@@ -2075,11 +2021,11 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 12px 28px;
+  padding: 10px 24px;
   background: var(--primary);
   color: var(--white);
   border-radius: var(--radius-full);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 500;
   transition: all var(--transition-base);
   margin: 0 auto;
@@ -2087,12 +2033,12 @@ onUnmounted(() => {
 
 .room-type-card:hover .room-type-cta {
   background: var(--primary-light);
-  gap: 14px;
-  box-shadow: 0 8px 24px rgba(84, 26, 26, 0.25);
+  gap: 12px;
+  box-shadow: 0 6px 20px rgba(84, 26, 26, 0.22);
 }
 
 .room-type-cta i {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   transition: transform var(--transition-base);
 }
 
@@ -2327,7 +2273,7 @@ onUnmounted(() => {
 
 /* NEW STYLES: ACCESSIBILITY */
 .accessibility-section {
-  background: var(--off-white);
+  background: var(--white);
 }
 
 .place-filters {
@@ -2346,7 +2292,7 @@ onUnmounted(() => {
 }
 
 .place-card {
-  background: var(--white);
+  background: var(--off-white);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px;
@@ -2429,11 +2375,14 @@ onUnmounted(() => {
 /* NEW STYLES: TESTIMONIALS */
 .testimonials-section {
   background: var(--white);
+  overflow: hidden;
+  width: 100%;
 }
 
 .testimonial-slider-box {
   position: relative;
   max-width: 760px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -2470,6 +2419,12 @@ onUnmounted(() => {
   right: -60px;
 }
 
+@media (max-width: 992px) {
+  .testi-arrow {
+    display: none !important;
+  }
+}
+
 .testimonial-card {
   background: var(--off-white);
   border: 1px solid var(--border);
@@ -2477,6 +2432,95 @@ onUnmounted(() => {
   padding: 40px;
   text-align: center;
   box-shadow: var(--shadow-md);
+  position: relative;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  user-select: none;
+}
+
+.testi-card-inner {
+  width: 100%;
+}
+
+/* Testimonial Controls & Dots */
+.testi-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.testi-nav-btn {
+  display: none; /* hidden on desktop (>992px) as side arrows are used */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.testi-nav-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.testi-nav-btn:active {
+  transform: scale(0.95);
+}
+
+.testi-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.testi-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 6px;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.testi-dot.active {
+  width: 28px;
+  background: var(--primary);
+}
+
+.testi-dot:hover:not(.active) {
+  background: var(--text-muted);
+}
+
+/* Slide/fade animation for testimonials */
+.testi-slide-fade-enter-active,
+.testi-slide-fade-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.testi-slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.testi-slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 .testi-stars {
@@ -2642,7 +2686,7 @@ onUnmounted(() => {
 
 /* FAQ SECTION */
 .faq {
-  background: var(--white);
+  background: var(--bg-light);
   position: relative;
 }
 
@@ -2865,7 +2909,7 @@ onUnmounted(() => {
 
 /* GALLERY SECTION (2-ROW DYNAMIC BENTO GRID WITH 100% GAPLESS INFINITY MARQUEE) */
 .gallery {
-  background: var(--off-white);
+  background: var(--bg-light);
   padding-left: 0;
   padding-right: 0;
   padding-bottom: 80px;
@@ -2931,12 +2975,12 @@ onUnmounted(() => {
 
 .gallery-double-row-wrapper::before {
   left: 0;
-  background: linear-gradient(to right, var(--off-white), transparent);
+  background: linear-gradient(to right, var(--bg-light), transparent);
 }
 
 .gallery-double-row-wrapper::after {
   right: 0;
-  background: linear-gradient(to left, var(--off-white), transparent);
+  background: linear-gradient(to left, var(--bg-light), transparent);
 }
 
 .gallery-marquee-row {
@@ -3012,9 +3056,15 @@ onUnmounted(() => {
   height: 260px;
 }
 
-.gallery-card:hover {
+.gallery-card:hover,
+.gallery-card:focus-visible {
   transform: translateY(-6px) scale(1.03);
   box-shadow: var(--shadow-xl);
+}
+
+.gallery-card:focus-visible {
+  outline: 3px solid var(--secondary);
+  outline-offset: 3px;
 }
 
 .gallery-img-wrapper {
@@ -3031,7 +3081,8 @@ onUnmounted(() => {
   transition: transform 0.6s ease, filter 0.4s ease;
 }
 
-.gallery-card:hover .gallery-img {
+.gallery-card:hover .gallery-img,
+.gallery-card:focus-visible .gallery-img {
   transform: scale(1.1);
   filter: brightness(0.9);
 }
@@ -3044,7 +3095,13 @@ onUnmounted(() => {
   flex-direction: column;
   justify-content: flex-end;
   padding: 20px;
+  opacity: 0;
   transition: opacity var(--transition-base);
+}
+
+.gallery-card:hover .gallery-overlay,
+.gallery-card:focus-visible .gallery-overlay {
+  opacity: 1;
 }
 
 .gallery-cat-badge {
@@ -3067,33 +3124,206 @@ onUnmounted(() => {
   line-height: 1.3;
 }
 
-.gallery-zoom-icon {
+/* ==========================================================================
+   8. CLOSING BANNER CTA SECTION
+   ========================================================================== */
+.closing-cta-section {
+  background: var(--white);
+  padding: 40px 0 80px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.closing-cta-card {
+  position: relative;
+  background: linear-gradient(135deg, #541A1A 0%, #3D1212 50%, #2A0B0B 100%);
+  border: 1px solid rgba(220, 195, 170, 0.25);
+  border-radius: var(--radius-xl);
+  padding: 64px 40px;
+  text-align: center;
+  overflow: hidden;
+  max-width: 100%;
+  box-shadow: 0 20px 50px rgba(84, 26, 26, 0.28);
+}
+
+.closing-cta-glow {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 38px;
-  height: 38px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+.closing-cta-glow.glow-1 {
+  top: -60px;
+  left: -60px;
+  width: 260px;
+  height: 260px;
+  background: rgba(220, 195, 170, 0.2);
+}
+
+.closing-cta-glow.glow-2 {
+  bottom: -60px;
+  right: -60px;
+  width: 280px;
+  height: 280px;
+  background: rgba(241, 226, 209, 0.15);
+}
+
+.closing-cta-content {
+  position: relative;
+  z-index: 2;
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.closing-cta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  background: rgba(220, 195, 170, 0.15);
+  border: 1px solid rgba(220, 195, 170, 0.35);
+  border-radius: var(--radius-full);
+  color: var(--secondary-light);
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 20px;
   backdrop-filter: blur(8px);
+}
+
+.closing-cta-badge i {
+  color: #FFA726;
+  font-size: 1.1rem;
+}
+
+.closing-cta-content h2 {
   color: var(--white);
+  font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+  font-weight: 700;
+  line-height: 1.25;
+  margin-bottom: 16px;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #F1E2D1 0%, #DCC3AA 50%, #E8D5C2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.closing-cta-content p {
+  color: rgba(247, 239, 229, 0.88);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin-bottom: 32px;
+}
+
+.closing-cta-actions {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
-  opacity: 0;
-  transform: scale(0.8);
-  transition: all var(--transition-base);
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
 }
 
-.gallery-card:hover .gallery-zoom-icon {
-  opacity: 1;
-  transform: scale(1);
-  background: var(--white);
+.btn-closing-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 30px;
+  background: linear-gradient(135deg, #DCC3AA 0%, #C9A888 100%);
+  color: var(--primary-dark);
+  font-weight: 700;
+  font-size: 0.98rem;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgba(220, 195, 170, 0.35);
+  transition: all var(--transition-smooth);
+}
+
+.btn-closing-primary:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(220, 195, 170, 0.5);
+  background: #FFF;
   color: var(--primary);
 }
 
-/* CONTACT SECTION */
+.btn-closing-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 26px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: var(--white);
+  font-weight: 600;
+  font-size: 0.98rem;
+  border-radius: var(--radius-lg);
+  backdrop-filter: blur(8px);
+  transition: all var(--transition-smooth);
+}
+
+.btn-closing-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--secondary);
+  color: var(--secondary-light);
+  transform: translateY(-3px);
+}
+
+.btn-closing-secondary i {
+  color: #25D366;
+  font-size: 1.3rem;
+}
+
+.closing-cta-perks {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.perk-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(247, 239, 229, 0.8);
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.perk-item i {
+  color: var(--secondary);
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .closing-cta-card {
+    padding: 40px 20px;
+  }
+
+  .closing-cta-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-closing-primary,
+  .btn-closing-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .closing-cta-perks {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+}
+
+/* 9. CONTACT SECTION */
 .contact {
   background: var(--white);
 }
@@ -3187,6 +3417,18 @@ onUnmounted(() => {
 
 .contact-cta-btn i {
   font-size: 1.35rem;
+}
+
+.cta-rooms-btn {
+  background: var(--primary);
+  color: var(--white);
+  box-shadow: 0 4px 14px rgba(84, 26, 26, 0.2);
+}
+
+.cta-rooms-btn:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  color: var(--white);
 }
 
 .cta-wa {
@@ -3523,10 +3765,14 @@ onUnmounted(() => {
     height: 260px;
   }
 
-  /* Hide hero & testimonial desktop arrows */
+  /* Hide hero & testimonial desktop arrows, show mobile controls */
   .hero-arrow,
   .testi-arrow {
-    display: none;
+    display: none !important;
+  }
+
+  .testi-nav-btn {
+    display: flex;
   }
 
   /* Testimonial card gets more room without arrows */
@@ -3565,10 +3811,42 @@ onUnmounted(() => {
   .hero-actions {
     flex-direction: column;
     width: 100%;
+    gap: 10px;
   }
   .hero-actions .btn {
     width: 100%;
     justify-content: center;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
+  .hero-stats {
+    gap: 16px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+  }
+  .stat-number {
+    font-size: 1.35rem;
+  }
+  .stat-item span {
+    font-size: 0.72rem;
+  }
+  .stat-divider {
+    height: 30px;
+  }
+  .hero-slide-dots {
+    gap: 8px;
+  }
+  .hero::before {
+    width: 250px;
+    height: 250px;
+    top: -80px;
+    right: -80px;
+  }
+  .hero::after {
+    width: 200px;
+    height: 200px;
+    bottom: -40px;
+    left: -60px;
   }
 
   /* Hero stats → compact */
@@ -3669,6 +3947,7 @@ onUnmounted(() => {
   /* Accessibility → single column */
   .accessibility-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   /* Filter/category buttons */

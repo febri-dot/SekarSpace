@@ -1,83 +1,85 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import Navbar from '../components/layout/Navbar.vue'
 import Footer from '../components/layout/Footer.vue'
-import { useDataStore, type RoomData } from '../composables/useDataStore'
+import { useDataStore, getRoomPriceByDuration, type RoomData, type RoomTypeData } from '../composables/useDataStore'
+import communalFacilitiesData from '../data/communalFacilities.json'
+import roomGalleriesData from '../data/roomGalleries.json'
 
-const { rooms, bookRoom } = useDataStore()
+const { rooms, roomTypes, bookRoom, buildings, cmsSettings, getRoomAvailabilityInfo } = useDataStore()
 const route = useRoute()
+
+// Floating button state for Step 2 & Step 3
+const showScrollToTopBtn = ref(false)
+
+const handleScroll = () => {
+  if (currentStep.value === 2) {
+    showScrollToTopBtn.value = window.scrollY > 350
+  } else if (currentStep.value === 3) {
+    showScrollToTopBtn.value = window.scrollY > 300
+  } else {
+    showScrollToTopBtn.value = false
+  }
+}
+
+const handleFloatingAction = () => {
+  if (currentStep.value === 2) {
+    scrollToBuildingGrid()
+  } else if (currentStep.value === 3) {
+    window.scrollTo({ top: 140, behavior: 'smooth' })
+  }
+}
+
+// Dynamic Room Types Data derived directly from roomTypes.json + live room counts from rooms.json
+const roomTypesData = computed(() => {
+  const kmLuarMeta = (roomTypes.value.find(t => t.typeId === 'km-luar') || {}) as RoomTypeData
+  const kmDalamMeta = (roomTypes.value.find(t => t.typeId === 'km-dalam') || {}) as RoomTypeData
+
+  const kmLuarRooms = rooms.value.filter(r => r.typeId === 'km-luar')
+  const kmLuarAvailable = kmLuarRooms.filter(r => r.status === 'available').length
+  const minPriceKmLuar = kmLuarRooms.length > 0 
+    ? Math.min(...kmLuarRooms.map(r => r.price || r.price1Month || 600000))
+    : (cmsSettings.value?.priceKmLuarMonthly || 600000)
+
+  const kmDalamRooms = rooms.value.filter(r => r.typeId === 'km-dalam')
+  const kmDalamAvailable = kmDalamRooms.filter(r => r.status === 'available').length
+  const minPriceKmDalam = kmDalamRooms.length > 0
+    ? Math.min(...kmDalamRooms.map(r => r.price || r.price1Month || 850000))
+    : (cmsSettings.value?.priceKmDalamMonthly || 850000)
+
+  return {
+    kmLuar: {
+      ...kmLuarMeta,
+      price: minPriceKmLuar,
+      totalRooms: kmLuarRooms.length,
+      availableRooms: kmLuarAvailable
+    },
+    kmDalam: {
+      ...kmDalamMeta,
+      price: minPriceKmDalam,
+      totalRooms: kmDalamRooms.length,
+      availableRooms: kmDalamAvailable
+    }
+  }
+})
+
+const getAvailableCountForBuilding = (bId: string) => {
+  return rooms.value.filter(r => {
+    const isThisBuilding = r.buildingId === bId || (bId === 'utama' && r.buildingId === 'bld-a') || (bId === 'timur' && r.buildingId === 'bld-b') || (bId === 'barat' && r.buildingId === 'bld-c')
+    const avail = getRoomAvailabilityInfo(r.id)
+    const isAvail = avail.status === 'available' || avail.status === 'upcoming_available'
+    const isTypeMatch = !selectedType.value || r.typeId === selectedType.value
+    return isThisBuilding && isAvail && isTypeMatch
+  }).length
+}
 
 // Step Management
 const currentStep = ref<number>(1)
-const selectedType = ref<'km-luar' | 'km-dalam'>('km-luar')
-const selectedBuildingId = ref<string>('utama')
+const selectedType = ref<'km-luar' | 'km-dalam' | null>(null)
+const selectedBuildingId = ref<string | null>(null)
 const selectedRoomId = ref<string | null>(null)
 const activeFloor = ref<'floor1' | 'floor2'>('floor1')
-
-// Gallery State for Step 3
-const activeImageIndex = ref<number>(0)
-const galleryImages = [
-  { url: '/assets/images/room-single.png', title: 'Kamar Standard' },
-  { url: '/assets/images/room-deluxe.png', title: 'Kamar Mandi Dalam' },
-  { url: '/assets/images/room-double.png', title: 'Kamar Double / Shared' },
-  { url: '/assets/images/gallery-kitchen.png', title: 'Dapur Bersama' },
-  { url: '/assets/images/gallery-livingroom.png', title: 'Ruang Tamu & Santai' }
-]
-
-// Calculator & Estimator State for Step 3
-const calcDuration = ref<number>(1) // Months: 1 - 12
-const calcAddonParking = ref<boolean>(false)
-const calcAddonLaundry = ref<boolean>(false)
-
-// Booking Modal State
-const isModalOpen = ref(false)
-const bookingForm = ref({
-  fullName: '',
-  phone: '',
-  startDate: '',
-  notes: ''
-})
-const isSubmitted = ref(false)
-
-// Building Data Definition
-const buildingList = [
-  {
-    id: 'utama',
-    name: 'Gedung Utama (Depan)',
-    desc: 'Dekat dengan pagar utama, area parkir utama, dan musholla.',
-    badge: 'Favorit',
-    facilities: ['Parkir Motor Luar', 'CCTV 24 Jam', 'Dapur Bersama Lt.1', 'Ruang Tamu Utama']
-  },
-  {
-    id: 'timur',
-    name: 'Gedung Timur (Tengah)',
-    desc: 'Suasana lebih tenang, dekat area santai & musholla.',
-    badge: 'Tenang',
-    facilities: ['Musholla Bersama', 'Dapur Bersama Lt.1', 'WiFi Dedicated', 'Dispenser Air']
-  },
-  {
-    id: 'barat',
-    name: 'Gedung Barat (Belakang)',
-    desc: 'Balkon luas di lantai 2, pemandangan asri dekat area laundry.',
-    badge: 'View Asri',
-    facilities: ['Mesin Cuci Bersama', 'Area Jemur Atas', 'Parkir Motor Dalam', 'Balkon Santai']
-  }
-]
-
-// Selected Building Object
-const currentBuilding = computed(() => {
-  return buildingList.find(b => b.id === selectedBuildingId.value) || buildingList[0]!
-})
-
-// Rooms filtered by Building & Type
-const roomsInSelectedBuilding = computed(() => {
-  return rooms.value.filter(r => r.buildingId === selectedBuildingId.value)
-})
-
-const availableRoomsInBuilding = computed(() => {
-  return roomsInSelectedBuilding.value.filter(r => r.status === 'available')
-})
 
 // Selected Active Room Object for Step 3
 const selectedRoom = computed<RoomData | null>(() => {
@@ -85,86 +87,211 @@ const selectedRoom = computed<RoomData | null>(() => {
     const found = rooms.value.find(r => r.id === selectedRoomId.value)
     if (found) return found
   }
-  // Fallback to first available room in building or first room
-  return availableRoomsInBuilding.value[0] || roomsInSelectedBuilding.value[0] || rooms.value[0] || null
+  return null
 })
 
-// Floor Plan Nodes for Selected Building
+// Gallery State for Step 3
+const activeImageIndex = ref<number>(0)
+
+// Dynamic Gallery Images based on Room Type loaded from JSON
+const galleryImages = computed(() => {
+  const typeKey =
+    selectedRoom.value?.typeId === 'km-dalam'
+      ? 'km-dalam'
+      : 'km-luar'
+
+  const images =
+    (roomGalleriesData as Record<
+      string,
+      { url: string; title: string }[]
+    >)[typeKey] || []
+
+  if (
+    selectedBuildingId.value === 'bld-b' ||
+    selectedBuildingId.value === 'timur'
+  ) {
+    return images.filter(
+      image => image.title !== 'Ruang Tamu & TV'
+    )
+  }
+
+  return images
+})
+
+// Reset gallery active index when room changes
+watch(selectedRoomId, () => {
+  activeImageIndex.value = 0
+})
+
+// Lightbox Preview Modal State
+const isLightboxOpen = ref(false)
+const openLightbox = () => {
+  isLightboxOpen.value = true
+}
+const closeLightbox = () => {
+  isLightboxOpen.value = false
+}
+const prevLightboxImage = () => {
+  activeImageIndex.value = (activeImageIndex.value - 1 + galleryImages.value.length) % galleryImages.value.length
+}
+const nextLightboxImage = () => {
+  activeImageIndex.value = (activeImageIndex.value + 1) % galleryImages.value.length
+}
+
+// Calculator & Estimator State for Step 3
+const durationOptions = [1, 3, 6, 12]
+const durationIndex = ref<number>(0) // 0 = 1 month, 1 = 3 months, 2 = 6 months, 3 = 12 months
+const calcDuration = computed(() => durationOptions[durationIndex.value] || 1)
+
+const calcAddonExtraPerson = ref<boolean>(false)
+const calcAddonCarParking = ref<boolean>(false)
+
+// Building Data Definition (Loaded from JSON via useDataStore)
+const buildingList = computed(() => buildings.value)
+
+// Selected Building Object
+const currentBuilding = computed(() => {
+  if (!selectedBuildingId.value) return null
+  return buildingList.value.find(b => b.id === selectedBuildingId.value) || null
+})
+
+// Rooms filtered by Building & Type
+const roomsInSelectedBuilding = computed(() => {
+  return rooms.value.filter(r => r.buildingId === selectedBuildingId.value || (selectedBuildingId.value === 'utama' && r.buildingId === 'bld-a') || (selectedBuildingId.value === 'timur' && r.buildingId === 'bld-b') || (selectedBuildingId.value === 'barat' && r.buildingId === 'bld-c'))
+})
+
+const availableRoomsInBuilding = computed(() => {
+  return roomsInSelectedBuilding.value.filter(r => r.status === 'available')
+})
+
+// Helper to map building identifier to standard key
+const getBuildingKey = (
+  bId: string | null
+): 'bld-a' | 'bld-b' | 'bld-c' | null => {
+  if (!bId) return null
+
+  if (bId === 'utama' || bId === 'bld-a') return 'bld-a'
+  if (bId === 'timur' || bId === 'bld-b') return 'bld-b'
+  if (bId === 'barat' || bId === 'bld-c') return 'bld-c'
+
+  return null
+}
+
+const currentBuildingName = computed(() => {
+  if (
+    selectedBuildingId.value === 'utama' ||
+    selectedBuildingId.value === 'bld-a'
+  ) {
+    return 'Gedung A'
+  }
+
+  if (
+    selectedBuildingId.value === 'timur' ||
+    selectedBuildingId.value === 'bld-b'
+  ) {
+    return 'Gedung B'
+  }
+
+  if (
+    selectedBuildingId.value === 'barat' ||
+    selectedBuildingId.value === 'bld-c'
+  ) {
+    return 'Gedung C'
+  }
+
+  return 'Belum Dipilih'
+})
+
+// Floor Plan Nodes for Selected Building (Clean JSON lookup, no repetitive if/else)
 const buildingFloorPlanNodes = computed(() => {
   const floorNum = activeFloor.value === 'floor1' ? 1 : 2
   const roomNodes = roomsInSelectedBuilding.value
     .filter(r => r.floor === floorNum)
-    .map(r => ({
-      id: r.id,
-      number: r.number,
-      title: `Kamar ${r.number}`,
-      type: r.typeName,
-      typeId: r.typeId,
-      status: r.status === 'available' ? 'Tersedia' : 'Terisi',
-      icon: r.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open',
-      isRoom: true,
-      roomData: r
-    }))
+    .map(r => {
+      const avail = getRoomAvailabilityInfo(r.id)
+      let displayStatus = 'Terisi'
+      if (avail.status === 'available') {
+        displayStatus = 'Tersedia'
+      } else if (avail.status === 'upcoming_available') {
+        displayStatus = `Tersedia (${avail.availableFrom})`
+      }
+      const isSelectable = avail.status === 'available' || avail.status === 'upcoming_available'
 
-  // Add communal nodes depending on floor
-  if (floorNum === 1) {
-    return [
-      ...roomNodes,
-      { id: 'f1-dapur', number: 'F-01', title: 'Dapur Bersama', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-fridge', isRoom: false },
-      { id: 'f1-tamu', number: 'F-02', title: 'Ruang Tamu', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-group', isRoom: false }
-    ]
-  } else {
-    return [
-      ...roomNodes,
-      { id: 'f2-balkon', number: 'F-03', title: 'Balkon Santai', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bxs-sun', isRoom: false },
-      { id: 'f2-jemuran', number: 'F-04', title: 'Area Jemuran', type: 'Fasilitas Umum', typeId: 'fasilitas', status: 'Fasilitas Umum', icon: 'bx bx-closet', isRoom: false }
-    ]
+      return {
+        id: r.id,
+        number: r.number,
+        title: `Kamar ${r.number}`,
+        type: r.typeName,
+        typeId: r.typeId,
+        status: displayStatus,
+        statusCode: avail.status,
+        availableFrom: avail.availableFrom,
+        isSelectable: isSelectable,
+        icon: r.typeId === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open',
+        isRoom: true,
+        roomData: r
+      }
+    })
+
+  const key = getBuildingKey(selectedBuildingId.value)
+
+  if (!key) {
+    return roomNodes
   }
+
+  const communalMap = communalFacilitiesData[key] || communalFacilitiesData['bld-a']
+  const communalNodes = (communalMap as any)[String(floorNum)] || []
+
+  return [...roomNodes, ...communalNodes]
 })
 
-// Calculator Calculations
-const basePricePerMonth = computed(() => {
-  if (!selectedRoom.value) return 700000
-  let price = selectedRoom.value.price
-  if (calcDuration.value >= 12) {
-    price = price * 0.9 // 10% discount for 1 year
-  } else if (calcDuration.value >= 3) {
-    price = price * 0.95 // 5% discount for 3 months
-  }
-  return price
+// Calculator Calculations (Direct JSON Data Lookup)
+const basePriceTotal = computed(() => {
+  if (!selectedRoom.value) return 0
+  return getRoomPriceByDuration(selectedRoom.value, calcDuration.value)
 })
 
-const totalAddonsPerMonth = computed(() => {
+const totalAddonsTotal = computed(() => {
   let addons = 0
-  if (calcAddonParking.value) addons += 50000
-  if (calcAddonLaundry.value) addons += 75000
+  if (calcAddonExtraPerson.value) addons += 250000
+  if (calcAddonCarParking.value) addons += 50000 * calcDuration.value
   return addons
 })
 
-const totalPerMonthWithAddons = computed(() => {
-  return basePricePerMonth.value + totalAddonsPerMonth.value
-})
-
 const grandTotalEstimator = computed(() => {
-  return totalPerMonthWithAddons.value * calcDuration.value
+  return basePriceTotal.value + totalAddonsTotal.value
 })
 
 const calcWaMessage = computed(() => {
   if (!selectedRoom.value) return ''
   const roomNum = selectedRoom.value.number
-  const bldName = currentBuilding.value.name
+  const bldName = selectedBuildingId.value === 'bld-a' || selectedBuildingId.value === 'utama'
+    ? 'Gedung A'
+    : selectedBuildingId.value === 'bld-b' || selectedBuildingId.value === 'timur'
+      ? 'Gedung B'
+      : selectedBuildingId.value === 'bld-c' || selectedBuildingId.value === 'barat'
+        ? 'Gedung C'
+        : ''
   const roomType = selectedRoom.value.typeName
+  const avail = getRoomAvailabilityInfo(selectedRoom.value.id)
+
   const addons = []
-  if (calcAddonParking.value) addons.push('Parkir Motor Dedicated (+Rp 50rb/bln)')
-  if (calcAddonLaundry.value) addons.push('Jasa Laundry Berlangganan (+Rp 75rb/bln)')
+  if (calcAddonExtraPerson.value) {
+    addons.push(`Penghuni Lebih dari 1 Orang (Rp ${(250000).toLocaleString('id-ID')} untuk ${calcDuration.value} orang)`)
+  }
+  if (calcAddonCarParking.value) {
+    addons.push(`Parkir Mobil (Rp ${(50000 * calcDuration.value).toLocaleString('id-ID')} untuk ${calcDuration.value} bln)`)
+  }
   const addonStr = addons.length > 0 ? addons.join(', ') : 'Tanpa Layanan Tambahan'
 
+  const upcomingNote = avail.isUpcoming ? `\n- Rencana Mulai Masuk: Setelah ${avail.availableFrom} (Booking Awal Masuk)` : ''
+
   const text = `Halo Admin Sekar Space, saya berminat memesan Kamar ${roomNum} (${bldName} - ${roomType}) dengan rincian:
-- Durasi Sewa: ${calcDuration.value} Bulan
+- Durasi Sewa: ${calcDuration.value} Bulan${upcomingNote}
 - Layanan Tambahan: ${addonStr}
 - Estimasi Total Sewa: Rp ${grandTotalEstimator.value.toLocaleString('id-ID')}
 
-Apakah kamar ini masih siap dihuni? Terima kasih.`
+Apakah kamar ini siap dibooking? Terima kasih.`
 
   return encodeURIComponent(text)
 })
@@ -177,53 +304,64 @@ const selectType = (type: 'km-luar' | 'km-dalam') => {
 
 const selectBuilding = (bId: string) => {
   selectedBuildingId.value = bId
-  // Pick first available room in this building if available
-  const match = rooms.value.find(r => r.buildingId === bId && r.status === 'available')
-  if (match) {
-    selectedRoomId.value = match.id
+  selectedRoomId.value = null // Reset room selection when building changes
+
+  nextTick(() => {
+    const el = document.getElementById('floorPlanSection')
+    if (el) {
+      const topPos = el.getBoundingClientRect().top + window.scrollY - 85
+      window.scrollTo({ top: topPos, behavior: 'smooth' })
+    }
+  })
+}
+
+const scrollToBuildingGrid = () => {
+  const el = document.getElementById('buildingSelectionSection')
+  if (el) {
+    const topPos = el.getBoundingClientRect().top + window.scrollY - 85
+    window.scrollTo({ top: topPos, behavior: 'smooth' })
+  } else {
+    window.scrollTo({ top: 150, behavior: 'smooth' })
   }
-  currentStep.value = 2
 }
 
 const selectRoomFromFloorPlan = (roomNode: any) => {
   if (!roomNode.isRoom) return
-  if (roomNode.roomData.status === 'occupied') return
+  if (!roomNode.isSelectable) return
+  if (selectedType.value && roomNode.typeId !== selectedType.value) {
+    alert(`Kamar ini bertipe ${roomNode.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'}. Silakan pilih kamar tipe ${selectedType.value === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'} sesuai pilihan Anda di Langkah 1.`)
+    return
+  }
   selectedRoomId.value = roomNode.roomData.id
   currentStep.value = 3
 }
 
 const selectRoomDirect = (room: RoomData) => {
-  if (room.status === 'occupied') return
+  const avail = getRoomAvailabilityInfo(room.id)
+  if (avail.status === 'occupied') return
+  if (selectedType.value && room.typeId !== selectedType.value) {
+    alert(`Kamar ini bertipe ${room.typeId === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'}. Silakan pilih kamar tipe ${selectedType.value === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar'} sesuai pilihan Anda di Langkah 1.`)
+    return
+  }
   selectedRoomId.value = room.id
 }
 
 const goToStep = (step: number) => {
+  if (step >= 2 && !selectedType.value) {
+    alert('Silakan pilih Tipe Kamar terlebih dahulu.')
+    return
+  }
+  if (step === 3 && !selectedRoomId.value) {
+    alert('Silakan pilih Kamar yang tersedia terlebih dahulu.')
+    return
+  }
+
   currentStep.value = step
   window.scrollTo({ top: 180, behavior: 'smooth' })
 }
 
 const formatRupiah = (val: number) => {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val)
-}
-
-const openBookingModal = () => {
-  isModalOpen.value = true
-  isSubmitted.value = false
-}
-
-const closeModal = () => {
-  isModalOpen.value = false
-}
-
-const submitBookingForm = () => {
-  if (!bookingForm.value.fullName || !bookingForm.value.phone) {
-    alert('Mohon isi nama lengkap dan nomor WhatsApp Anda.')
-    return
-  }
-  if (selectedRoom.value) {
-    bookRoom(selectedRoom.value.id)
-  }
-  isSubmitted.value = true
 }
 
 const applyRouteQuery = () => {
@@ -236,14 +374,11 @@ const applyRouteQuery = () => {
 
 onMounted(() => {
   applyRouteQuery()
-  // Auto select default room ID
-  if (availableRoomsInBuilding.value.length > 0) {
-    selectedRoomId.value = availableRoomsInBuilding.value[0]!.id
-  }
+  window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
-watch(() => route.query.tipe, () => {
-  applyRouteQuery()
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -296,11 +431,11 @@ watch(() => route.query.tipe, () => {
       <!-- SELECTION SUMMARY BAR -->
       <div class="selection-summary">
         <span class="summary-chip" @click="goToStep(1)">
-          <i class='bx bx-bed'></i> Tipe: {{ selectedType === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar' }}
+          <i class='bx bx-bed'></i> Tipe: {{ selectedType === 'km-dalam' ? 'Kamar Mandi Dalam' : selectedType === 'km-luar' ? 'Kamar Mandi Luar' : 'Belum Dipilih' }}
         </span>
         <span class="summary-separator">›</span>
         <span class="summary-chip" @click="goToStep(2)">
-          <i class='bx bx-building-house'></i> {{ currentBuilding.name }}
+          <i class='bx bx-building-house'></i> Gedung: {{ currentBuildingName }}
         </span>
         <span v-if="selectedRoom" class="summary-separator">›</span>
         <span v-if="selectedRoom" class="summary-chip active-chip" @click="goToStep(3)">
@@ -322,21 +457,24 @@ watch(() => route.query.tipe, () => {
             :class="{ selected: selectedType === 'km-luar' }"
             @click="selectType('km-luar')"
           >
+            <div class="type-badge-top">
+              <span class="badge-avail-pill">
+                <i class='bx bx-check-circle'></i> {{ roomTypesData.kmLuar.availableRooms }} Kamar Tersedia
+              </span>
+            </div>
             <div class="type-card-icon">
               <i class='bx bx-door-open'></i>
             </div>
-            <h3>Kamar Mandi Luar</h3>
-            <p class="type-desc">Kamar bersih & ekonomis dengan fasilitas kamar mandi luar terawat bersama.</p>
+            <h3>{{ roomTypesData.kmLuar.typeName }}</h3>
+            <p class="type-desc">{{ roomTypesData.kmLuar.desc }}</p>
             <ul class="type-features">
-              <li><i class='bx bx-check-circle'></i> Ukuran 3 x 3 Meter</li>
-              <li><i class='bx bx-check-circle'></i> Kasur, Bantal & Lemari Pakaian</li>
-              <li><i class='bx bx-check-circle'></i> Meja & Cermin Belajar</li>
-              <li><i class='bx bx-check-circle'></i> WiFi Cepat 24 Jam</li>
-              <li><i class='bx bx-check-circle'></i> Access Dapur & Kulkas Bersama</li>
+              <li v-for="(feat, idx) in roomTypesData.kmLuar.features" :key="idx">
+                <i class='bx bx-check-circle'></i> {{ feat }}
+              </li>
             </ul>
             <div class="type-price">
               <span class="price-label">Mulai dari</span>
-              <strong class="price-amount">Rp 700.000 <span>/ bulan</span></strong>
+              <strong class="price-amount">{{ formatRupiah(roomTypesData.kmLuar.price) }} <span>/ bulan</span></strong>
             </div>
             <button class="btn btn-primary type-btn">Pilih Tipe Kamar Ini</button>
           </div>
@@ -348,23 +486,26 @@ watch(() => route.query.tipe, () => {
             @click="selectType('km-dalam')"
           >
             <div class="type-badge-float">
-              <i class='bx bxs-star'></i> Populer & Favorit
+              <i class='bx bxs-star'></i> {{ roomTypesData.kmDalam.badge }}
+            </div>
+            <div class="type-badge-top">
+              <span class="badge-avail-pill">
+                <i class='bx bx-check-circle'></i> {{ roomTypesData.kmDalam.availableRooms }} Kamar Tersedia
+              </span>
             </div>
             <div class="type-card-icon">
               <i class='bx bx-bath'></i>
             </div>
-            <h3>Kamar Mandi Dalam</h3>
-            <p class="type-desc">Kamar lebih luas dengan kamar mandi pribadi di dalam kamar untuk kenyamanan & privasi ekstra.</p>
+            <h3>{{ roomTypesData.kmDalam.typeName }}</h3>
+            <p class="type-desc">{{ roomTypesData.kmDalam.desc }}</p>
             <ul class="type-features">
-              <li><i class='bx bx-check-circle'></i> Ukuran 3 x 4 Meter</li>
-              <li><i class='bx bx-check-circle'></i> Kamar Mandi Dalam (Shower & Closet)</li>
-              <li><i class='bx bx-check-circle'></i> Kasur Springbed & Lemari 2 Pintu</li>
-              <li><i class='bx bx-check-circle'></i> Meja, Cermin & Token Listrik</li>
-              <li><i class='bx bx-check-circle'></i> WiFi Cepat 24 Jam</li>
+              <li v-for="(feat, idx) in roomTypesData.kmDalam.features" :key="idx">
+                <i class='bx bx-check-circle'></i> {{ feat }}
+              </li>
             </ul>
             <div class="type-price">
               <span class="price-label">Mulai dari</span>
-              <strong class="price-amount">Rp 950.000 <span>/ bulan</span></strong>
+              <strong class="price-amount">{{ formatRupiah(roomTypesData.kmDalam.price) }} <span>/ bulan</span></strong>
             </div>
             <button class="btn btn-primary type-btn">Pilih Tipe Kamar Ini</button>
           </div>
@@ -372,10 +513,24 @@ watch(() => route.query.tipe, () => {
       </section>
 
       <!-- ==================== STEP 2: PILIH GEDUNG & DENAH BANGUNAN ==================== -->
-      <section v-if="currentStep === 2" class="step-panel">
+      <section v-if="currentStep === 2" id="buildingSelectionSection" class="step-panel">
         <div class="step-title">
           <h2>Langkah 2: Pilih Gedung & Lihat Denah Layout</h2>
           <p>Pilih gedung hunian Anda untuk melihat tata letak ruangan (Lantai 1 & 2) dan kamar yang masih siap dihuni</p>
+        </div>
+
+        <!-- Selected Room Type Notice Banner -->
+        <div class="type-filter-notice">
+          <div class="filter-notice-icon">
+            <i :class="selectedType === 'km-dalam' ? 'bx bx-bath' : 'bx bx-door-open'"></i>
+          </div>
+          <div class="filter-notice-text">
+            <h4>Filter Aktif: {{ selectedType === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar' }}</h4>
+            <p>Jumlah kamar yang ditampilkan di bawah adalah kamar yang <strong>tersedia khusus tipe {{ selectedType === 'km-dalam' ? 'Kamar Mandi Dalam' : 'Kamar Mandi Luar' }}</strong>.</p>
+          </div>
+          <button class="btn btn-outline btn-sm filter-change-btn" @click="goToStep(1)">
+            <i class='bx bx-edit-alt'></i> Ubah Tipe
+          </button>
         </div>
 
         <!-- Building Selector Cards -->
@@ -400,19 +555,18 @@ watch(() => route.query.tipe, () => {
             </ul>
             <div class="building-footer">
               <span class="badge-avail">
-                <i class='bx bx-check-circle'></i> {{ rooms.filter(r => r.buildingId === bld.id && r.status === 'available').length }} Kamar Tersedia
+                <i class='bx bx-check-circle'></i> {{ getAvailableCountForBuilding(bld.id) }} Kamar {{ selectedType === 'km-dalam' ? 'KM Dalam' : 'KM Luar' }} Tersedia
               </span>
-              <button class="btn btn-ghost btn-sm">Lihat Denah Gedung</button>
             </div>
           </div>
         </div>
 
         <!-- INTERACTIVE FLOOR PLAN DENAH BANGUNAN FOR SELECTED BUILDING -->
-        <div class="floor-plan-container">
+        <div id="floorPlanSection" class="floor-plan-container">
           <div class="floor-plan-header">
             <div>
-              <h3><i class='bx bx-map-alt'></i> Denah Layout — {{ currentBuilding.name }}</h3>
-              <p>Klik salah satu nomor kamar pada denah di bawah untuk langsung menuju detail dan pemesanan.</p>
+              <h3><i class='bx bx-map-alt'></i> Denah Layout — {{ currentBuildingName }}</h3>
+              <p>Menampilkan denah ruangan. Klik nomor kamar tipe <strong>{{ selectedType === 'km-dalam' ? 'KM Dalam' : 'KM Luar' }}</strong> yang berwarna hijau untuk memesan.</p>
             </div>
             <div class="floor-switcher">
               <button 
@@ -447,6 +601,9 @@ watch(() => route.query.tipe, () => {
               <span class="legend-dot status-avail"></span> <span>Tersedia</span>
             </div>
             <div class="legend-item">
+              <span class="legend-dot status-upcoming"></span> <span>Tersedia Segera (Booking Awal)</span>
+            </div>
+            <div class="legend-item">
               <span class="legend-dot status-occ"></span> <span>Terisi</span>
             </div>
           </div>
@@ -458,9 +615,10 @@ watch(() => route.query.tipe, () => {
                 :key="node.id"
                 class="floor-node-card"
                 :class="[
-                  node.status.toLowerCase().replace(/\s+/g, '-'),
+                  node.statusCode ? node.statusCode : node.status.toLowerCase().replace(/\s+/g, '-'),
                   node.typeId,
-                  { 'is-clickable': node.isRoom && node.status === 'Tersedia' },
+                  { 'is-clickable': node.isRoom && node.isSelectable && node.typeId === selectedType },
+                  { 'is-disabled-type': node.isRoom && node.typeId !== selectedType },
                   { 'is-selected': selectedRoomId === node.id }
                 ]"
                 @click="selectRoomFromFloorPlan(node)"
@@ -474,16 +632,10 @@ watch(() => route.query.tipe, () => {
                 <div class="node-icon"><i :class="node.icon"></i></div>
                 <div class="node-num">{{ node.title }}</div>
                 <div class="node-type">{{ node.type }}</div>
-                <span class="node-badge">{{ node.status }}</span>
-                <span v-if="node.isRoom && node.status === 'Tersedia'" class="node-click-hint">Pilih Kamar Ini</span>
+                <span class="node-badge" :class="node.statusCode">{{ node.status }}</span>
+                <span v-if="node.isRoom && node.isSelectable && node.typeId === selectedType" class="node-click-hint">Pilih Kamar Ini</span>
               </div>
             </div>
-          </div>
-
-          <div class="floor-plan-cta">
-            <button class="btn btn-primary" @click="goToStep(3)">
-              Lanjutkan ke Detail & Pesan Kamar <i class='bx bx-right-arrow-alt'></i>
-            </button>
           </div>
         </div>
       </section>
@@ -493,12 +645,12 @@ watch(() => route.query.tipe, () => {
         <div class="room-detail-layout">
           <!-- Left Column: Photo Gallery -->
           <div class="room-gallery">
-            <div class="gallery-main">
+            <div class="gallery-main" @click="openLightbox" title="Klik untuk melihat foto ukuran penuh">
               <span class="gallery-badge">{{ selectedRoom.typeName }}</span>
               <img :src="galleryImages[activeImageIndex]?.url || galleryImages[0]!.url" :alt="selectedRoom.typeName" class="main-img" />
               <div class="gallery-zoom-overlay">
-                <i class='bx bx-zoom-in'></i>
-                <span>{{ galleryImages[activeImageIndex]?.title }}</span>
+                <i class='bx bx-fullscreen'></i>
+                <span>{{ galleryImages[activeImageIndex]?.title }} · <em>Klik untuk perbesar</em></span>
               </div>
             </div>
             <div class="gallery-thumbs">
@@ -518,7 +670,7 @@ watch(() => route.query.tipe, () => {
           <div class="room-specs">
             <div class="room-specs-header">
               <span class="type-badge">{{ selectedRoom.typeName }}</span>
-              <h2>{{ currentBuilding.name }} — Kamar {{ selectedRoom.number }}</h2>
+              <h2>{{ currentBuilding?.name || '' }} — Kamar {{ selectedRoom.number }}</h2>
               <div class="building-name">
                 <i class='bx bxs-map-pin'></i> Kost Muslimah Sekar Wangi, Trini, Mlati, Sleman
               </div>
@@ -556,32 +708,45 @@ watch(() => route.query.tipe, () => {
                 <div class="spec-icon"><i class='bx bx-zap'></i></div>
                 <div class="spec-text">
                   <small>Listrik</small>
-                  <strong>Token (Meteran Mandiri)</strong>
+                  <strong>Token Bersama</strong>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Room Number Selector Grid -->
+          <!-- Room Number Selector Grid -->
         <div class="room-number-section">
-          <h3><i class='bx bx-key'></i> Pilih Nomor Kamar Kosong di {{ currentBuilding.name }}</h3>
-          <p>Klik salah satu nomor kamar di bawah ini yang siap dihuni:</p>
+          <h3><i class='bx bx-key'></i> Pilih Nomor Kamar Kosong di {{ currentBuildingName }}</h3>
+          <p>Klik salah satu nomor kamar di bawah ini yang siap dihuni atau siap dibooking:</p>
+
+          <!-- UPCOMING BOOKING ALERT IN STEP 3 -->
+          <div v-if="selectedRoom && getRoomAvailabilityInfo(selectedRoom.id).isUpcoming" class="upcoming-booking-alert">
+            <div class="upcoming-alert-icon">
+              <i class='bx bx-calendar-star'></i>
+            </div>
+            <div class="upcoming-alert-text">
+              <h4>🗓️ Booking Awal: Kamar Siap Ditempati Mulai {{ getRoomAvailabilityInfo(selectedRoom.id).availableFrom }}</h4>
+              <p>Penyewa saat ini dijadwalkan menyelesaikan masa sewa pada <strong>{{ getRoomAvailabilityInfo(selectedRoom.id).availableFrom }}</strong>. Anda dapat melakukan booking sekarang untuk mengamankan slot kamar ini sebelum diambil calon penyewa lain.</p>
+            </div>
+          </div>
+
           <div class="room-number-grid">
             <button 
               v-for="rm in roomsInSelectedBuilding" 
               :key="rm.id"
               class="room-number-pill"
               :class="[
-                rm.status === 'available' ? 'pill-available' : 'pill-occupied',
-                { selected: selectedRoomId === rm.id }
+                getRoomAvailabilityInfo(rm.id).status === 'available' ? 'pill-available' : getRoomAvailabilityInfo(rm.id).status === 'upcoming_available' ? 'pill-upcoming' : 'pill-occupied',
+                { selected: selectedRoomId === rm.id },
+                { 'pill-disabled': rm.typeId !== selectedType }
               ]"
-              :disabled="rm.status === 'occupied'"
+              :disabled="getRoomAvailabilityInfo(rm.id).status === 'occupied' || rm.typeId !== selectedType"
               @click="selectRoomDirect(rm)"
             >
-              <i class='bx' :class="rm.status === 'available' ? 'bx-key' : 'bx-lock-alt'"></i>
+              <i class='bx' :class="getRoomAvailabilityInfo(rm.id).status === 'available' ? 'bx-key' : getRoomAvailabilityInfo(rm.id).status === 'upcoming_available' ? 'bx-calendar-star' : 'bx-lock-alt'"></i>
               <span>Kamar {{ rm.number }}</span>
-              <small>{{ rm.status === 'available' ? 'Tersedia' : 'Terisi' }}</small>
+              <small>{{ getRoomAvailabilityInfo(rm.id).status === 'available' ? 'Tersedia' : getRoomAvailabilityInfo(rm.id).status === 'upcoming_available' ? 'Tersedia ' + getRoomAvailabilityInfo(rm.id).availableFrom : 'Terisi' }}</small>
             </button>
           </div>
         </div>
@@ -603,16 +768,16 @@ watch(() => route.query.tipe, () => {
                 </label>
                 <input 
                   type="range" 
-                  min="1" 
-                  max="12" 
-                  v-model.number="calcDuration" 
+                  min="0" 
+                  max="3" 
+                  v-model.number="durationIndex" 
                   class="estimator-range"
                 />
-                <div class="range-marks">
+                <div class="range-marks" style="justify-content: space-between;">
                   <span>1 Bln</span>
-                  <span>3 Bln (Diskon 5%)</span>
+                  <span>3 Bln</span>
                   <span>6 Bln</span>
-                  <span>12 Bln (Diskon 10%)</span>
+                  <span>12 Bln</span>
                 </div>
               </div>
 
@@ -620,18 +785,18 @@ watch(() => route.query.tipe, () => {
               <div class="estimator-group">
                 <label class="estimator-label"><i class='bx bx-plus-circle'></i> Layanan Tambahan (Opsional)</label>
                 <div class="checkbox-group">
-                  <label class="checkbox-card" :class="{ checked: calcAddonParking }">
-                    <input type="checkbox" v-model="calcAddonParking" />
+                  <label class="checkbox-card" :class="{ checked: calcAddonExtraPerson }">
+                    <input type="checkbox" v-model="calcAddonExtraPerson" />
                     <div class="checkbox-text">
-                      <strong>Parkir Motor Dedicated</strong>
-                      <span>+ Rp 50.000 / bulan</span>
+                      <strong>Penghuni Lebih dari 1 Orang</strong>
+                      <span>+ Rp 250.000 / orang</span>
                     </div>
                   </label>
-                  <label class="checkbox-card" :class="{ checked: calcAddonLaundry }">
-                    <input type="checkbox" v-model="calcAddonLaundry" />
+                  <label class="checkbox-card" :class="{ checked: calcAddonCarParking }">
+                    <input type="checkbox" v-model="calcAddonCarParking" />
                     <div class="checkbox-text">
-                      <strong>Jasa Laundry Berlangganan</strong>
-                      <span>+ Rp 75.000 / bulan</span>
+                      <strong>Parkir Mobil</strong>
+                      <span>+ Rp 50.000 / bulan</span>
                     </div>
                   </label>
                 </div>
@@ -642,40 +807,38 @@ watch(() => route.query.tipe, () => {
             <div class="estimator-summary-panel">
               <div class="summary-badge"><i class='bx bx-receipt'></i> Rincian Biaya</div>
               <div class="summary-row">
-                <span>Harga Kamar per Bulan:</span>
-                <strong>{{ formatRupiah(basePricePerMonth) }}</strong>
+                <span>Harga Kamar ({{ calcDuration }} Bulan):</span>
+                <strong>{{ formatRupiah(basePriceTotal) }}</strong>
               </div>
-              <div v-if="calcAddonParking" class="summary-row">
-                <span>Parkir Motor Dedicated:</span>
-                <strong>+ {{ formatRupiah(50000) }}</strong>
+              <div v-if="calcAddonExtraPerson" class="summary-row">
+                <span>Tambahan Penghuni:</span>
+                <strong>+ {{ formatRupiah(250000) }}</strong>
               </div>
-              <div v-if="calcAddonLaundry" class="summary-row">
-                <span>Jasa Laundry Berlangganan:</span>
-                <strong>+ {{ formatRupiah(75000) }}</strong>
+              <div v-if="calcAddonCarParking" class="summary-row">
+                <span>Parkir Mobil ({{ calcDuration }} Bln):</span>
+                <strong>+ {{ formatRupiah(50000 * calcDuration) }}</strong>
               </div>
               <div class="summary-divider"></div>
-              <div class="summary-row summary-total">
-                <span>Total per Bulan:</span>
-                <strong class="text-primary">{{ formatRupiah(totalPerMonthWithAddons) }}</strong>
-              </div>
               <div class="summary-row summary-grand">
-                <span>Estimasi Total ({{ calcDuration }} Bulan):</span>
+                <span>Estimasi Total Pembayaran:</span>
                 <strong class="grand-price">{{ formatRupiah(grandTotalEstimator) }}</strong>
               </div>
 
-              <!-- Booking CTA Buttons -->
-              <div class="booking-cta-group">
-                <a 
-                  :href="`https://wa.me/62895378020456?text=${calcWaMessage}`" 
-                  target="_blank" 
-                  rel="noopener"
-                  class="btn btn-primary btn-wa"
-                >
-                  <i class='bx bxl-whatsapp'></i> Pesan via WhatsApp
-                </a>
-                <button class="btn btn-secondary btn-form" @click="openBookingModal">
-                  <i class='bx bx-edit-alt'></i> Form Booking Online
-                </button>
+              <!-- Booking CTA -->
+              <a 
+                :href="`https://wa.me/62895378020456?text=${calcWaMessage}`" 
+                target="_blank" 
+                rel="noopener"
+                class="btn btn-primary btn-wa btn-wa-full"
+              >
+                <i class='bx bxl-whatsapp'></i> Pesan via WhatsApp
+              </a>
+
+              <!-- Info Box -->
+              <div class="wa-info-box"><i class='bx bx-info-circle'></i><strong> Cara Pemesanan</strong>
+                <div>
+                  <p>Klik tombol di atas, lalu kirim pesan ke admin. Tim kami akan membalas dalam waktu kurang dari 1 jam pada jam kerja (08.00–17.00 WIB).</p>
+                </div>
               </div>
             </div>
           </div>
@@ -689,59 +852,61 @@ watch(() => route.query.tipe, () => {
       </section>
     </main>
 
-    <!-- ONLINE BOOKING FORM MODAL -->
-    <div v-if="isModalOpen" class="modal-backdrop" @click.self="closeModal">
-      <div class="modal-box">
-        <button class="modal-close" @click="closeModal"><i class='bx bx-x'></i></button>
 
-        <div v-if="!isSubmitted">
-          <div class="modal-header">
-            <h2>Formulir Booking Kamar {{ selectedRoom?.number }}</h2>
-            <p>{{ currentBuilding.name }} — {{ selectedRoom?.typeName }}</p>
-          </div>
-
-          <form @submit.prevent="submitBookingForm" class="booking-form">
-            <div class="form-group">
-              <label>Nama Lengkap (Sesuai KTP)</label>
-              <input type="text" v-model="bookingForm.fullName" placeholder="Masukkan nama lengkap Anda" required />
-            </div>
-
-            <div class="form-group">
-              <label>Nomor WhatsApp / HP</label>
-              <input type="tel" v-model="bookingForm.phone" placeholder="Contoh: 081234567890" required />
-            </div>
-
-            <div class="form-group">
-              <label>Rencana Tanggal Masuk</label>
-              <input type="date" v-model="bookingForm.startDate" required />
-            </div>
-
-            <div class="form-group">
-              <label>Catatan / Pertanyaan Tambahan</label>
-              <textarea v-model="bookingForm.notes" rows="2" placeholder="Catatan atau pertanyaan untuk pengelola..."></textarea>
-            </div>
-
-            <div class="form-summary">
-              <span>Estimasi Total ({{ calcDuration }} Bulan):</span>
-              <strong>{{ formatRupiah(grandTotalEstimator) }}</strong>
-            </div>
-
-            <button type="submit" class="btn btn-primary submit-booking-btn">
-              <i class='bx bx-send'></i> Kirim Permohonan Pesan
-            </button>
-          </form>
-        </div>
-
-        <div v-else class="modal-success">
-          <div class="success-icon"><i class='bx bx-check-circle'></i></div>
-          <h2>Permohonan Terkirim!</h2>
-          <p>Terima kasih, <strong>{{ bookingForm.fullName }}</strong>. Permohonan booking Kamar {{ selectedRoom?.number }} telah kami terima. Pengelola Sekar Space akan menghubungi Anda via WhatsApp di <strong>{{ bookingForm.phone }}</strong> untuk konfirmasi.</p>
-          <button class="btn btn-primary" @click="closeModal">Tutup</button>
-        </div>
-      </div>
-    </div>
 
     <Footer />
+
+    <!-- ROOM GALLERY FULLSCREEN LIGHTBOX PREVIEW -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div 
+          v-if="isLightboxOpen" 
+          class="room-lightbox-backdrop" 
+          @click="closeLightbox"
+        >
+          <div class="room-lightbox-content" @click.stop>
+            <button class="lightbox-close-btn" @click="closeLightbox" aria-label="Tutup preview">
+              <i class='bx bx-x'></i>
+            </button>
+            
+            <button class="lightbox-nav-btn prev-btn" @click="prevLightboxImage" aria-label="Foto sebelumnya">
+              <i class='bx bx-chevron-left'></i>
+            </button>
+
+            <div class="lightbox-image-box">
+              <img 
+                :src="galleryImages[activeImageIndex]?.url" 
+                :alt="galleryImages[activeImageIndex]?.title" 
+                class="lightbox-img" 
+              />
+              <div class="lightbox-caption">
+                <span class="lightbox-badge">{{ selectedRoom?.typeName }}</span>
+                <h4>{{ galleryImages[activeImageIndex]?.title }}</h4>
+                <span class="lightbox-counter">{{ activeImageIndex + 1 }} / {{ galleryImages.length }}</span>
+              </div>
+            </div>
+
+            <button class="lightbox-nav-btn next-btn" @click="nextLightboxImage" aria-label="Foto berikutnya">
+              <i class='bx bx-chevron-right'></i>
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Floating Back to Top / Action Button for Step 2 & Step 3 -->
+    <Transition name="fade-slide">
+      <button 
+        v-if="(currentStep === 2 || currentStep === 3) && showScrollToTopBtn" 
+        class="floating-scroll-top-btn"
+        @click="handleFloatingAction"
+        :aria-label="currentStep === 2 ? 'Kembali ke Pilihan Gedung' : 'Kembali ke Atas'"
+        :title="currentStep === 2 ? 'Kembali ke pilihan gedung di atas' : 'Kembali ke detail kamar di atas'"
+      >
+        <i class='bx bx-up-arrow-alt'></i>
+        <span>{{ currentStep === 2 ? 'Pilih Gedung Lain' : 'Kembali ke Atas' }}</span>
+      </button>
+    </Transition>
   </div>
 </template>
 
@@ -751,16 +916,23 @@ watch(() => route.query.tipe, () => {
   flex-direction: column;
   min-height: 100vh;
   background: var(--off-white);
+  position: relative;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 
 .main-body {
   flex: 1;
-  padding-top: 100px;
-  padding-bottom: 80px;
+  padding-top: 95px;
+  padding-bottom: 70px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .page-header {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   text-align: center;
 }
 
@@ -769,9 +941,9 @@ watch(() => route.query.tipe, () => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   color: var(--text-muted);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .breadcrumb a {
@@ -779,13 +951,13 @@ watch(() => route.query.tipe, () => {
 }
 
 .page-header h1 {
-  font-size: 2.2rem;
-  margin-bottom: 8px;
+  font-size: 1.95rem;
+  margin-bottom: 6px;
 }
 
 .page-header p {
   color: var(--text-muted);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
 }
 
 /* STEP PROGRESS INDICATOR */
@@ -793,22 +965,22 @@ watch(() => route.query.tipe, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  max-width: 700px;
-  margin: 0 auto 36px;
+  max-width: 640px;
+  margin: 0 auto 28px;
 }
 
 .step-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   cursor: pointer;
   transition: all var(--transition-base);
 }
 
 .step-number {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   background: var(--white);
   border: 2px solid var(--border);
@@ -817,8 +989,69 @@ watch(() => route.query.tipe, () => {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: all var(--transition-base);
+}
+
+.room-number-pill.pill-available:hover,
+.room-number-pill.pill-upcoming:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.room-number-pill.pill-upcoming {
+  background: #FFFBEB;
+  border-color: #FCD34D;
+  color: #B45309;
+}
+
+.room-number-pill.pill-upcoming i {
+  color: #D97706;
+}
+
+.room-number-pill.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+}
+
+.room-number-pill.selected span,
+.room-number-pill.selected small,
+.room-number-pill.selected i {
+  color: var(--white);
+}
+
+/* UPCOMING BOOKING ALERT ON STEP 3 */
+.upcoming-booking-alert {
+  background: #FFFBEB;
+  border: 1.5px dashed #F59E0B;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.upcoming-alert-icon {
+  font-size: 1.8rem;
+  color: #D97706;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.upcoming-alert-text h4 {
+  font-size: 0.95rem;
+  color: #92400E;
+  margin-bottom: 4px;
+}
+
+.upcoming-alert-text p {
+  font-size: 0.85rem;
+  color: #78350F;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .step-item.active .step-number {
@@ -829,7 +1062,7 @@ watch(() => route.query.tipe, () => {
 }
 
 .step-label {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -840,9 +1073,9 @@ watch(() => route.query.tipe, () => {
 
 .step-connector {
   flex: 1;
-  height: 3px;
+  height: 2px;
   background: var(--border);
-  margin: 0 16px 24px;
+  margin: 0 14px 20px;
 }
 
 .step-connector.active {
@@ -854,8 +1087,8 @@ watch(() => route.query.tipe, () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 32px;
+  gap: 10px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
@@ -863,9 +1096,9 @@ watch(() => route.query.tipe, () => {
   background: var(--white);
   border: 1px solid var(--border);
   color: var(--primary);
-  padding: 6px 16px;
+  padding: 5px 14px;
   border-radius: var(--radius-full);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
@@ -888,7 +1121,7 @@ watch(() => route.query.tipe, () => {
 
 .summary-separator {
   color: var(--text-muted);
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 700;
 }
 
@@ -900,30 +1133,30 @@ watch(() => route.query.tipe, () => {
 .step-title {
   text-align: center;
   max-width: 760px;
-  margin: 0 auto 40px;
+  margin: 0 auto 28px;
   padding: 0 16px;
 }
 
 .step-title h2 {
-  font-size: clamp(1.5rem, 3.2vw, 1.95rem);
+  font-size: clamp(1.4rem, 2.8vw, 1.75rem);
   color: var(--dark);
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   font-weight: 700;
   line-height: 1.3;
 }
 
 .step-title p {
-  font-size: 1rem;
+  font-size: 0.92rem;
   color: var(--text-muted);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 /* STEP 1: TYPE SELECTION GRID */
 .type-selection-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 32px;
-  max-width: 920px;
+  gap: 28px;
+  max-width: 1040px;
   margin: 0 auto;
 }
 
@@ -931,7 +1164,7 @@ watch(() => route.query.tipe, () => {
   background: var(--white);
   border: 2px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 32px;
+  padding: 28px 28px 30px;
   position: relative;
   cursor: pointer;
   transition: all var(--transition-smooth);
@@ -953,48 +1186,68 @@ watch(() => route.query.tipe, () => {
 
 .type-badge-float {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 18px;
+  right: 18px;
   background: linear-gradient(135deg, #E8A838, #D4912A);
   color: white;
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 700;
   padding: 4px 12px;
   border-radius: var(--radius-full);
-  box-shadow: 0 4px 12px rgba(212, 145, 42, 0.3);
+  box-shadow: 0 4px 12px rgba(212, 145, 42, 0.28);
+}
+
+.type-badge-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.badge-avail-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  background: #E8F5E9;
+  color: #1B5E20;
+  border-radius: var(--radius-full);
+  border: 1px solid rgba(46, 125, 50, 0.2);
 }
 
 .type-card-icon {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-md);
   background: var(--tertiary);
   color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.6rem;
-  margin-bottom: 16px;
+  font-size: 1.5rem;
+  margin-bottom: 14px;
 }
 
 .type-card h3 {
-  font-size: 1.35rem;
-  margin-bottom: 8px;
+  font-size: 1.3rem;
+  margin-bottom: 6px;
   color: var(--dark);
 }
 
 .type-desc {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--text-muted);
-  margin-bottom: 20px;
-  line-height: 1.5;
+  margin-bottom: 16px;
+  line-height: 1.48;
 }
 
 .type-features {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
 }
 
@@ -1002,49 +1255,133 @@ watch(() => route.query.tipe, () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   color: var(--dark);
 }
 
 .type-features i {
   color: #16A34A;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
 }
 
 .type-price {
   margin-top: auto;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .price-label {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   color: var(--text-muted);
 }
 
 .price-amount {
   font-family: var(--font-heading);
-  font-size: 1.4rem;
+  font-size: 1.35rem;
   color: var(--primary);
   font-weight: 700;
 }
 
 .price-amount span {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   font-weight: 400;
   color: var(--text-muted);
 }
 
 .type-btn {
   width: 100%;
+  padding: 10px 20px;
+  font-size: 0.92rem;
+  font-weight: 600;
 }
 
 /* STEP 2: BUILDING GRID & FLOOR PLAN */
+.type-filter-notice {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--tertiary-light);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  max-width: 1040px;
+  margin: 0 auto 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-notice-icon {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 8px rgba(84, 26, 26, 0.1);
+}
+
+.filter-notice-text {
+  flex: 1;
+}
+
+.filter-notice-text h4 {
+  font-size: 0.98rem;
+  color: var(--primary);
+  margin-bottom: 2px;
+  font-weight: 700;
+}
+
+.filter-notice-text p {
+  font-size: 0.88rem;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.filter-change-btn {
+  white-space: nowrap;
+  font-size: 0.82rem;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  background: var(--white);
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.filter-change-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+}
+
+@media (max-width: 600px) {
+  .type-filter-notice {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+  .filter-change-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .building-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 24px;
-  margin-bottom: 52px;
+  max-width: 1040px;
+  margin: 0 auto 48px;
 }
 
 .building-card {
@@ -1132,18 +1469,21 @@ watch(() => route.query.tipe, () => {
 .building-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding-top: 12px;
   border-top: 1px solid var(--border);
 }
 
 .badge-avail {
   font-size: 0.8rem;
-  color: #16A34A;
+  color: #1B5E20;
+  background: #E8F5E9;
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
   font-weight: 600;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  border: 1px solid rgba(46, 125, 50, 0.2);
 }
 
 /* FLOOR PLAN CONTAINER */
@@ -1152,7 +1492,10 @@ watch(() => route.query.tipe, () => {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 32px;
+  max-width: 1040px;
+  margin: 0 auto;
   box-shadow: var(--shadow-md);
+  box-sizing: border-box;
 }
 
 .floor-plan-header {
@@ -1273,6 +1616,10 @@ watch(() => route.query.tipe, () => {
   background: #15803D;
 }
 
+.legend-dot.status-upcoming {
+  background: #D97706;
+}
+
 .legend-dot.status-occ {
   background: #B91C1C;
 }
@@ -1363,12 +1710,19 @@ watch(() => route.query.tipe, () => {
   font-weight: 700;
 }
 
-.floor-node-card.tersedia .node-badge {
+.floor-node-card.available .node-badge {
   background: #DCFCE7;
   color: #15803D;
 }
 
-.floor-node-card.terisi .node-badge {
+.floor-node-card.upcoming_available .node-badge,
+.node-badge.upcoming_available {
+  background: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.floor-node-card.occupied .node-badge {
   background: #FEE2E2;
   color: #B91C1C;
 }
@@ -1386,6 +1740,12 @@ watch(() => route.query.tipe, () => {
   margin-top: 6px;
 }
 
+.floor-node-card.is-disabled-type {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(80%);
+}
+
 .floor-plan-cta {
   display: flex;
   justify-content: flex-end;
@@ -1400,69 +1760,238 @@ watch(() => route.query.tipe, () => {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 36px;
-  margin-bottom: 32px;
+  max-width: 1040px;
+  margin: 0 auto 32px;
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .room-gallery {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .gallery-main {
   position: relative;
-  height: 320px;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 4 / 3;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  background: var(--dark);
+  background: #201410;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.03);
+  transition: all var(--transition-base);
+  box-sizing: border-box;
+}
+
+.gallery-main:hover {
+  border-color: var(--primary);
+  box-shadow: 0 8px 24px rgba(84, 26, 26, 0.15);
 }
 
 .main-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  display: block;
   transition: transform 0.4s ease;
 }
 
 .gallery-main:hover .main-img {
-  transform: scale(1.04);
+  transform: scale(1.03);
 }
 
 .gallery-badge {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 14px;
+  left: 14px;
   padding: 4px 12px;
-  background: rgba(84, 26, 26, 0.85);
+  background: rgba(84, 26, 26, 0.88);
   color: var(--white);
   font-size: 0.78rem;
   font-weight: 700;
   border-radius: var(--radius-full);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
+  z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
 
 .gallery-zoom-overlay {
   position: absolute;
   bottom: 0;
   inset-x: 0;
-  padding: 16px;
-  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  padding: 12px 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 70%, transparent 100%);
   color: var(--white);
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 0.82rem;
+  z-index: 2;
+  transition: all var(--transition-base);
+  box-sizing: border-box;
+}
+
+.gallery-main:hover .gallery-zoom-overlay {
+  background: linear-gradient(to top, rgba(84,26,26,0.92) 0%, rgba(84,26,26,0.5) 70%, transparent 100%);
+}
+
+/* LIGHTBOX FULLSCREEN MODAL */
+.room-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(18, 12, 10, 0.94);
+  backdrop-filter: blur(12px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.room-lightbox-content {
+  position: relative;
+  max-width: 92vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-image-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+  max-height: 85vh;
+}
+
+.lightbox-img {
+  max-width: 86vw;
+  max-height: 76vh;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+  animation: zoomIn 0.3s ease;
+}
+
+.lightbox-caption {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--white);
+}
+
+.lightbox-caption h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.lightbox-badge {
+  padding: 2px 10px;
+  background: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.lightbox-counter {
   font-size: 0.85rem;
+  color: var(--secondary);
+  background: rgba(255, 255, 255, 0.12);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: -48px;
+  right: 0;
+  width: 42px;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: var(--white);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.lightbox-close-btn:hover {
+  background: var(--primary);
+  transform: scale(1.1);
+}
+
+.lightbox-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  color: var(--white);
+  font-size: 2.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  z-index: 10;
+}
+
+.lightbox-nav-btn:hover {
+  background: var(--primary);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.lightbox-nav-btn.prev-btn {
+  left: -64px;
+}
+
+.lightbox-nav-btn.next-btn {
+  right: -64px;
 }
 
 .gallery-thumbs {
   display: flex;
-  gap: 10px;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  -webkit-overflow-scrolling: touch;
 }
 
 .thumb-btn {
-  flex: 1;
-  height: 64px;
+  flex: 0 0 60px;
+  width: 60px;
+  height: 48px;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 2px solid transparent;
@@ -1470,7 +1999,8 @@ watch(() => route.query.tipe, () => {
   opacity: 0.7;
   transition: all var(--transition-base);
   padding: 0;
-  background: none;
+  background: var(--off-white);
+  flex-shrink: 0;
 }
 
 .thumb-btn.active {
@@ -1588,8 +2118,10 @@ watch(() => route.query.tipe, () => {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 28px;
-  margin-bottom: 32px;
+  max-width: 1040px;
+  margin: 0 auto 32px;
   box-shadow: var(--shadow-sm);
+  box-sizing: border-box;
 }
 
 .room-number-section h3 {
@@ -1649,6 +2181,15 @@ watch(() => route.query.tipe, () => {
   background: #FEE2E2;
 }
 
+.room-number-pill.pill-disabled {
+  background: var(--light);
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+  filter: grayscale(100%);
+}
+
 .room-number-pill i {
   font-size: 1.3rem;
   color: var(--primary);
@@ -1671,8 +2212,10 @@ watch(() => route.query.tipe, () => {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 36px;
-  margin-bottom: 32px;
+  max-width: 1040px;
+  margin: 0 auto 32px;
   box-shadow: var(--shadow-md);
+  box-sizing: border-box;
 }
 
 .estimator-header {
@@ -1889,6 +2432,8 @@ watch(() => route.query.tipe, () => {
 .step-nav-footer {
   display: flex;
   justify-content: flex-start;
+  max-width: 1040px;
+  margin: 0 auto;
 }
 
 /* MODAL DIALOG */
@@ -2036,6 +2581,8 @@ watch(() => route.query.tipe, () => {
 }
 
 /* RESPONSIVE MEDIA QUERIES */
+
+/* ---- TABLET (max 1024px) ---- */
 @media (max-width: 1024px) {
   .type-selection-grid,
   .room-detail-layout,
@@ -2048,14 +2595,79 @@ watch(() => route.query.tipe, () => {
   .floor-node-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .room-detail-layout {
+    padding: 28px;
+    gap: 28px;
+  }
+  .estimator-container {
+    padding: 28px;
+  }
+  .floor-plan-container {
+    padding: 24px;
+  }
+  .spec-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
+/* ---- MOBILE LANDSCAPE / SMALL TABLET (max 768px) ---- */
 @media (max-width: 768px) {
+  .main-body {
+    padding-top: 78px;
+    padding-bottom: 50px;
+  }
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  .page-header p {
+    font-size: 0.85rem;
+  }
   .building-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .building-card {
+    padding: 20px 16px;
+  }
+  .building-card h3 {
+    font-size: 1.05rem;
   }
   .floor-node-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .floor-plan-container {
+    padding: 18px;
+    border-radius: var(--radius-lg);
+  }
+  .floor-plan-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .floor-plan-header h3 {
+    font-size: 1.1rem;
+  }
+  .floor-plan-header p {
+    font-size: 0.82rem;
+  }
+  .floor-switcher {
+    width: 100%;
+    justify-content: center;
+  }
+  .floor-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+  .floor-plan-legend {
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+  .floor-layout-box {
+    padding: 14px;
   }
   .spec-grid {
     grid-template-columns: 1fr;
@@ -2066,5 +2678,678 @@ watch(() => route.query.tipe, () => {
   .step-connector {
     margin: 0 6px 24px;
   }
+  .step-label {
+    font-size: 0.72rem;
+  }
+  .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 0.82rem;
+  }
+  .selection-summary {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+    font-size: 0.78rem;
+  }
+  .summary-chip {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+  .step-title h2 {
+    font-size: 1.3rem;
+  }
+  .step-title p {
+    font-size: 0.85rem;
+  }
+  .type-card {
+    padding: 22px 18px;
+  }
+  .type-card h3 {
+    font-size: 1.15rem;
+  }
+  .type-desc {
+    font-size: 0.84rem;
+  }
+  .type-card-icon {
+    width: 42px;
+    height: 42px;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+  }
+  .room-detail-layout {
+    padding: 20px 16px;
+    gap: 24px;
+    border-radius: var(--radius-lg);
+  }
+  .room-detail-header h2 {
+    font-size: 1.25rem;
+  }
+  .gallery-main {
+    aspect-ratio: 16 / 10;
+  }
+  .gallery-thumbs img {
+    width: 56px;
+    height: 44px;
+  }
+  .room-price-display {
+    padding: 14px 16px;
+  }
+  .price-main {
+    font-size: 1.4rem;
+  }
+  .estimator-container {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+  .estimator-header h3 {
+    font-size: 1.2rem;
+  }
+  .estimator-header p {
+    font-size: 0.85rem;
+  }
+  .estimator-body {
+    gap: 24px;
+  }
+  .estimator-summary-panel {
+    padding: 18px;
+  }
+  .room-number-section {
+    padding: 20px 16px;
+    border-radius: var(--radius-lg);
+  }
+  .room-number-pill {
+    min-width: 100px;
+    padding: 10px 14px;
+  }
+  .modal-content {
+    width: 92vw;
+    max-height: 90vh;
+    padding: 24px 18px;
+  }
+  .lightbox-nav-btn.prev-btn {
+    left: 8px;
+  }
+  .lightbox-nav-btn.next-btn {
+    right: 8px;
+  }
+  .lightbox-nav-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.6rem;
+  }
+  .lightbox-close-btn {
+    top: -40px;
+    right: 8px;
+  }
+  .lightbox-caption {
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+  .lightbox-caption h4 {
+    font-size: 0.95rem;
+  }
+  .modal-box {
+    padding: 24px 18px;
+    max-width: 95vw;
+  }
+  .modal-header h2 {
+    font-size: 1.2rem;
+  }
+  .floating-scroll-top-btn {
+    bottom: 20px;
+    right: 16px;
+    padding: 10px 16px;
+    font-size: 0.82rem;
+  }
+  .floating-scroll-top-btn i {
+    font-size: 1.1rem;
+  }
+}
+
+/* ---- MOBILE PORTRAIT (max 480px) ---- */
+@media (max-width: 480px) {
+  .main-body {
+    padding-top: 70px;
+    padding-bottom: 40px;
+  }
+  .page-header {
+    margin-bottom: 16px;
+  }
+  .page-header h1 {
+    font-size: 1.3rem;
+  }
+  .page-header p {
+    font-size: 0.8rem;
+  }
+  .breadcrumb {
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+  .step-progress {
+    gap: 2px;
+    padding: 0 6px;
+    margin-bottom: 16px;
+  }
+  .step-connector {
+    margin: 0 4px 24px;
+    min-width: 20px;
+  }
+  .step-label {
+    font-size: 0.62rem;
+    max-width: 64px;
+    text-align: center;
+    line-height: 1.25;
+  }
+  .step-number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+  .selection-summary {
+    padding: 8px 10px;
+    gap: 5px;
+  }
+  .summary-chip {
+    font-size: 0.68rem;
+    padding: 3px 6px;
+    gap: 4px;
+  }
+  .summary-chip i {
+    font-size: 0.78rem;
+  }
+  .summary-separator {
+    display: none;
+  }
+  .step-title {
+    margin-bottom: 18px;
+    padding: 0 8px;
+  }
+  .step-title h2 {
+    font-size: 1.12rem;
+  }
+  .step-title p {
+    font-size: 0.8rem;
+  }
+  .type-selection-grid {
+    gap: 16px;
+  }
+  .type-card {
+    padding: 18px 14px 20px;
+    border-radius: var(--radius-lg);
+  }
+  .type-card h3 {
+    font-size: 1.08rem;
+  }
+  .type-card-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+  }
+  .type-desc {
+    font-size: 0.8rem;
+    margin-bottom: 12px;
+  }
+  .type-features {
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .type-features li {
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+  .type-features i {
+    font-size: 0.92rem;
+  }
+  .type-price {
+    margin-bottom: 12px;
+  }
+  .price-label {
+    font-size: 0.7rem;
+  }
+  .price-amount {
+    font-size: 1.15rem;
+  }
+  .price-amount span {
+    font-size: 0.76rem;
+  }
+  .type-btn {
+    padding: 9px 14px;
+    font-size: 0.85rem;
+  }
+  .type-badge-float {
+    top: 12px;
+    right: 12px;
+    font-size: 0.68rem;
+    padding: 3px 8px;
+  }
+  .badge-avail-pill {
+    font-size: 0.68rem;
+    padding: 2px 7px;
+  }
+  /* Step 2 */
+  .type-filter-notice {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px;
+    margin-bottom: 20px;
+  }
+  .filter-notice-icon {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 1.2rem;
+  }
+  .filter-notice-text h4 {
+    font-size: 0.88rem;
+  }
+  .filter-notice-text p {
+    font-size: 0.8rem;
+  }
+  .filter-change-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  .building-grid {
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .building-card {
+    padding: 16px 14px;
+    border-radius: var(--radius-lg);
+  }
+  .building-card h3 {
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+  .building-desc {
+    font-size: 0.78rem;
+    margin-bottom: 10px;
+  }
+  .building-fac-list {
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .building-fac-list li {
+    font-size: 0.76rem;
+  }
+  .building-icon {
+    width: 38px;
+    height: 38px;
+    font-size: 1.3rem;
+  }
+  .building-badge {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+  }
+  .badge-avail {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+  }
+  .floor-plan-container {
+    padding: 14px;
+    border-radius: var(--radius-md);
+  }
+  .floor-plan-header h3 {
+    font-size: 1rem;
+  }
+  .floor-plan-header p {
+    font-size: 0.78rem;
+  }
+  .floor-switcher {
+    gap: 4px;
+  }
+  .floor-btn {
+    padding: 7px 10px;
+    font-size: 0.78rem;
+    gap: 4px;
+  }
+  .floor-plan-legend {
+    gap: 8px;
+    padding: 8px 10px;
+    font-size: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .legend-pill {
+    font-size: 0.66rem;
+    padding: 2px 7px;
+  }
+  .floor-layout-box {
+    padding: 10px;
+    margin-bottom: 14px;
+  }
+  .floor-node-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .floor-node-card {
+    padding: 14px 10px 10px;
+  }
+  .node-room-type-tag {
+    top: 6px;
+    right: 6px;
+    font-size: 0.58rem;
+    padding: 1px 6px;
+  }
+  .node-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+  }
+  .node-num {
+    font-size: 0.92rem;
+  }
+  .node-type {
+    font-size: 0.7rem;
+    margin-bottom: 4px;
+  }
+  .node-badge {
+    font-size: 0.62rem;
+    padding: 2px 6px;
+  }
+  .node-click-hint {
+    font-size: 0.62rem;
+    margin-top: 4px;
+  }
+  /* Step 3 */
+  .room-detail-layout {
+    padding: 16px 12px;
+    gap: 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+  }
+  .gallery-main {
+    aspect-ratio: 16 / 11;
+    border-radius: var(--radius-md);
+  }
+  .gallery-badge {
+    top: 10px;
+    left: 10px;
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+  .gallery-zoom-overlay {
+    padding: 10px 12px;
+    font-size: 0.78rem;
+  }
+  .gallery-thumbs {
+    gap: 6px;
+  }
+  .thumb-btn {
+    flex: 0 0 52px;
+    height: 44px;
+  }
+  .type-badge {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+  }
+  .room-specs-header h2 {
+    font-size: 1.2rem;
+  }
+  .building-name {
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+  }
+  .room-price-display {
+    padding: 12px 14px;
+    margin-bottom: 18px;
+  }
+  .price-main {
+    font-size: 1.3rem;
+  }
+  .price-main span {
+    font-size: 0.78rem;
+  }
+  .spec-item {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .spec-icon {
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
+  .spec-text small {
+    font-size: 0.7rem;
+  }
+  .spec-text strong {
+    font-size: 0.82rem;
+  }
+  .room-number-section {
+    padding: 16px 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+  }
+  .room-number-section h3 {
+    font-size: 1.05rem;
+  }
+  .room-number-section p {
+    font-size: 0.82rem;
+    margin-bottom: 14px;
+  }
+  .room-number-grid {
+    gap: 8px;
+  }
+  .room-number-pill {
+    min-width: 90px;
+    padding: 8px 12px;
+  }
+  .room-number-pill i {
+    font-size: 1.1rem;
+  }
+  .room-number-pill span {
+    font-size: 0.85rem;
+  }
+  .room-number-pill small {
+    font-size: 0.66rem;
+  }
+  .estimator-container {
+    padding: 16px 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+  }
+  .estimator-header {
+    margin-bottom: 18px;
+  }
+  .estimator-tag {
+    font-size: 0.72rem;
+    padding: 3px 10px;
+  }
+  .estimator-header h3 {
+    font-size: 1.1rem;
+  }
+  .estimator-header p {
+    font-size: 0.82rem;
+  }
+  .estimator-body {
+    gap: 20px;
+  }
+  .estimator-controls {
+    gap: 18px;
+  }
+  .estimator-label {
+    font-size: 0.85rem;
+  }
+  .range-marks {
+    font-size: 0.7rem;
+  }
+  .checkbox-card {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .checkbox-card input {
+    width: 16px;
+    height: 16px;
+  }
+  .checkbox-text strong {
+    font-size: 0.82rem;
+  }
+  .checkbox-text span {
+    font-size: 0.72rem;
+  }
+  .estimator-summary-panel {
+    padding: 14px;
+    gap: 10px;
+  }
+  .summary-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+  .summary-row {
+    font-size: 0.82rem;
+  }
+  .grand-price {
+    font-size: 1.15rem;
+  }
+  .booking-cta-group {
+    margin-top: 10px;
+    gap: 8px;
+  }
+  .btn-wa,
+  .btn-secondary {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+  .step-nav-footer {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .step-nav-footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .modal-box {
+    padding: 20px 14px;
+    max-width: 96vw;
+    border-radius: var(--radius-lg);
+  }
+  .modal-header h2 {
+    font-size: 1.1rem;
+  }
+  .modal-header p {
+    font-size: 0.82rem;
+  }
+  .form-group label {
+    font-size: 0.8rem;
+  }
+  .form-group input,
+  .form-group textarea {
+    font-size: 0.85rem;
+    padding: 9px 12px;
+  }
+  .form-summary {
+    font-size: 0.82rem;
+    padding: 10px 12px;
+  }
+  .form-summary strong {
+    font-size: 1rem;
+  }
+  .modal-content {
+    width: 96vw;
+    padding: 20px 14px;
+    border-radius: var(--radius-lg);
+  }
+  .lightbox-img {
+    max-width: 94vw;
+    max-height: 70vh;
+    border-radius: var(--radius-md);
+  }
+  .lightbox-nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.4rem;
+  }
+  .lightbox-nav-btn.prev-btn {
+    left: 4px;
+  }
+  .lightbox-nav-btn.next-btn {
+    right: 4px;
+  }
+  .lightbox-close-btn {
+    top: -36px;
+    right: 4px;
+    width: 34px;
+    height: 34px;
+    font-size: 1.3rem;
+  }
+  .lightbox-caption h4 {
+    font-size: 0.85rem;
+  }
+  .lightbox-badge {
+    font-size: 0.68rem;
+  }
+  .lightbox-counter {
+    font-size: 0.75rem;
+  }
+  .room-lightbox-backdrop {
+    padding: 12px;
+  }
+  .floating-scroll-top-btn {
+    bottom: 16px;
+    right: 12px;
+    padding: 9px 14px;
+    font-size: 0.78rem;
+    gap: 6px;
+  }
+  .floating-scroll-top-btn i {
+    font-size: 1rem;
+  }
+  .floating-scroll-top-btn span {
+    font-size: 0.76rem;
+  }
+}
+
+/* FLOATING BUTTON (STEP 2: BACK TO BUILDING SELECTOR) */
+.floating-scroll-top-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 99;
+  background: var(--primary);
+  color: var(--white);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 11px 20px;
+  border-radius: var(--radius-full);
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(84, 26, 26, 0.35);
+  cursor: pointer;
+  transition: all var(--transition-smooth);
+}
+
+.floating-scroll-top-btn:hover {
+  background: var(--primary-light);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 30px rgba(84, 26, 26, 0.45);
+}
+
+.floating-scroll-top-btn i {
+  font-size: 1.25rem;
+  animation: bounceUp 1.5s infinite;
+}
+
+@keyframes bounceUp {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
 }
 </style>
