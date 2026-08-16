@@ -12,7 +12,7 @@
     "price6Months": 3500000,
     "price12Months": 7000000,
     "icon": "bx bx-door-open",
-    "image": "/assets/images/fasilitas-luas-kamar.png",
+    "image": "/assets/images/fasilitas-luas-kamar.webp",
     "features": [
       "Ukuran 3 × 3 Meter",
       "Kasur, Bantal & Lemari Pakaian",
@@ -34,7 +34,7 @@
     "price6Months": 4000000,
     "price12Months": 8000000,
     "icon": "bx bx-bath",
-    "image": "/assets/images/kamar-km-dalam-1.png",
+    "image": "/assets/images/kamar-km-dalam-1.webp",
     "features": [
       "Ukuran 3 × 4 Meter",
       "Kasur, Bantal & Lemari Pakaian",

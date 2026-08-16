@@ -10,10 +10,10 @@
   "priceKmDalamMonthly": 950000,
   "priceKmLuarYearly": 650000,
   "priceKmDalamYearly": 880000,
-  "heroImage1": "/assets/images/hero-gedung-depan.png",
-  "heroImage2": "/assets/images/hero-kamar.png",
-  "heroImage3": "/assets/images/hero-dapur.png",
-  "qrisImage": "/assets/images/qris-sekar-space.png",
+  "heroImage1": "/assets/images/hero-gedung-depan.webp",
+  "heroImage2": "/assets/images/hero-kamar.webp",
+  "heroImage3": "/assets/images/hero-dapur.webp",
+  "qrisImage": "/assets/images/qris-sekar-space.webp",
   "bankAccounts": [
     {
       "bank": "BCA",

@@ -23,7 +23,7 @@
       "title": "Ruang Tamu & Bersantai",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-sofa.png",
+      "image": "/assets/images/fasilitas-sofa.webp",
       "sizeClass": "card-wide",
       "desc": "Ruang tamu nyaman dengan sofa dan meja, cocok untuk menerima tamu dan bersantai bersama."
     },
@@ -32,7 +32,7 @@
       "title": "Kamar Mandi Umum",
       "category": "rooms",
       "categoryLabel": "Kamar Standard",
-      "image": "/assets/images/fasilitas-km-luar.png",
+      "image": "/assets/images/fasilitas-km-luar.webp",
       "sizeClass": "card-standard",
       "desc": "Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur, bantal, guling, lemari, cermin, rak buku dan meja belajar."
     },
@@ -41,7 +41,7 @@
       "title": "Dapur Bersama",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-dapur.png",
+      "image": "/assets/images/fasilitas-dapur.webp",
       "sizeClass": "card-tall",
       "desc": "Dapur lengkap dengan kompor, peralatan memasak, dan rak penyimpanan yang tertata rapi serta terawat."
     },
@@ -50,7 +50,7 @@
       "title": "Kamar Mandi Dalam",
       "category": "rooms",
       "categoryLabel": "Kamar Premium",
-      "image": "/assets/images/foto-km-dalam.png",
+      "image": "/assets/images/foto-km-dalam.webp",
       "sizeClass": "card-standard",
       "desc": "Kamar mandi dalam untuk kamar premium, dilengkapi perlengkapan mandi dan interior modern minimalis yang bersih dan nyaman."
     },
@@ -59,7 +59,7 @@
       "title": "Tampak Depan Gedung",
       "category": "environment",
       "categoryLabel": "Suasana Kost",
-      "image": "/assets/images/foto-gedung.png",
+      "image": "/assets/images/foto-gedung.webp",
       "sizeClass": "card-large",
       "desc": "Lingkungan kost yang asri, tenang, dan aman, khusus muslimah dengan area tertutup untuk menjaga privasi."
     },
@@ -68,7 +68,7 @@
       "title": "Kamar",
       "category": "rooms",
       "categoryLabel": "Kapasitas 2 Orang",
-      "image": "/assets/images/fasilitas-luas-kamar.png",
+      "image": "/assets/images/fasilitas-luas-kamar.webp",
       "sizeClass": "card-standard",
       "desc": "Kamar luas untuk berdua dengan kasur berkualitas, lemari ganda, dan suasana belajar yang kondusif."
     },
@@ -77,7 +77,7 @@
       "title": "Parkir Indoor",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-parkir.png",
+      "image": "/assets/images/fasilitas-parkir.webp",
       "sizeClass": "card-wide",
       "desc": "Area parkir indoor yang luas untuk motor dan sepeda, terlindung dari panas dan hujan sehingga kendaraan tetap aman."
     },
@@ -86,7 +86,7 @@
       "title": "Kulkas Bersama",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-kulkas.png",
+      "image": "/assets/images/fasilitas-kulkas.webp",
       "sizeClass": "card-standard",
       "desc": "Kulkas bersama tersedia untuk menyimpan bahan makanan dengan aman dan praktis tanpa biaya tambahan."
     },
@@ -95,7 +95,7 @@
       "title": "Mesin Cuci",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/mesin-cuci.png",
+      "image": "/assets/images/mesin-cuci.webp",
       "sizeClass": "card-tall",
       "desc": "Mesin cuci bersama tersedia untuk memudahkan kebutuhan mencuci pakaian sehari-hari."
     },
@@ -104,7 +104,7 @@
       "title": "TV Bersama",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-tv.png",
+      "image": "/assets/images/fasilitas-tv.webp",
       "sizeClass": "card-standard",
       "desc": "Ruang bersama dengan TV, kursi, karpet, dan koneksi Smart TV untuk bersantai dan menikmati tayangan favorit."
     },
@@ -113,7 +113,7 @@
       "title": "Area Jemuran",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-jemuran.png",
+      "image": "/assets/images/fasilitas-jemuran.webp",
       "sizeClass": "card-wide",
       "desc": "Area jemuran yang luas dan bersih, dengan ruang yang cukup untuk menjemur pakaian dengan nyaman dan rapi."
     }
@@ -124,7 +124,7 @@
       "title": "Kamar Mandi Dalam",
       "category": "rooms",
       "categoryLabel": "Kamar Premium",
-      "image": "/assets/images/foto-km-dalam.png",
+      "image": "/assets/images/foto-km-dalam.webp",
       "sizeClass": "card-standard",
       "desc": "Kamar mandi dalam untuk kamar premium, dilengkapi perlengkapan mandi dan interior modern minimalis yang bersih dan nyaman."
     },
@@ -133,7 +133,7 @@
       "title": "Dapur Bersama",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-dapur.png",
+      "image": "/assets/images/fasilitas-dapur.webp",
       "sizeClass": "card-large",
       "desc": "Dapur lengkap dengan kompor, peralatan memasak, dan rak penyimpanan yang tertata rapi serta terawat."
     },
@@ -142,7 +142,7 @@
       "title": "Kamar",
       "category": "rooms",
       "categoryLabel": "Kapasitas 2 Orang",
-      "image": "/assets/images/fasilitas-luas-kamar.png",
+      "image": "/assets/images/fasilitas-luas-kamar.webp",
       "sizeClass": "card-tall",
       "desc": "Kamar luas dengan kapasitas maksimal 2 orang, dilengkapi kasur, lemari, bantal, guling, dan rak buku yang dapat digunakan bersama."
     },
@@ -151,7 +151,7 @@
       "title": "Ruang Tamu & Bersantai",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-sofa.png",
+      "image": "/assets/images/fasilitas-sofa.webp",
       "sizeClass": "card-wide",
       "desc": "Ruang tamu nyaman dengan sofa dan meja, cocok untuk menerima tamu dan bersantai bersama."
     },
@@ -160,7 +160,7 @@
       "title": "Kamar Mandi Umum",
       "category": "rooms",
       "categoryLabel": "Kamar Standard",
-      "image": "/assets/images/fasilitas-km-luar.png",
+      "image": "/assets/images/fasilitas-km-luar.webp",
       "sizeClass": "card-standard",
       "desc": "Kamar nyaman dan bersih dengan sirkulasi udara yang baik, kasur, bantal, guling, lemari, cermin, rak buku dan meja belajar."
     },
@@ -169,7 +169,7 @@
       "title": "Tampak Depan Gedung",
       "category": "environment",
       "categoryLabel": "Suasana Kost",
-      "image": "/assets/images/foto-gedung.png",
+      "image": "/assets/images/foto-gedung.webp",
       "sizeClass": "card-large",
       "desc": "Lingkungan kost yang asri, tenang, dan aman khusus muslimah dengan pagar pengaman terpadu."
     },
@@ -178,7 +178,7 @@
       "title": "Mesin Cuci",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/mesin-cuci.png",
+      "image": "/assets/images/mesin-cuci.webp",
       "sizeClass": "card-tall",
       "desc": "Mesin cuci bersama tersedia untuk memudahkan kebutuhan mencuci pakaian sehari-hari."
     },
@@ -187,7 +187,7 @@
       "title": "Kulkas Bersama",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-kulkas.png",
+      "image": "/assets/images/fasilitas-kulkas.webp",
       "sizeClass": "card-standard",
       "desc": "Kulkas bersama tersedia untuk menyimpan bahan makanan dengan aman dan praktis tanpa biaya tambahan."
     },
@@ -196,7 +196,7 @@
       "title": "Parkir Indoor",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-parkir.png",
+      "image": "/assets/images/fasilitas-parkir.webp",
       "sizeClass": "card-wide",
       "desc": "Area parkir indoor yang luas untuk motor dan sepeda, terlindung dari panas dan hujan sehingga kendaraan tetap aman."
     },
@@ -205,7 +205,7 @@
       "title": "Area Jemuran",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-jemuran.png",
+      "image": "/assets/images/fasilitas-jemuran.webp",
       "sizeClass": "card-wide",
       "desc": "Area jemuran yang luas dan bersih, dengan ruang yang cukup untuk menjemur pakaian dengan nyaman dan rapi."
     },
@@ -214,7 +214,7 @@
       "title": "TV Bersama",
       "category": "facilities",
       "categoryLabel": "Fasilitas Umum",
-      "image": "/assets/images/fasilitas-tv.png",
+      "image": "/assets/images/fasilitas-tv.webp",
       "sizeClass": "card-standard",
       "desc": "Ruang bersama dengan TV, kursi, karpet, dan koneksi Smart TV untuk bersantai dan menikmati tayangan favorit."
     }

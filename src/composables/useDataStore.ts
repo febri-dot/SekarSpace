@@ -233,21 +233,38 @@ const STORAGE_BUILDINGS = 'sekar_space_buildings_v3'
 const STORAGE_RENTALS = 'sekar_space_rentals_v9'
 const STORAGE_ROOM_TRANSFERS = 'sekar_space_room_transfers_v2'
 
+const normalizeWebp = (obj: any): any => {
+  if (typeof obj === 'string') {
+    return obj.replace(/\/assets\/images\/([a-zA-Z0-9_-]+)\.png/g, '/assets/images/$1.webp')
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(normalizeWebp)
+  }
+  if (typeof obj === 'object' && obj !== null) {
+    const res: any = {}
+    for (const key of Object.keys(obj)) {
+      res[key] = normalizeWebp(obj[key])
+    }
+    return res
+  }
+  return obj
+}
+
 const loadStorage = <T>(key: string, defaultValue: T): T => {
   const saved = localStorage.getItem(key)
   if (saved) {
     try {
       const parsed = JSON.parse(saved)
       if (typeof defaultValue === 'object' && defaultValue !== null && !Array.isArray(defaultValue)) {
-        return { ...defaultValue, ...parsed }
+        return normalizeWebp({ ...defaultValue, ...parsed })
       }
-      return parsed
+      return normalizeWebp(parsed)
     } catch (e) {
       console.error(`Failed parsing ${key}`, e)
     }
   }
   localStorage.setItem(key, JSON.stringify(defaultValue))
-  return defaultValue
+  return normalizeWebp(defaultValue)
 }
 
 const roomTypes = ref<RoomTypeData[]>(loadStorage(STORAGE_ROOM_TYPES, defaultRoomTypes as RoomTypeData[]))

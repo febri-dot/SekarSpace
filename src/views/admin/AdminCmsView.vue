@@ -19,9 +19,9 @@ const formCms = ref({
   priceKmLuarYearly: cmsSettings.value.priceKmLuarYearly || 650000,
   priceKmDalamYearly: cmsSettings.value.priceKmDalamYearly || 880000,
   // Images
-  heroImage1: cmsSettings.value.heroImage1 || '/assets/images/hero-gedung-depan.png',
-  heroImage2: cmsSettings.value.heroImage2 || '/assets/images/hero-kamar.png',
-  heroImage3: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.png',
+  heroImage1: cmsSettings.value.heroImage1 || '/assets/images/hero-gedung-depan.webp',
+  heroImage2: cmsSettings.value.heroImage2 || '/assets/images/hero-kamar.webp',
+  heroImage3: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.webp',
   qrisImage: cmsSettings.value.qrisImage || ''
 })
 
@@ -46,7 +46,7 @@ const removeQrisImage = () => {
 }
 
 const useDefaultDemoQris = () => {
-  formCms.value.qrisImage = '/assets/images/qris-sekar-space.png'
+  formCms.value.qrisImage = '/assets/images/qris-sekar-space.webp'
 }
 
 const handleSaveCms = () => {
