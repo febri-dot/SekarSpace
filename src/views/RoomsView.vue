@@ -95,8 +95,27 @@ const activeImageIndex = ref<number>(0)
 
 // Dynamic Gallery Images based on Room Type loaded from JSON
 const galleryImages = computed(() => {
-  const typeKey = selectedRoom.value?.typeId === 'km-dalam' ? 'km-dalam' : 'km-luar'
-  return (roomGalleriesData as Record<string, { url: string; title: string }[]>)[typeKey] || []
+  const typeKey =
+    selectedRoom.value?.typeId === 'km-dalam'
+      ? 'km-dalam'
+      : 'km-luar'
+
+  const images =
+    (roomGalleriesData as Record<
+      string,
+      { url: string; title: string }[]
+    >)[typeKey] || []
+
+  if (
+    selectedBuildingId.value === 'bld-b' ||
+    selectedBuildingId.value === 'timur'
+  ) {
+    return images.filter(
+      image => image.title !== 'Ruang Tamu & TV'
+    )
+  }
+
+  return images
 })
 
 // Reset gallery active index when room changes
@@ -1691,7 +1710,7 @@ onUnmounted(() => {
   font-weight: 700;
 }
 
-.floor-node-card.tersedia .node-badge {
+.floor-node-card.available .node-badge {
   background: #DCFCE7;
   color: #15803D;
 }
@@ -1703,7 +1722,7 @@ onUnmounted(() => {
   border: 1px solid #FDE68A;
 }
 
-.floor-node-card.terisi .node-badge {
+.floor-node-card.occupied .node-badge {
   background: #FEE2E2;
   color: #B91C1C;
 }
