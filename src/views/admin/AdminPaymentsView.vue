@@ -1,11 +1,28 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import AdminSidebar from '../../components/layout/AdminSidebar.vue'
 import { useDataStore, getRoomPriceByDuration, calculateRoomPrice, type PaymentData } from '../../composables/useDataStore'
 import { useAuth, type User } from '../../composables/useAuth'
 
 const { payments, addPayment, updatePaymentStatus, rooms, rentals, getRoomById, getBuildingName, updateRoom, getActiveRentalByMemberId, getRentalsByMemberId, getPaymentsByRentalId, getRentalByPayment, getPaymentAmount, updateRental, addRental } = useDataStore()
 const { tenants, getTenantById, updateMember } = useAuth()
+
+const route = useRoute()
+const validTabs = ['all', 'pending', 'paid', 'rejected', 'expiring'] as const
+type PaymentTab = typeof validTabs[number]
+
+const initialTab = (route.query.tab as string && validTabs.includes(route.query.tab as PaymentTab))
+  ? (route.query.tab as PaymentTab)
+  : 'all'
+
+const activeTab = ref<PaymentTab>(initialTab)
+
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && validTabs.includes(newTab as PaymentTab)) {
+    activeTab.value = newTab as PaymentTab
+  }
+})
 
 const getTenantByPayment = (pay: PaymentData) => {
   const rent = rentals.value.find(r => r.id === pay.rentalId)
@@ -54,8 +71,6 @@ const formatDateIndo = (dateStr?: string) => {
   const monthIdx = parseInt(monthStr, 10) - 1
   return `${day} ${monthsIndo[monthIdx] || ''} ${yearStr}`
 }
-
-const activeTab = ref<'all' | 'pending' | 'paid' | 'rejected' | 'expiring'>('all')
 const searchQuery = ref('')
 const isInvoiceModalOpen = ref(false)
 const isProofModalOpen = ref(false)

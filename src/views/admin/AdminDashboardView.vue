@@ -144,7 +144,7 @@ const urgentNotifications = computed(() => {
         dueDate: rent.endDate || '01 Agustus 2026',
         type: 'reminder',
         typeLabel: 'Jatuh Tempo Sewa',
-        targetLink: '/admin/tenants'
+        targetLink: '/admin/payments?tab=expiring'
       })
     }
   })
@@ -167,7 +167,7 @@ const urgentNotifications = computed(() => {
           dueDate: pendingPay.dueDate || '05 September 2026',
           type: 'billing',
           typeLabel: 'Jatuh Tempo Tagihan',
-          targetLink: '/admin/payments'
+          targetLink: '/admin/payments?tab=pending'
         })
       }
     }
@@ -183,7 +183,7 @@ const urgentNotifications = computed(() => {
       dueDate: '01 Agustus 2026',
       type: 'reminder',
       typeLabel: 'Jatuh Tempo Sewa',
-      targetLink: '/admin/tenants'
+      targetLink: '/admin/payments?tab=expiring'
     })
   }
 
