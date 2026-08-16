@@ -23,12 +23,13 @@ const roomPricingPeriod = ref<'monthly' | 'quarterly' | 'semi-annual' | 'yearly'
 
 // Hero Background Slideshow State
 const activeHeroSlide = ref(0)
+const heroSlidesReady = ref(false)
 let heroTimer: any = null
 
 const heroSlides = computed(() => [
   {
     id: 1,
-    image: cmsSettings.value.heroImage1 || '/assets/images/hero-gedung-depan.png',
+    image: cmsSettings.value.heroImage1 || '/assets/images/hero-gedung-depan.webp',
     tag: cmsSettings.value.heroBadgeText || 'Kost Muslimah Terpercaya',
     titleMain: cmsSettings.value.heroHeadline || 'Kost Muslimah Sekar Wangi',
     titleGradient: 'Nyaman & Aman',
@@ -36,7 +37,7 @@ const heroSlides = computed(() => [
   },
   {
     id: 2,
-    image: cmsSettings.value.heroImage2 || '/assets/images/fasilitas-km-luar.png',
+    image: cmsSettings.value.heroImage2 || '/assets/images/hero-kamar.webp',
     tag: 'Tipe Kamar Mandi Luar',
     titleMain: 'Kamar Nyaman',
     titleGradient: 'Harga Terjangkau',
@@ -44,7 +45,7 @@ const heroSlides = computed(() => [
   },
   {
     id: 3,
-    image: cmsSettings.value.heroImage3 || '/assets/images/foto-km-dalam.png',
+    image: cmsSettings.value.heroImage3 || '/assets/images/hero-dapur.webp',
     tag: 'Tipe Kamar Mandi Dalam',
     titleMain: 'Privasi & Kenyamanan',
     titleGradient: 'Maksimal Setiap Hari',
@@ -55,7 +56,7 @@ const heroSlides = computed(() => [
 const currentHeroSlide = computed(() => {
   return heroSlides.value[activeHeroSlide.value] || heroSlides.value[0] || {
     id: 1,
-    image: '/assets/images/hero-gedung-depan.png',
+    image: '/assets/images/hero-gedung-depan.webp',
     tag: 'Kost Muslimah Terpercaya',
     titleMain: 'Kost Muslimah Sekar Wangi',
     titleGradient: 'Nyaman & Aman',
@@ -140,6 +141,9 @@ const filteredPlaces = computed(() => {
 
 // 3. TESTIMONIAL CAROUSEL STATE
 const activeTestimonial = ref(0)
+let testiTimer: any = null
+const touchStartX = ref(0)
+const touchEndX = ref(0)
 
 const currentTestimonial = computed(() => {
   return testimonials.value[activeTestimonial.value] || testimonials.value[0] || {
@@ -154,11 +158,66 @@ const currentTestimonial = computed(() => {
 })
 
 const nextTestimonial = () => {
+  if (!testimonials.value || testimonials.value.length === 0) return
   activeTestimonial.value = (activeTestimonial.value + 1) % testimonials.value.length
 }
 
 const prevTestimonial = () => {
+  if (!testimonials.value || testimonials.value.length === 0) return
   activeTestimonial.value = (activeTestimonial.value - 1 + testimonials.value.length) % testimonials.value.length
+}
+
+const setTestimonial = (index: number) => {
+  activeTestimonial.value = index
+  resetTestiTimer()
+}
+
+const startTestiTimer = () => {
+  if (testiTimer) clearInterval(testiTimer)
+  testiTimer = setInterval(() => {
+    nextTestimonial()
+  }, 5000)
+}
+
+const stopTestiTimer = () => {
+  if (testiTimer) {
+    clearInterval(testiTimer)
+    testiTimer = null
+  }
+}
+
+const resetTestiTimer = () => {
+  stopTestiTimer()
+  startTestiTimer()
+}
+
+const handleTestiTouchStart = (e: TouchEvent) => {
+  if (e.touches && e.touches[0]) {
+    touchStartX.value = e.touches[0].clientX
+    touchEndX.value = e.touches[0].clientX
+  }
+  stopTestiTimer()
+}
+
+const handleTestiTouchMove = (e: TouchEvent) => {
+  if (e.touches && e.touches[0]) {
+    touchEndX.value = e.touches[0].clientX
+  }
+}
+
+const handleTestiTouchEnd = () => {
+  const diffX = touchStartX.value - touchEndX.value
+  const threshold = 40 // min swipe distance in px
+  if (Math.abs(diffX) > threshold && touchEndX.value !== 0) {
+    if (diffX > 0) {
+      nextTestimonial()
+    } else {
+      prevTestimonial()
+    }
+  }
+  touchStartX.value = 0
+  touchEndX.value = 0
+  resetTestiTimer()
 }
 
 const toggleFaq = (index: number) => {
@@ -250,30 +309,30 @@ let gsapCtx: gsap.Context | null = null
 
 const initGsapAnimations = () => {
   gsapCtx = gsap.context(() => {
-    // 1. HERO ANIMATIONS
+    // 1. HERO ANIMATIONS (Optimized for instant LCP - no opacity blocking)
     gsap.fromTo('.hero-badge', 
-      { scale: 0, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 1, ease: 'back.out(1.8)', clearProps: 'all' }
+      { scale: 0.9, opacity: 0.6 },
+      { scale: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.5)', clearProps: 'all' }
     )
 
     gsap.fromTo('#heroHeading', 
-      { y: 50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 1, delay: 0.15, ease: 'power3.out', clearProps: 'all' }
+      { y: 15 },
+      { y: 0, duration: 0.5, ease: 'power2.out', clearProps: 'all' }
     )
 
     gsap.fromTo('.hero-desc', 
-      { y: 30, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.8, delay: 0.3, ease: 'power2.out', clearProps: 'all' }
+      { y: 12 },
+      { y: 0, duration: 0.5, delay: 0.05, ease: 'power2.out', clearProps: 'all' }
     )
 
     gsap.fromTo('.hero-actions .btn', 
-      { y: 30, scale: 0.9, opacity: 0 },
-      { y: 0, scale: 1, opacity: 1, stagger: 0.15, duration: 0.8, delay: 0.45, ease: 'back.out(1.5)', clearProps: 'all' }
+      { y: 15, opacity: 0.7 },
+      { y: 0, opacity: 1, stagger: 0.08, duration: 0.5, delay: 0.1, ease: 'power2.out', clearProps: 'all' }
     )
 
     gsap.fromTo('.hero-stats', 
-      { y: 40, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.9, delay: 0.6, ease: 'power3.out', clearProps: 'all' }
+      { y: 15, opacity: 0.7 },
+      { y: 0, opacity: 1, duration: 0.5, delay: 0.15, ease: 'power2.out', clearProps: 'all' }
     )
 
     // 2. FACILITIES SECTION
@@ -437,6 +496,10 @@ watch(() => route.hash, (newHash) => {
 onMounted(() => {
   window.addEventListener('scroll', handleWindowScroll)
   startHeroTimer()
+  startTestiTimer()
+  setTimeout(() => {
+    heroSlidesReady.value = true
+  }, 800)
   nextTick(() => {
     initGsapAnimations()
     // Setelah GSAP init + ScrollTrigger.refresh selesai, baru scroll ke hash
@@ -452,6 +515,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', handleWindowScroll)
   if (heroTimer) clearInterval(heroTimer)
+  if (testiTimer) clearInterval(testiTimer)
   if (gsapCtx) {
     gsapCtx.revert()
   }
@@ -479,7 +543,7 @@ onUnmounted(() => {
             :key="slide.id"
             class="hero-bg-slide"
             :class="{ active: activeHeroSlide === index }"
-            :style="{ backgroundImage: `url(${slide.image})` }"
+            :style="{ backgroundImage: (index === 0 || heroSlidesReady || activeHeroSlide === index) ? `url(${slide.image})` : 'none' }"
           ></div>
         </div>
 
@@ -624,7 +688,7 @@ onUnmounted(() => {
             <!-- Kamar Mandi Luar -->
             <RouterLink v-if="roomTypeKmLuar" to="/rooms?tipe=km-luar" class="room-type-card" id="roomKmLuar">
               <div class="room-type-image-wrapper">
-                <img :src="roomTypeKmLuar.image || '/assets/images/fasilitas-luas-kamar.png'" :alt="`Tipe ${roomTypeKmLuar.typeName} Sekar Space`" class="room-type-img">
+                <img :src="roomTypeKmLuar.image || '/assets/images/fasilitas-luas-kamar.webp'" :alt="`Tipe ${roomTypeKmLuar.typeName} Sekar Space`" class="room-type-img" loading="lazy" decoding="async">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
                   <i :class="roomTypeKmLuar.icon || 'bx bx-door-open'"></i>
@@ -663,7 +727,7 @@ onUnmounted(() => {
                 <i class='bx bxs-star'></i> {{ roomTypeKmDalam.badge || 'Populer' }}
               </div>
               <div class="room-type-image-wrapper">
-                <img :src="roomTypeKmDalam.image || '/assets/images/kamar-km-dalam-1.png'" :alt="`Tipe ${roomTypeKmDalam.typeName} Sekar Space`" class="room-type-img">
+                <img :src="roomTypeKmDalam.image || '/assets/images/kamar-km-dalam-1.webp'" :alt="`Tipe ${roomTypeKmDalam.typeName} Sekar Space`" class="room-type-img" loading="lazy" decoding="async">
                 <div class="room-type-img-overlay"></div>
                 <div class="room-type-icon-badge">
                   <i :class="roomTypeKmDalam.icon || 'bx bx-bath'"></i>
@@ -781,7 +845,7 @@ onUnmounted(() => {
                 @keydown.space.prevent="openLightbox(item)"
               >
                 <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" decoding="async" />
                   <div class="gallery-overlay">
                     <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
                     <h3>{{ item.title }}</h3>
@@ -803,7 +867,7 @@ onUnmounted(() => {
                 @keydown.space.prevent="openLightbox(item)"
               >
                 <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" decoding="async" />
                   <div class="gallery-overlay">
                     <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
                     <h3>{{ item.title }}</h3>
@@ -829,7 +893,7 @@ onUnmounted(() => {
                 @keydown.space.prevent="openLightbox(item)"
               >
                 <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" decoding="async" />
                   <div class="gallery-overlay">
                     <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
                     <h3>{{ item.title }}</h3>
@@ -851,7 +915,7 @@ onUnmounted(() => {
                 @keydown.space.prevent="openLightbox(item)"
               >
                 <div class="gallery-img-wrapper">
-                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" />
+                  <img :src="item.image" :alt="item.title" class="gallery-img" loading="lazy" decoding="async" />
                   <div class="gallery-overlay">
                     <span class="gallery-cat-badge">{{ item.categoryLabel }}</span>
                     <h3>{{ item.title }}</h3>
@@ -872,28 +936,72 @@ onUnmounted(() => {
             <p>Dengarkan langsung ulasan dan pengalaman dari mahasiswi dan pekerja muslimah yang tinggal di kost kami.</p>
           </header>
 
-          <div class="testimonial-slider-box">
-            <button class="testi-arrow arrow-left" @click="prevTestimonial" aria-label="Ulasan sebelumnya">
+          <div 
+            class="testimonial-slider-box"
+            @mouseenter="stopTestiTimer"
+            @mouseleave="startTestiTimer"
+            @touchstart.passive="handleTestiTouchStart"
+            @touchmove.passive="handleTestiTouchMove"
+            @touchend="handleTestiTouchEnd"
+          >
+            <!-- Desktop Side Floating Arrows -->
+            <button class="testi-arrow arrow-left" @click="prevTestimonial(); resetTestiTimer()" aria-label="Ulasan sebelumnya">
               <i class='bx bx-chevron-left'></i>
             </button>
-            <button class="testi-arrow arrow-right" @click="nextTestimonial" aria-label="Ulasan berikutnya">
+            <button class="testi-arrow arrow-right" @click="nextTestimonial(); resetTestiTimer()" aria-label="Ulasan berikutnya">
               <i class='bx bx-chevron-right'></i>
             </button>
 
             <div class="testimonial-card">
-              <div class="testi-stars">
-                <i v-for="s in currentTestimonial.rating" :key="s" class='bx bxs-star'></i>
-              </div>
-              <blockquote class="testi-quote">
-                "{{ currentTestimonial.comment }}"
-              </blockquote>
-              <div class="testi-user">
-                <img :src="currentTestimonial.avatar" :alt="currentTestimonial.name" class="testi-avatar" />
-                <div>
-                  <h4>{{ currentTestimonial.name }}</h4>
-                  <p>{{ currentTestimonial.role }} • <span class="text-primary">{{ currentTestimonial.tag }}</span></p>
+              <Transition name="testi-slide-fade" mode="out-in">
+                <div :key="activeTestimonial" class="testi-card-inner">
+                  <div class="testi-stars">
+                    <i v-for="s in currentTestimonial.rating" :key="s" class='bx bxs-star'></i>
+                  </div>
+                  <blockquote class="testi-quote">
+                    "{{ currentTestimonial.comment }}"
+                  </blockquote>
+                  <div class="testi-user">
+                    <img :src="currentTestimonial.avatar" :alt="currentTestimonial.name" class="testi-avatar" />
+                    <div>
+                      <h4>{{ currentTestimonial.name }}</h4>
+                      <p>{{ currentTestimonial.role }} • <span class="text-primary">{{ currentTestimonial.tag }}</span></p>
+                    </div>
+                  </div>
                 </div>
+              </Transition>
+            </div>
+
+            <!-- Controls (Arrows + Dots) for Mobile & Desktop Navigation -->
+            <div class="testi-controls">
+              <button 
+                class="testi-nav-btn testi-nav-prev" 
+                @click="prevTestimonial(); resetTestiTimer()" 
+                aria-label="Ulasan sebelumnya"
+              >
+                <i class='bx bx-chevron-left'></i>
+              </button>
+
+              <div class="testi-dots" role="tablist" aria-label="Pilih ulasan">
+                <button 
+                  v-for="(item, idx) in testimonials" 
+                  :key="item.id || idx" 
+                  class="testi-dot" 
+                  :class="{ active: activeTestimonial === idx }"
+                  @click="setTestimonial(idx)"
+                  :aria-label="`Ulasan ${idx + 1}`"
+                  :aria-selected="activeTestimonial === idx"
+                  role="tab"
+                ></button>
               </div>
+
+              <button 
+                class="testi-nav-btn testi-nav-next" 
+                @click="nextTestimonial(); resetTestiTimer()" 
+                aria-label="Ulasan berikutnya"
+              >
+                <i class='bx bx-chevron-right'></i>
+              </button>
             </div>
           </div>
         </div>
@@ -2298,12 +2406,6 @@ onUnmounted(() => {
   transition: all var(--transition-fast);
 }
 
-@media (max-width: 1100px) {
-  .testi-arrow {
-    display: none !important;
-  }
-}
-
 .testi-arrow:hover {
   background: var(--primary);
   color: var(--white);
@@ -2317,6 +2419,12 @@ onUnmounted(() => {
   right: -60px;
 }
 
+@media (max-width: 992px) {
+  .testi-arrow {
+    display: none !important;
+  }
+}
+
 .testimonial-card {
   background: var(--off-white);
   border: 1px solid var(--border);
@@ -2324,6 +2432,95 @@ onUnmounted(() => {
   padding: 40px;
   text-align: center;
   box-shadow: var(--shadow-md);
+  position: relative;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  user-select: none;
+}
+
+.testi-card-inner {
+  width: 100%;
+}
+
+/* Testimonial Controls & Dots */
+.testi-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.testi-nav-btn {
+  display: none; /* hidden on desktop (>992px) as side arrows are used */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 1px solid var(--border);
+  color: var(--primary);
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.testi-nav-btn:hover {
+  background: var(--primary);
+  color: var(--white);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.testi-nav-btn:active {
+  transform: scale(0.95);
+}
+
+.testi-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.testi-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 6px;
+  background: var(--border);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.testi-dot.active {
+  width: 28px;
+  background: var(--primary);
+}
+
+.testi-dot:hover:not(.active) {
+  background: var(--text-muted);
+}
+
+/* Slide/fade animation for testimonials */
+.testi-slide-fade-enter-active,
+.testi-slide-fade-leave-active {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.testi-slide-fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.testi-slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 .testi-stars {
@@ -3568,10 +3765,14 @@ onUnmounted(() => {
     height: 260px;
   }
 
-  /* Hide hero & testimonial desktop arrows */
+  /* Hide hero & testimonial desktop arrows, show mobile controls */
   .hero-arrow,
   .testi-arrow {
-    display: none;
+    display: none !important;
+  }
+
+  .testi-nav-btn {
+    display: flex;
   }
 
   /* Testimonial card gets more room without arrows */
