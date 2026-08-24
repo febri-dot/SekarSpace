@@ -26,7 +26,7 @@ const handleLogin = () => {
 
     if (result.success && result.user) {
       if (result.user.role === 'admin') {
-        router.push('/admin/tenants')
+        router.push('/admin/dashboard')
       } else {
         router.push('/user')
       }
